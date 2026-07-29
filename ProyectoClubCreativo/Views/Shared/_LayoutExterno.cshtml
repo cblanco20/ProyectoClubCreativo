@@ -1,0 +1,382 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - Club Creativo MiVo</title>
+
+    <link rel="icon"
+          type="image/x-icon"
+          href="~/favicon.ico" />
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="~/css/club-creativo.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/acceso.css"
+          asp-append-version="true" />
+</head>
+
+<body>
+
+    <!-- Fondo oscuro del menú lateral -->
+    <div id="fondoMenuLateral"
+         class="fondo-menu-lateral">
+    </div>
+
+    <!-- Menú lateral oculto -->
+    <aside id="menuLateral"
+           class="menu-lateral"
+           aria-hidden="true">
+
+        <div class="cabecera-menu-lateral">
+            <img src="~/images/logo.jpg"
+                 alt="Logo de Club Creativo MiVo"
+                 class="logo-menu-lateral" />
+
+            <button id="botonCerrarMenu"
+                    type="button"
+                    class="boton-cerrar-menu"
+                    aria-label="Cerrar menú">
+                ×
+            </button>
+        </div>
+
+        <h2 class="titulo-menu-lateral">
+            Explora Club Creativo
+        </h2>
+
+        <nav aria-label="Menú lateral principal">
+            <ul class="navegacion-lateral">
+                <li>
+                    <a asp-controller="Home"
+                       asp-action="Index">
+                        Inicio
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#productos">
+                        Productos cool
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#emprendimientos">
+                        Emprendimientos
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#eventos">
+                        Eventos
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#talleres">
+                        Talleres
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#promociones">
+                        Promociones
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#comunidad">
+                        Comunidad creativa
+                    </a>
+                </li>
+
+                <li>
+                    <a asp-controller="Home"
+                       asp-action="Contacto">
+                        Contacto
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="bloque-menu-registro">
+            <h3>¿Quieres formar parte?</h3>
+
+            <p>
+                Regístrate como usuario o solicita incorporar
+                tu emprendimiento a la comunidad creativa.
+            </p>
+
+            <a asp-controller="Cuenta"
+               asp-action="SeleccionarRegistro"
+               class="boton-menu-registro">
+                Crear una cuenta
+            </a>
+        </div>
+    </aside>
+
+    <!-- Encabezado público -->
+    <header class="encabezado-principal">
+        <div class="contenedor-club barra-navegacion">
+
+            <!-- Menú de tres líneas -->
+            <button id="botonAbrirMenu"
+                    type="button"
+                    class="boton-menu-lateral"
+                    aria-label="Abrir menú"
+                    aria-expanded="false"
+                    aria-controls="menuLateral">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <!-- Marca -->
+            <a asp-controller="Home"
+               asp-action="Index"
+               class="marca-principal">
+
+                <span class="contenedor-logo-principal">
+                    <img src="~/images/logo.jpg"
+                         alt="Logo de Club Creativo"
+                         class="logo-principal" />
+                </span>
+
+                <span class="nombre-marca-principal">
+                    Club Creativo
+                </span>
+            </a>
+
+            <!-- Navegación -->
+            <nav class="menu-superior"
+                 aria-label="Navegación principal">
+
+                <ul class="lista-menu-superior">
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="Index"
+                           class="enlace-menu activo">
+                            Inicio
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#productos"
+                           class="enlace-menu">
+                            Productos
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#emprendimientos"
+                           class="enlace-menu">
+                            Emprendimientos
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#eventos"
+                           class="enlace-menu">
+                            Eventos
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#talleres"
+                           class="enlace-menu">
+                            Talleres
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="Contacto"
+                           class="enlace-menu">
+                            Contacto
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Acciones derechas -->
+            <div class="acciones-encabezado">
+
+                <button type="button"
+                        class="boton-busqueda"
+                        aria-label="Buscar">
+                    <span>⌕</span>
+                </button>
+
+                <a asp-controller="Cuenta"
+                   asp-action="IniciarSesion"
+                   class="boton-iniciar-sesion">
+                    Iniciar sesión
+                </a>
+
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Contenido de cada vista -->
+    <main>
+        @RenderBody()
+    </main>
+
+    <!-- Footer público -->
+    <footer id="contacto"
+            class="footer-principal">
+
+        <div class="contenedor-club contenido-footer">
+
+            <section>
+                <img src="~/images/logo.jpg"
+                     alt="Club Creativo MiVo"
+                     class="logo-footer" />
+
+                <p class="descripcion-footer">
+                    Apoyamos el talento local, conectamos
+                    emprendimientos con oportunidades y construimos
+                    una comunidad alrededor del arte, el diseño
+                    y la creatividad.
+                </p>
+
+                <div class="redes-footer">
+                    <a href="#"
+                       class="red-social"
+                       aria-label="Instagram">
+                        IG
+                    </a>
+
+                    <a href="#"
+                       class="red-social"
+                       aria-label="TikTok">
+                        TK
+                    </a>
+
+                    <a href="#"
+                       class="red-social"
+                       aria-label="Facebook">
+                        FB
+                    </a>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="titulo-footer">Navegación</h2>
+
+                <ul class="lista-footer">
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="Index">
+                            Inicio
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#productos">
+                            Productos cool
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#emprendimientos">
+                            Emprendimientos
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#eventos">
+                            Eventos
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#talleres">
+                            Talleres
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#comunidad">
+                            Comunidad
+                        </a>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="titulo-footer">Ayuda</h2>
+
+                <ul class="lista-footer">
+                    <li><a href="#">Preguntas frecuentes</a></li>
+                    <li><a href="#">Envíos y entregas</a></li>
+                    <li><a href="#">Métodos de pago</a></li>
+                    <li><a href="#">Devoluciones</a></li>
+                    <li><a href="#">Reglamento</a></li>
+                    <li><a href="#">Términos del servicio</a></li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="titulo-footer">Contacto</h2>
+
+                <ul class="lista-footer">
+                    <li>
+                        WhatsApp:
+                        <a href="tel:+50671301389">
+                            +506 7130-1389
+                        </a>
+                    </li>
+
+                    <li>
+                        Correo:
+                        <a href="mailto:hola@clubcreativomivo.com">
+                            hola@clubcreativomivo.com
+                        </a>
+                    </li>
+
+                    <li>
+                        San José, Costa Rica
+                    </li>
+                </ul>
+            </section>
+
+        </div>
+
+        <div class="barra-legal-footer">
+            <div class="contenedor-club contenido-legal-footer">
+
+                <p>
+                    © @DateTime.Now.Year Club Creativo MiVo.
+                    Todos los derechos reservados.
+                </p>
+
+                <div class="enlaces-legales">
+                    <a href="#">Política de privacidad</a>
+                    <a href="#">Términos del servicio</a>
+                    <a href="#">Política de reembolso</a>
+                    <a href="#">Condiciones de uso</a>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="~/js/menu-lateral.js"
+            asp-append-version="true">
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

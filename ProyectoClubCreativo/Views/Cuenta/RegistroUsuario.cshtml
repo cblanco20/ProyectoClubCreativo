@@ -1,0 +1,206 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.RegistroUsuarioViewModel
+
+@{
+    ViewData["Title"] = "Registro de usuario";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+}
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+
+        <div class="tarjeta-formulario-acceso tarjeta-formulario-amplia">
+
+            <div class="encabezado-formulario-acceso">
+                <span class="etiqueta-formulario-acceso">
+                    Registro de usuario
+                </span>
+
+                <h1 class="titulo-formulario-acceso">
+                    Crea tu cuenta
+                </h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Forma parte de Club Creativo y descubre
+                    productos, eventos, talleres y recompensas.
+                </p>
+            </div>
+
+            <form asp-controller="Cuenta"
+                  asp-action="RegistroUsuario"
+                  method="post"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="fila-formulario">
+                    <div class="grupo-formulario">
+                        <label asp-for="Nombre"></label>
+                        <input asp-for="Nombre"
+                               class="control-formulario"
+                               placeholder="Tu nombre" />
+                        <span asp-validation-for="Nombre"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="Apellidos"></label>
+                        <input asp-for="Apellidos"
+                               class="control-formulario"
+                               placeholder="Tus apellidos" />
+                        <span asp-validation-for="Apellidos"
+                              class="mensaje-validacion"></span>
+                    </div>
+                </div>
+
+                <div class="fila-formulario">
+                    <div class="grupo-formulario">
+                        <label asp-for="Correo"></label>
+                        <input asp-for="Correo"
+                               class="control-formulario"
+                               placeholder="ejemplo@correo.com" />
+                        <span asp-validation-for="Correo"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="Telefono"></label>
+                        <input asp-for="Telefono"
+                               class="control-formulario"
+                               placeholder="88888888"
+                               maxlength="8" />
+                        <span asp-validation-for="Telefono"
+                              class="mensaje-validacion"></span>
+                    </div>
+                </div>
+
+                <div class="fila-formulario">
+                    <div class="grupo-formulario">
+                        <label asp-for="Provincia"></label>
+
+                        <select asp-for="Provincia"
+                                class="control-formulario">
+                            <option value="">Seleccione una provincia</option>
+                            <option>San José</option>
+                            <option>Alajuela</option>
+                            <option>Cartago</option>
+                            <option>Heredia</option>
+                            <option>Guanacaste</option>
+                            <option>Puntarenas</option>
+                            <option>Limón</option>
+                        </select>
+
+                        <span asp-validation-for="Provincia"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="FechaNacimiento"></label>
+
+                        <input asp-for="FechaNacimiento"
+                               class="control-formulario" />
+
+                        <span asp-validation-for="FechaNacimiento"
+                              class="mensaje-validacion"></span>
+                    </div>
+                </div>
+
+                <div class="fila-formulario">
+                    <div class="grupo-formulario">
+                        <label asp-for="Contrasena">Contraseña</label>
+
+                        <div class="campo-contrasena">
+                            <input asp-for="Contrasena"
+                                   id="contrasenaUsuario"
+                                   class="control-formulario"
+                                   placeholder="Mínimo 8 caracteres" />
+
+                            <button type="button"
+                                    class="boton-ver-contrasena"
+                                    data-toggle-password="contrasenaUsuario">
+                                ◉
+                            </button>
+                        </div>
+
+                        <span asp-validation-for="Contrasena"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="ConfirmarContrasena"></label>
+
+                        <div class="campo-contrasena">
+                            <input asp-for="ConfirmarContrasena"
+                                   id="confirmarUsuario"
+                                   class="control-formulario"
+                                   placeholder="Repite la contraseña" />
+
+                            <button type="button"
+                                    class="boton-ver-contrasena"
+                                    data-toggle-password="confirmarUsuario">
+                                ◉
+                            </button>
+                        </div>
+
+                        <span asp-validation-for="ConfirmarContrasena"
+                              class="mensaje-validacion"></span>
+                    </div>
+                </div>
+
+                <div class="aceptacion-terminos">
+                    <input asp-for="AceptaTerminos" />
+
+                    <label asp-for="AceptaTerminos">
+                        He leído y acepto la política de privacidad
+                        y las condiciones de uso.
+                    </label>
+                </div>
+
+                <span asp-validation-for="AceptaTerminos"
+                      class="mensaje-validacion"></span>
+
+                <button type="submit"
+                        class="boton-formulario-acceso">
+                    Registrarme
+                </button>
+            </form>
+
+            <div class="separador-acceso">
+                Ya tengo una cuenta
+            </div>
+
+            <a asp-controller="Cuenta"
+               asp-action="IniciarSesion"
+               class="enlace-acceso">
+                Regresar al inicio de sesión
+            </a>
+
+        </div>
+    </section>
+
+    <aside class="panel-visual-acceso panel-visual-usuario">
+        <div class="contenido-visual-acceso">
+
+            <img src="~/images/registro-usuario.jpg"
+                 alt="Visitantes de Club Creativo"
+                 class="imagen-ovalada-acceso" />
+
+            <h2 class="titulo-visual-acceso">
+                Descubre talento local
+            </h2>
+
+            <p class="texto-visual-acceso">
+                Guarda tus productos favoritos, participa en talleres,
+                consulta eventos y acumula puntos por tus compras
+                y visitas.
+            </p>
+        </div>
+    </aside>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

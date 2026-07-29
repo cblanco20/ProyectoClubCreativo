@@ -1,0 +1,504 @@
+﻿/* =========================================================
+   PÁGINAS DE ACCESO
+   ========================================================= */
+
+.pagina-acceso {
+    min-height: 100vh;
+    margin: 0;
+    background-color: #ffffff;
+}
+
+.marca-acceso {
+    position: fixed;
+    top: 24px;
+    left: 30px;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-acceso-contenedor {
+    width: 62px;
+    height: 62px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: var(--color-azul);
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(31, 31, 31, 0.14);
+}
+
+.logo-acceso {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nombre-acceso {
+    color: var(--color-negro);
+    font-family: "Fredoka", sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+    .nombre-acceso span {
+        color: var(--color-naranja);
+    }
+
+.contenedor-acceso {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(540px, 1fr) minmax(430px, 0.9fr);
+}
+
+.panel-formulario-acceso {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 125px 7% 65px;
+    background-color: var(--color-blanco);
+}
+
+.tarjeta-formulario-acceso {
+    width: min(650px, 100%);
+    padding: 42px;
+    background-color: var(--color-blanco);
+    border-radius: 28px;
+    box-shadow: 0 16px 45px rgba(31, 31, 31, 0.09);
+}
+
+.tarjeta-formulario-amplia {
+    width: min(770px, 100%);
+}
+
+.encabezado-formulario-acceso {
+    margin-bottom: 30px;
+}
+
+.etiqueta-formulario-acceso {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 7px 13px;
+    color: var(--color-negro);
+    background-color: var(--color-morado);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.titulo-formulario-acceso {
+    margin-bottom: 10px;
+    color: var(--color-negro);
+    font-family: "Oswald", sans-serif;
+    font-size: clamp(39px, 5vw, 55px);
+    font-weight: 700;
+}
+
+.descripcion-formulario-acceso {
+    color: var(--color-gris-oscuro);
+    line-height: 1.65;
+}
+
+.grupo-formulario {
+    margin-bottom: 21px;
+}
+
+    .grupo-formulario label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--color-negro);
+        font-family: "Poppins", sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+.control-formulario {
+    width: 100%;
+    min-height: 55px;
+    padding: 13px 17px;
+    color: var(--color-negro);
+    background-color: #ffffff;
+    border: 1.5px solid #cfcfcf;
+    border-radius: 14px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .control-formulario:focus {
+        border-color: var(--color-azul);
+        box-shadow: 0 0 0 4px rgba(61, 139, 234, 0.13);
+    }
+
+textarea.control-formulario {
+    min-height: 135px;
+    resize: vertical;
+}
+
+.campo-contrasena {
+    position: relative;
+}
+
+    .campo-contrasena .control-formulario {
+        padding-right: 55px;
+    }
+
+.boton-ver-contrasena {
+    position: absolute;
+    top: 50%;
+    right: 13px;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-negro);
+    background-color: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+    .boton-ver-contrasena:hover {
+        background-color: var(--color-gris-claro);
+    }
+
+.mensaje-validacion {
+    display: block;
+    margin-top: 6px;
+    color: #c92a2a;
+    font-size: 12px;
+}
+
+.validation-summary-errors {
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    color: #8b1a1a;
+    background-color: #ffe8e8;
+    border-radius: 12px;
+    font-size: 13px;
+}
+
+    .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+.boton-formulario-acceso {
+    width: 100%;
+    min-height: 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    color: var(--color-blanco);
+    background-color: var(--color-naranja);
+    border: 2px solid var(--color-naranja);
+    border-radius: 28px;
+    font-family: "Oswald", sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .boton-formulario-acceso:hover {
+        color: var(--color-naranja);
+        background-color: var(--color-blanco);
+    }
+
+.opciones-secundarias {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-top: 18px;
+    font-size: 13px;
+}
+
+.enlace-acceso {
+    color: var(--color-naranja);
+    font-weight: 600;
+}
+
+    .enlace-acceso:hover {
+        text-decoration: underline;
+    }
+
+.separador-acceso {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 30px 0;
+    color: var(--color-gris-oscuro);
+    font-size: 13px;
+}
+
+    .separador-acceso::before,
+    .separador-acceso::after {
+        flex: 1;
+        height: 1px;
+        content: "";
+        background-color: var(--color-gris-medio);
+    }
+
+/* Panel visual derecho */
+
+.panel-visual-acceso {
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 70px;
+    color: var(--color-blanco);
+    background-color: var(--color-naranja);
+}
+
+.panel-visual-usuario {
+    background-color: var(--color-azul);
+}
+
+.panel-visual-emprendedor {
+    background-color: var(--color-naranja);
+}
+
+.panel-visual-recuperacion {
+    background-color: var(--color-morado);
+    color: var(--color-negro);
+}
+
+.panel-visual-acceso::before {
+    position: absolute;
+    top: -130px;
+    right: -100px;
+    width: 350px;
+    height: 350px;
+    content: "";
+    background-color: rgba(255, 255, 255, 0.13);
+    border-radius: 50%;
+}
+
+.panel-visual-acceso::after {
+    position: absolute;
+    left: -120px;
+    bottom: -150px;
+    width: 390px;
+    height: 390px;
+    content: "";
+    background-color: rgba(216, 180, 232, 0.25);
+    border-radius: 50%;
+}
+
+.contenido-visual-acceso {
+    position: relative;
+    z-index: 2;
+    width: min(520px, 100%);
+    text-align: center;
+}
+
+.imagen-ovalada-acceso {
+    width: min(440px, 100%);
+    height: 330px;
+    margin: 0 auto 35px;
+    object-fit: cover;
+    border: 9px solid rgba(255, 255, 255, 0.25);
+    border-radius: 52% 48% 57% 43% / 45% 57% 43% 55%;
+    box-shadow: 0 20px 45px rgba(31, 31, 31, 0.17);
+}
+
+.titulo-visual-acceso {
+    margin-bottom: 16px;
+    font-family: "Oswald", sans-serif;
+    font-size: 45px;
+    font-weight: 700;
+}
+
+.texto-visual-acceso {
+    max-width: 470px;
+    margin: 0 auto;
+    font-size: 16px;
+    line-height: 1.75;
+}
+
+/* Selección de registro */
+
+.tarjetas-tipo-registro {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.tarjeta-tipo-registro {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 25px;
+    background-color: var(--color-blanco);
+    border: 2px solid var(--color-gris-medio);
+    border-radius: 22px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .tarjeta-tipo-registro:hover {
+        border-color: var(--color-naranja);
+        box-shadow: 0 15px 30px rgba(31, 31, 31, 0.09);
+        transform: translateY(-5px);
+    }
+
+    .tarjeta-tipo-registro.usuario:hover {
+        border-color: var(--color-azul);
+    }
+
+.icono-tipo-registro {
+    font-size: 42px;
+}
+
+.tarjeta-tipo-registro h2 {
+    margin: 18px 0 8px;
+    font-family: "Oswald", sans-serif;
+    font-size: 28px;
+}
+
+.tarjeta-tipo-registro p {
+    color: var(--color-gris-oscuro);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Dos columnas en formularios */
+
+.fila-formulario {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.titulo-seccion-formulario {
+    margin: 35px 0 22px;
+    padding-top: 25px;
+    color: var(--color-naranja);
+    border-top: 1px solid var(--color-gris-medio);
+    font-family: "Oswald", sans-serif;
+    font-size: 29px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* Términos */
+
+.caja-terminos {
+    margin-top: 25px;
+    padding: 22px;
+    background-color: var(--color-gris-claro);
+    border: 1px solid var(--color-gris-medio);
+    border-radius: 18px;
+}
+
+.encabezado-terminos {
+    margin-bottom: 15px;
+}
+
+    .encabezado-terminos h3 {
+        font-family: "Oswald", sans-serif;
+        font-size: 24px;
+    }
+
+.contenido-terminos {
+    height: 260px;
+    padding: 18px;
+    overflow-y: auto;
+    background-color: var(--color-blanco);
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+    .contenido-terminos h4 {
+        margin: 18px 0 8px;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+.aceptacion-terminos {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+    .aceptacion-terminos input {
+        width: 19px;
+        height: 19px;
+        flex-shrink: 0;
+        margin-top: 2px;
+        accent-color: var(--color-naranja);
+    }
+
+.alerta-exito-acceso {
+    margin-bottom: 22px;
+    padding: 14px 18px;
+    color: #166534;
+    background-color: #dcfce7;
+    border-radius: 12px;
+}
+
+/* Responsive */
+
+@media (max-width: 1000px) {
+    .contenedor-acceso {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-visual-acceso {
+        position: relative;
+        min-height: 520px;
+    }
+
+    .panel-formulario-acceso {
+        padding-top: 130px;
+    }
+}
+
+@media (max-width: 650px) {
+    .marca-acceso {
+        top: 16px;
+        left: 16px;
+    }
+
+    .nombre-acceso {
+        display: none;
+    }
+
+    .panel-formulario-acceso {
+        padding: 110px 15px 40px;
+    }
+
+    .tarjeta-formulario-acceso {
+        padding: 28px 20px;
+        border-radius: 20px;
+    }
+
+    .fila-formulario,
+    .tarjetas-tipo-registro {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-visual-acceso {
+        min-height: 430px;
+        padding: 45px 20px;
+    }
+
+    .imagen-ovalada-acceso {
+        height: 240px;
+    }
+
+    .titulo-visual-acceso {
+        font-size: 36px;
+    }
+}

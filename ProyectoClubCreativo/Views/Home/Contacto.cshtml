@@ -1,0 +1,145 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.ContactoViewModel
+
+@{
+    ViewData["Title"] = "Contacto";
+    Layout = "~/Views/Shared/_LayoutExterno.cshtml";
+}
+
+<section class="seccion-contacto">
+
+    <div class="contenedor-club">
+
+        <div class="burbuja-contacto">
+
+            <div class="informacion-contacto">
+
+                <span class="etiqueta-contacto">
+                    Hablemos
+                </span>
+
+                <h1>
+                    Contacto
+                </h1>
+
+                <p>
+                    ¿Tienes consultas sobre ferias, talleres,
+                    productos o participación de emprendimientos?
+                    Envíanos un mensaje.
+                </p>
+
+                <div class="datos-contacto">
+                    <div>
+                        <strong>WhatsApp</strong>
+                        <span>+506 7130-1389</span>
+                    </div>
+
+                    <div>
+                        <strong>Correo</strong>
+                        <span>hola@clubcreativomivo.com</span>
+                    </div>
+
+                    <div>
+                        <strong>Ubicación</strong>
+                        <span>San José, Costa Rica</span>
+                    </div>
+                </div>
+
+                <div class="decoracion-contacto">
+                    Club Creativo MiVo ✦
+                </div>
+            </div>
+
+            <div class="formulario-contacto">
+
+                @if (TempData["MensajeContacto"] is not null)
+                {
+                    <div class="alerta-exito-acceso">
+                        @TempData["MensajeContacto"]
+                    </div>
+                }
+
+                <form asp-controller="Home"
+                      asp-action="Contacto"
+                      method="post"
+                      novalidate>
+
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly"></div>
+
+                    <div class="fila-formulario">
+                        <div class="grupo-formulario">
+                            <label asp-for="Nombre"></label>
+                            <input asp-for="Nombre"
+                                   class="control-formulario"
+                                   placeholder="Tu nombre" />
+                            <span asp-validation-for="Nombre"
+                                  class="mensaje-validacion"></span>
+                        </div>
+
+                        <div class="grupo-formulario">
+                            <label asp-for="Correo"></label>
+                            <input asp-for="Correo"
+                                   class="control-formulario"
+                                   placeholder="ejemplo@correo.com" />
+                            <span asp-validation-for="Correo"
+                                  class="mensaje-validacion"></span>
+                        </div>
+                    </div>
+
+                    <div class="fila-formulario">
+                        <div class="grupo-formulario">
+                            <label asp-for="Telefono"></label>
+                            <input asp-for="Telefono"
+                                   class="control-formulario"
+                                   placeholder="88888888"
+                                   maxlength="8" />
+                            <span asp-validation-for="Telefono"
+                                  class="mensaje-validacion"></span>
+                        </div>
+
+                        <div class="grupo-formulario">
+                            <label asp-for="Asunto"></label>
+
+                            <select asp-for="Asunto"
+                                    class="control-formulario">
+                                <option value="">Seleccione un asunto</option>
+                                <option>Información sobre eventos</option>
+                                <option>Información sobre talleres</option>
+                                <option>Registro de emprendimiento</option>
+                                <option>Productos y compras</option>
+                                <option>Soporte de la plataforma</option>
+                                <option>Otro</option>
+                            </select>
+
+                            <span asp-validation-for="Asunto"
+                                  class="mensaje-validacion"></span>
+                        </div>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="Mensaje"></label>
+
+                        <textarea asp-for="Mensaje"
+                                  class="control-formulario"
+                                  placeholder="Cuéntanos cómo podemos ayudarte..."></textarea>
+
+                        <span asp-validation-for="Mensaje"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <button type="submit"
+                            class="boton-enviar-contacto">
+                        Enviar mensaje
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

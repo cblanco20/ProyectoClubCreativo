@@ -1,0 +1,97 @@
+﻿@{
+    ViewData["Title"] = "Crear cuenta";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+}
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+        <div class="tarjeta-formulario-acceso">
+
+            <div class="encabezado-formulario-acceso">
+                <span class="etiqueta-formulario-acceso">
+                    Únete a la comunidad
+                </span>
+
+                <h1 class="titulo-formulario-acceso">
+                    ¿Cómo deseas registrarte?
+                </h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Selecciona la opción que mejor represente
+                    la forma en que deseas participar.
+                </p>
+            </div>
+
+            <div class="tarjetas-tipo-registro">
+
+                <a asp-controller="Cuenta"
+                   asp-action="RegistroUsuario"
+                   class="tarjeta-tipo-registro usuario">
+
+                    <div>
+                        <span class="icono-tipo-registro">👤</span>
+
+                        <h2>Usuario</h2>
+
+                        <p>
+                            Descubre productos, inscríbete en talleres,
+                            guarda favoritos y acumula recompensas.
+                        </p>
+                    </div>
+
+                    <strong>Registrarme como usuario →</strong>
+                </a>
+
+                <a asp-controller="Cuenta"
+                   asp-action="RegistroEmprendedor"
+                   class="tarjeta-tipo-registro">
+
+                    <div>
+                        <span class="icono-tipo-registro">👜</span>
+
+                        <h2>Emprendedor</h2>
+
+                        <p>
+                            Publica tu marca, administra productos
+                            y solicita participación en las ferias.
+                        </p>
+                    </div>
+
+                    <strong>Registrar emprendimiento →</strong>
+                </a>
+
+            </div>
+
+            <div class="separador-acceso">
+                Ya tengo una cuenta
+            </div>
+
+            <a asp-controller="Cuenta"
+               asp-action="IniciarSesion"
+               class="enlace-acceso">
+                Regresar al inicio de sesión
+            </a>
+        </div>
+    </section>
+
+    <aside class="panel-visual-acceso panel-visual-usuario">
+        <div class="contenido-visual-acceso">
+
+            <img src="~/images/acceso-feria.jpg"
+                 alt="Comunidad Club Creativo"
+                 class="imagen-ovalada-acceso" />
+
+            <h2 class="titulo-visual-acceso">
+                Una comunidad, muchas formas de participar
+            </h2>
+
+            <p class="texto-visual-acceso">
+                Tanto si deseas descubrir talento local como si buscas
+                hacer crecer tu emprendimiento, aquí encontrarás
+                un espacio para ti.
+            </p>
+        </div>
+    </aside>
+
+</div>

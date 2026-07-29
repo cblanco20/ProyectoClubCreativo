@@ -1,8 +1,558 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inicio";
+    Layout = "~/Views/Shared/_LayoutExterno.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- ======================================================
+     BANNER PRINCIPAL
+     ====================================================== -->
+<section class="seccion-hero">
+    <div class="contenedor-club">
+
+        <div class="hero-principal">
+
+            <div class="contenido-hero">
+                <span class="etiqueta-hero">
+                    Talento local hecho en Costa Rica
+                </span>
+
+                <h1 class="titulo-hero">
+                    Apoyá lo nuestro,
+                    <span>viví lo creativo</span>
+                </h1>
+
+                <p class="descripcion-hero">
+                    Descubrí emprendimientos, productos únicos,
+                    eventos, talleres y experiencias creadas
+                    por personas apasionadas por el arte,
+                    el diseño y la creatividad.
+                </p>
+
+                <div class="botones-hero">
+                    <a href="#productos"
+                       class="boton-principal">
+                        Explorar productos
+                    </a>
+
+                    <a href="#eventos"
+                       class="boton-secundario">
+                        Ver eventos
+                    </a>
+                </div>
+            </div>
+
+            <div class="imagen-hero-contenedor">
+                <img src="~/images/hero-feria.jpg"
+                     alt="Feria de emprendimientos de Club Creativo"
+                     class="imagen-hero" />
+
+                <div class="mensaje-flotante-hero">
+                    Hecho en Costa Rica ❤
+                </div>
+            </div>
+
+        </div>
+
+        <div class="barra-beneficios">
+
+            <article class="beneficio">
+                <span class="icono-beneficio">🏪</span>
+
+                <div>
+                    <h3>Apoyá emprendimientos</h3>
+                    <p>
+                        Conocé marcas y proyectos costarricenses.
+                    </p>
+                </div>
+            </article>
+
+            <article class="beneficio">
+                <span class="icono-beneficio">📅</span>
+
+                <div>
+                    <h3>Viví experiencias</h3>
+                    <p>
+                        Participá en ferias, eventos y talleres.
+                    </p>
+                </div>
+            </article>
+
+            <article class="beneficio">
+                <span class="icono-beneficio">🛍️</span>
+
+                <div>
+                    <h3>Comprá productos</h3>
+                    <p>
+                        Encontrá artículos hechos con dedicación.
+                    </p>
+                </div>
+            </article>
+
+            <article class="beneficio">
+                <span class="icono-beneficio">⭐</span>
+
+                <div>
+                    <h3>Sumá beneficios</h3>
+                    <p>
+                        Acumulá puntos y disfrutá recompensas.
+                    </p>
+                </div>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+<!-- ======================================================
+     PRÓXIMOS EVENTOS
+     ====================================================== -->
+<section id="eventos"
+         class="seccion-contenido">
+    <div class="burbuja-seccion burbuja-rosada">
+        <div class="contenedor-club">
+
+        <div class="encabezado-seccion">
+            <div>
+                <h2 class="titulo-seccion">
+                    Próximos eventos ✦
+                </h2>
+
+                <p class="descripcion-seccion">
+                    Conocé las próximas ediciones de Club Creativo
+                    y descubrí espacios llenos de arte,
+                    diseño y emprendimiento.
+                </p>
+            </div>
+
+            <a href="#"
+               class="enlace-ver-todos">
+                Ver todos los eventos →
+            </a>
+        </div>
+
+        <div class="cuadricula-tarjetas">
+
+            <article class="tarjeta-contenido">
+                <img src="~/images/evento-san-pedro.jpg"
+                     alt="Arte Inarrivo San Pedro"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <span class="etiqueta-tarjeta">
+                        15 y 16 de agosto
+                    </span>
+
+                    <h3 class="titulo-tarjeta">
+                        Arte Inarrivo San Pedro
+                    </h3>
+
+                    <p class="texto-tarjeta">
+                        Una edición especial con arte,
+                        diseño y emprendimientos locales.
+                    </p>
+
+                    <div class="datos-tarjeta">
+                        <span>📍 San Pedro</span>
+                        <span>🕐 12:00 p. m.</span>
+                    </div>
+
+                    <a href="#"
+                       class="enlace-tarjeta">
+                        Ver evento →
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido">
+                <img src="~/images/evento-santa-ana.jpg"
+                     alt="Feria Creativa Santa Ana"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <span class="etiqueta-tarjeta">
+                        5 al 7 de septiembre
+                    </span>
+
+                    <h3 class="titulo-tarjeta">
+                        Feria Creativa Santa Ana
+                    </h3>
+
+                    <p class="texto-tarjeta">
+                        Marcas creativas, productos únicos
+                        y actividades para toda la comunidad.
+                    </p>
+
+                    <div class="datos-tarjeta">
+                        <span>📍 Santa Ana</span>
+                        <span>🕐 10:00 a. m.</span>
+                    </div>
+
+                    <a href="#"
+                       class="enlace-tarjeta">
+                        Ver evento →
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido">
+                <img src="~/images/evento-madres.jpg"
+                     alt="Edición especial Día de las Madres"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <span class="etiqueta-tarjeta">
+                        Edición especial
+                    </span>
+
+                    <h3 class="titulo-tarjeta">
+                        Día de las Madres
+                    </h3>
+
+                    <p class="texto-tarjeta">
+                        Regalos, experiencias y talento local
+                        para celebrar a mamá.
+                    </p>
+
+                    <div class="datos-tarjeta">
+                        <span>📍 Heredia</span>
+                        <span>🕐 11:00 a. m.</span>
+                    </div>
+
+                    <a href="#"
+                       class="enlace-tarjeta">
+                        Ver evento →
+                    </a>
+                </div>
+            </article>
+
+        </div>
+    </div>
+    </div>
+</section>
+
+<!-- ======================================================
+     TALLERES
+     ====================================================== -->
+<section id="talleres"
+         class="seccion-contenido">
+    <div class="burbuja-seccion burbuja-blanca">
+        <div class="contenedor-club">
+
+        <div class="encabezado-seccion">
+            <div>
+                <h2 class="titulo-seccion">
+                    Talleres destacados 〰
+                </h2>
+
+                <p class="descripcion-seccion">
+                    Aprendé nuevas técnicas, conectá con personas
+                    creativas y viví experiencias diferentes.
+                </p>
+            </div>
+
+            <a href="#"
+               class="enlace-ver-todos">
+                Ver todos los talleres →
+            </a>
+        </div>
+
+        <div class="cuadricula-talleres">
+
+            <article class="tarjeta-contenido tarjeta-taller">
+                <img src="~/images/taller-ceramica.jpg"
+                     alt="Taller de cerámica"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <span class="etiqueta-tarjeta">
+                        Cupos disponibles
+                    </span>
+
+                    <h3 class="titulo-tarjeta">
+                        Cerámica para principiantes
+                    </h3>
+
+                    <div class="datos-tarjeta">
+                        <span>📅 Sábado 23</span>
+                        <span>📍 Escazú</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido tarjeta-taller">
+                <img src="~/images/taller-bordado.jpg"
+                     alt="Taller de bordado creativo"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <span class="etiqueta-tarjeta">
+                        Cupos disponibles
+                    </span>
+
+                    <h3 class="titulo-tarjeta">
+                        Bordado creativo
+                    </h3>
+
+                    <div class="datos-tarjeta">
+                        <span>📅 Domingo 24</span>
+                        <span>📍 Santa Ana</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido tarjeta-taller">
+                <img src="~/images/taller-velas.jpg"
+                     alt="Taller de velas artesanales"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <span class="etiqueta-tarjeta">
+                        Cupos limitados
+                    </span>
+
+                    <h3 class="titulo-tarjeta">
+                        Velas artesanales
+                    </h3>
+
+                    <div class="datos-tarjeta">
+                        <span>📅 Sábado 30</span>
+                        <span>📍 Heredia</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido tarjeta-taller">
+                <img src="~/images/taller-joyeria.jpg"
+                     alt="Taller de joyería"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <span class="etiqueta-tarjeta">
+                        Cupos disponibles
+                    </span>
+
+                    <h3 class="titulo-tarjeta">
+                        Joyería en arcilla
+                    </h3>
+
+                    <div class="datos-tarjeta">
+                        <span>📅 Domingo 31</span>
+                        <span>📍 Alajuela</span>
+                    </div>
+                </div>
+            </article>
+
+        </div>
+    </div>
+    </div>
+</section>
+
+<!-- ======================================================
+     EMPRENDIMIENTOS Y PRODUCTOS
+     ====================================================== -->
+<section id="productos"
+         class="seccion-contenido seccion-fondo-morado">
+
+    <div class="burbuja-seccion burbuja-morada">
+    <div id="emprendimientos"
+         class="contenedor-club">
+
+        <div class="encabezado-seccion">
+            <div>
+                <h2 class="titulo-seccion">
+                    Emprendimientos y productos destacados
+                </h2>
+
+                <p class="descripcion-seccion">
+                    Descubrí marcas creadas con pasión
+                    y productos hechos por talento costarricense.
+                </p>
+            </div>
+
+            <a href="#"
+               class="enlace-ver-todos">
+                Ver todos →
+            </a>
+        </div>
+
+        <div class="cuadricula-productos">
+
+            <article class="tarjeta-contenido tarjeta-producto">
+                <button type="button"
+                        class="boton-favorito"
+                        aria-label="Agregar a favoritos">
+                    ♡
+                </button>
+
+                <img src="~/images/producto-1.jpg"
+                     alt="Accesorios artesanales"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <h3 class="titulo-tarjeta">Orquídea</h3>
+                    <p class="texto-tarjeta">Accesorios artesanales</p>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido tarjeta-producto">
+                <button type="button"
+                        class="boton-favorito"
+                        aria-label="Agregar a favoritos">
+                    ♡
+                </button>
+
+                <img src="~/images/producto-2.jpg"
+                     alt="Bolsos y accesorios"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <h3 class="titulo-tarjeta">Moras</h3>
+                    <p class="texto-tarjeta">Bolsos y accesorios</p>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido tarjeta-producto">
+                <button type="button"
+                        class="boton-favorito"
+                        aria-label="Agregar a favoritos">
+                    ♡
+                </button>
+
+                <img src="~/images/producto-3.jpg"
+                     alt="Velas artesanales"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <h3 class="titulo-tarjeta">Luz Natural</h3>
+                    <p class="texto-tarjeta">Velas artesanales</p>
+                </div>
+            </article>
+
+            <article class="tarjeta-contenido tarjeta-producto">
+                <button type="button"
+                        class="boton-favorito"
+                        aria-label="Agregar a favoritos">
+                    ♡
+                </button>
+
+                <img src="~/images/producto-4.jpg"
+                     alt="Arte e ilustración"
+                     class="imagen-tarjeta" />
+
+                <div class="cuerpo-tarjeta">
+                    <h3 class="titulo-tarjeta">Pinta Bonito</h3>
+                    <p class="texto-tarjeta">Arte e ilustración</p>
+                </div>
+            </article>
+
+        </div>
+    </div>
+    </div>
+</section>
+
+<!-- ======================================================
+     PROMOCIONES
+     ====================================================== -->
+<section id="promociones"
+         class="seccion-contenido">
+
+    <div class="burbuja-seccion burbuja-amarilla">
+    <div class="contenedor-club">
+
+        <div class="encabezado-seccion">
+            <div>
+                <h2 class="titulo-seccion">
+                    Promociones y campañas ✧
+                </h2>
+            </div>
+        </div>
+
+        <div class="banner-promocion">
+
+            <div class="contenido-promocion">
+                <span class="descuento-promocion">
+                    15% OFF
+                </span>
+
+                <h2>
+                    Regalos especiales para mamá
+                </h2>
+
+                <p>
+                    Aprovechá promociones en productos seleccionados
+                    creados por emprendimientos costarricenses.
+                </p>
+
+                <div>
+                    <a href="#"
+                       class="boton-principal">
+                        Ver promociones
+                    </a>
+                </div>
+            </div>
+
+            <img src="~/images/evento-madres.jpg"
+                 alt="Promoción especial para el Día de las Madres"
+                 class="imagen-promocion" />
+
+        </div>
+    </div>
+    </div>
+</section>
+
+<!-- ======================================================
+     COMUNIDAD
+     ====================================================== -->
+<section id="comunidad"
+         class="seccion-contenido">
+
+    <div class="burbuja-seccion burbuja-azul-suave">
+    <div class="contenedor-club">
+
+        <div class="encabezado-seccion">
+            <div>
+                <h2 class="titulo-seccion">
+                    Comunidad creativa ♥
+                </h2>
+
+                <p class="descripcion-seccion">
+                    Así vivimos nuestras ferias, talleres
+                    y actividades junto a la comunidad.
+                </p>
+            </div>
+
+            <a href="#"
+               class="enlace-ver-todos">
+                Síguenos en Instagram →
+            </a>
+        </div>
+
+        <div class="cuadricula-comunidad">
+            <img src="~/images/evento-san-pedro.jpg"
+                 alt="Actividad de Club Creativo"
+                 class="imagen-comunidad" />
+
+            <img src="~/images/producto-1.jpg"
+                 alt="Producto de emprendimiento"
+                 class="imagen-comunidad" />
+
+            <img src="~/images/taller-ceramica.jpg"
+                 alt="Taller creativo"
+                 class="imagen-comunidad" />
+
+            <img src="~/images/evento-santa-ana.jpg"
+                 alt="Feria creativa"
+                 class="imagen-comunidad" />
+
+            <img src="~/images/producto-3.jpg"
+                 alt="Producto artesanal"
+                 class="imagen-comunidad" />
+
+            <img src="~/images/taller-bordado.jpg"
+                 alt="Comunidad creativa"
+                 class="imagen-comunidad" />
+        </div>
+
+    </div>
+    </div>
+</section>

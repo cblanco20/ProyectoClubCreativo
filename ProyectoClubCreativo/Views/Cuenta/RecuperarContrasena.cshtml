@@ -1,0 +1,95 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.RecuperarContrasenaViewModel
+
+@{
+    ViewData["Title"] = "Recuperar contraseña";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+}
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+        <div class="tarjeta-formulario-acceso">
+
+            <div class="encabezado-formulario-acceso">
+                <span class="etiqueta-formulario-acceso">
+                    Recuperación de cuenta
+                </span>
+
+                <h1 class="titulo-formulario-acceso">
+                    Recupera tu contraseña
+                </h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Ingresa el correo asociado con tu cuenta
+                    y te enviaremos las instrucciones necesarias.
+                </p>
+            </div>
+
+            @if (TempData["MensajeExito"] is not null)
+            {
+                <div class="alerta-exito-acceso">
+                    @TempData["MensajeExito"]
+                </div>
+            }
+
+            <form asp-controller="Cuenta"
+                  asp-action="RecuperarContrasena"
+                  method="post"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Correo"></label>
+
+                    <input asp-for="Correo"
+                           class="control-formulario"
+                           placeholder="ejemplo@correo.com" />
+
+                    <span asp-validation-for="Correo"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <button type="submit"
+                        class="boton-formulario-acceso">
+                    Enviar instrucciones
+                </button>
+            </form>
+
+            <div class="separador-acceso">
+                Regresar
+            </div>
+
+            <a asp-controller="Cuenta"
+               asp-action="IniciarSesion"
+               class="enlace-acceso">
+                Volver al inicio de sesión
+            </a>
+        </div>
+    </section>
+
+    <aside class="panel-visual-acceso panel-visual-recuperacion">
+        <div class="contenido-visual-acceso">
+
+            <img src="~/images/acceso-feria.jpg"
+                 alt="Comunidad Club Creativo"
+                 class="imagen-ovalada-acceso" />
+
+            <h2 class="titulo-visual-acceso">
+                Estamos para ayudarte
+            </h2>
+
+            <p class="texto-visual-acceso">
+                Recupera el acceso a tu cuenta para continuar
+                descubriendo productos, eventos y experiencias.
+            </p>
+        </div>
+    </aside>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

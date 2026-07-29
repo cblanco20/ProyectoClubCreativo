@@ -1,0 +1,132 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.InicioSesionViewModel
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+}
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+        <div class="tarjeta-formulario-acceso">
+
+            <div class="encabezado-formulario-acceso">
+                <span class="etiqueta-formulario-acceso">
+                    Bienvenido de nuevo
+                </span>
+
+                <h1 class="titulo-formulario-acceso">
+                    Inicia sesión
+                </h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Ingresa tus datos para continuar disfrutando
+                    de la comunidad Club Creativo.
+                </p>
+            </div>
+
+            @if (TempData["MensajeExito"] is not null)
+            {
+                <div class="alerta-exito-acceso">
+                    @TempData["MensajeExito"]
+                </div>
+            }
+
+            <form asp-controller="Cuenta"
+                  asp-action="IniciarSesion"
+                  method="post"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Correo"></label>
+
+                    <input asp-for="Correo"
+                           class="control-formulario"
+                           placeholder="ejemplo@correo.com"
+                           autocomplete="email" />
+
+                    <span asp-validation-for="Correo"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Contrasena">Contraseña</label>
+
+                    <div class="campo-contrasena">
+                        <input asp-for="Contrasena"
+                               id="contrasenaLogin"
+                               class="control-formulario"
+                               placeholder="Ingresa tu contraseña"
+                               autocomplete="current-password" />
+
+                        <button type="button"
+                                class="boton-ver-contrasena"
+                                data-toggle-password="contrasenaLogin"
+                                aria-label="Mostrar contraseña">
+                            ◉
+                        </button>
+                    </div>
+
+                    <span asp-validation-for="Contrasena"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="opciones-secundarias">
+                    <label>
+                        <input asp-for="Recordarme" />
+                        Recordar sesión
+                    </label>
+
+                    <a asp-controller="Cuenta"
+                       asp-action="RecuperarContrasena"
+                       class="enlace-acceso">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+
+                <button type="submit"
+                        class="boton-formulario-acceso">
+                    Iniciar sesión
+                </button>
+            </form>
+
+            <div class="separador-acceso">
+                ¿Aún no tienes una cuenta?
+            </div>
+
+            <a asp-controller="Cuenta"
+               asp-action="SeleccionarRegistro"
+               class="boton-formulario-acceso">
+                Crear una cuenta
+            </a>
+        </div>
+    </section>
+
+    <aside class="panel-visual-acceso panel-visual-emprendedor">
+        <div class="contenido-visual-acceso">
+
+            <img src="~/images/acceso-feria.jpg"
+                 alt="Feria de Club Creativo"
+                 class="imagen-ovalada-acceso" />
+
+            <h2 class="titulo-visual-acceso">
+                ¡Hola, creativo!
+            </h2>
+
+            <p class="texto-visual-acceso">
+                Conecta con emprendimientos, descubre productos
+                únicos y participa en eventos y talleres creados
+                por nuestra comunidad.
+            </p>
+        </div>
+    </aside>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

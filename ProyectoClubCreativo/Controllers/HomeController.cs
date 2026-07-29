@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProyectoClubCreativo.Models;
+using ProyectoClubCreativo.Models.ViewModels;
 using System.Diagnostics;
 
 namespace ProyectoClubCreativo.Controllers
@@ -28,5 +29,27 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        [HttpGet]
+        public IActionResult Contacto()
+        {
+            return View(new ContactoViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Contacto(ContactoViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+
+            TempData["MensajeContacto"] =
+                "Tu mensaje fue validado correctamente. Gracias por contactarnos.";
+
+            return RedirectToAction(nameof(Contacto));
+        }
+
     }
 }

@@ -1,0 +1,332 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.RegistroEmprendedorViewModel
+
+@{
+    ViewData["Title"] = "Registro de emprendimiento";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+}
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+
+        <div class="tarjeta-formulario-acceso tarjeta-formulario-amplia">
+
+            <div class="encabezado-formulario-acceso">
+                <span class="etiqueta-formulario-acceso">
+                    Solicitud de emprendimiento
+                </span>
+
+                <h1 class="titulo-formulario-acceso">
+                    Comparte tu talento
+                </h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Completa tus datos personales y la información
+                    básica de tu emprendimiento.
+                </p>
+            </div>
+
+            <form asp-controller="Cuenta"
+                  asp-action="RegistroEmprendedor"
+                  method="post"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="fila-formulario">
+                    <div class="grupo-formulario">
+                        <label asp-for="Nombre"></label>
+                        <input asp-for="Nombre"
+                               class="control-formulario"
+                               placeholder="Tu nombre" />
+                        <span asp-validation-for="Nombre"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="Apellidos"></label>
+                        <input asp-for="Apellidos"
+                               class="control-formulario"
+                               placeholder="Tus apellidos" />
+                        <span asp-validation-for="Apellidos"
+                              class="mensaje-validacion"></span>
+                    </div>
+                </div>
+
+                <div class="fila-formulario">
+                    <div class="grupo-formulario">
+                        <label asp-for="Correo"></label>
+                        <input asp-for="Correo"
+                               class="control-formulario"
+                               placeholder="ejemplo@correo.com" />
+                        <span asp-validation-for="Correo"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="Telefono"></label>
+                        <input asp-for="Telefono"
+                               class="control-formulario"
+                               placeholder="88888888"
+                               maxlength="8" />
+                        <span asp-validation-for="Telefono"
+                              class="mensaje-validacion"></span>
+                    </div>
+                </div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Provincia"></label>
+
+                    <select asp-for="Provincia"
+                            class="control-formulario">
+                        <option value="">Seleccione una provincia</option>
+                        <option>San José</option>
+                        <option>Alajuela</option>
+                        <option>Cartago</option>
+                        <option>Heredia</option>
+                        <option>Guanacaste</option>
+                        <option>Puntarenas</option>
+                        <option>Limón</option>
+                    </select>
+
+                    <span asp-validation-for="Provincia"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="fila-formulario">
+                    <div class="grupo-formulario">
+                        <label asp-for="Contrasena">Contraseña</label>
+
+                        <div class="campo-contrasena">
+                            <input asp-for="Contrasena"
+                                   id="contrasenaEmprendedor"
+                                   class="control-formulario"
+                                   placeholder="Mínimo 8 caracteres" />
+
+                            <button type="button"
+                                    class="boton-ver-contrasena"
+                                    data-toggle-password="contrasenaEmprendedor">
+                                ◉
+                            </button>
+                        </div>
+
+                        <span asp-validation-for="Contrasena"
+                              class="mensaje-validacion"></span>
+                    </div>
+
+                    <div class="grupo-formulario">
+                        <label asp-for="ConfirmarContrasena"></label>
+
+                        <div class="campo-contrasena">
+                            <input asp-for="ConfirmarContrasena"
+                                   id="confirmarEmprendedor"
+                                   class="control-formulario"
+                                   placeholder="Repite la contraseña" />
+
+                            <button type="button"
+                                    class="boton-ver-contrasena"
+                                    data-toggle-password="confirmarEmprendedor">
+                                ◉
+                            </button>
+                        </div>
+
+                        <span asp-validation-for="ConfirmarContrasena"
+                              class="mensaje-validacion"></span>
+                    </div>
+                </div>
+
+                <h2 class="titulo-seccion-formulario">
+                    Datos de tu emprendimiento
+                </h2>
+
+                <div class="grupo-formulario">
+                    <label asp-for="NombreEmprendimiento"></label>
+
+                    <input asp-for="NombreEmprendimiento"
+                           class="control-formulario"
+                           placeholder="Nombre de la marca" />
+
+                    <span asp-validation-for="NombreEmprendimiento"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="SitioWeb"></label>
+
+                    <input asp-for="SitioWeb"
+                           class="control-formulario"
+                           placeholder="https://instagram.com/tu-marca" />
+
+                    <span asp-validation-for="SitioWeb"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Categoria"></label>
+
+                    <select asp-for="Categoria"
+                            class="control-formulario">
+                        <option value="">Seleccione una categoría</option>
+                        <option>Arte e ilustración</option>
+                        <option>Accesorios y joyería</option>
+                        <option>Moda y textiles</option>
+                        <option>Alimentos y bebidas</option>
+                        <option>Cuidado personal</option>
+                        <option>Decoración</option>
+                        <option>Servicios creativos</option>
+                        <option>Otro</option>
+                    </select>
+
+                    <span asp-validation-for="Categoria"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Descripcion"></label>
+
+                    <textarea asp-for="Descripcion"
+                              class="control-formulario"
+                              placeholder="Cuéntanos qué ofrece tu emprendimiento..."></textarea>
+
+                    <span asp-validation-for="Descripcion"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="caja-terminos">
+
+                    <div class="encabezado-terminos">
+                        <h3>
+                            Términos y condiciones de participación
+                        </h3>
+
+                        <p>
+                            Debes leer y aceptar estas condiciones antes
+                            de enviar tu solicitud.
+                        </p>
+                    </div>
+
+                    <div class="contenido-terminos">
+                        <h4>1. Introducción</h4>
+                        <p>
+                            Estos términos y condiciones regulan la participación
+                            en la Feria de Emprendimientos Club Creativo,
+                            organizada por Inversiones Broitman de Centroamérica.
+                            La participación implica la aceptación completa
+                            de estos términos.
+                        </p>
+
+                        <h4>2. Participantes</h4>
+                        <p>
+                            Podrán participar emprendimientos y PYMES
+                            previamente seleccionados por la organización.
+                            Club Creativo se reserva el derecho de admisión.
+                        </p>
+
+                        <h4>3. Pagos</h4>
+                        <p>
+                            Los expositores seleccionados deberán pagar la cuota
+                            correspondiente. Los adelantos no son reembolsables,
+                            salvo cambios de fecha o lugar realizados
+                            por la organización.
+                        </p>
+
+                        <p>
+                            Para reagendar la participación se deberá notificar
+                            con al menos ocho días de anticipación.
+                        </p>
+
+                        <h4>4. Obligaciones de los expositores</h4>
+                        <p>
+                            Los expositores deberán respetar los horarios
+                            de montaje y desmontaje, cuidar sus productos,
+                            cumplir la legislación costarricense y mantener
+                            una convivencia respetuosa.
+                        </p>
+
+                        <h4>5. Derechos de la organización</h4>
+                        <p>
+                            Club Creativo podrá modificar fecha, lugar u otros
+                            aspectos de la feria, notificándolo oportunamente.
+                            Su responsabilidad consiste en proporcionar
+                            el espacio acordado para la exposición.
+                        </p>
+
+                        <h4>6. Protección de datos</h4>
+                        <p>
+                            La información suministrada se utilizará para
+                            la organización y promoción de la feria,
+                            conforme a la Ley No. 8968 de Costa Rica.
+                        </p>
+
+                        <h4>7. Resolución de conflictos</h4>
+                        <p>
+                            Cualquier controversia será resuelta por los
+                            tribunales competentes de Costa Rica.
+                        </p>
+
+                        <h4>8. Aceptación</h4>
+                        <p>
+                            La participación implica la aceptación expresa
+                            de estos términos por parte del expositor.
+                        </p>
+                    </div>
+
+                    <div class="aceptacion-terminos">
+                        <input asp-for="AceptaTerminos" />
+
+                        <label asp-for="AceptaTerminos">
+                            He leído y acepto los términos y condiciones
+                            de participación.
+                        </label>
+                    </div>
+
+                    <span asp-validation-for="AceptaTerminos"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <button type="submit"
+                        class="boton-formulario-acceso">
+                    Enviar solicitud
+                </button>
+
+            </form>
+
+            <div class="separador-acceso">
+                Ya tengo una cuenta
+            </div>
+
+            <a asp-controller="Cuenta"
+               asp-action="IniciarSesion"
+               class="enlace-acceso">
+                Regresar al inicio de sesión
+            </a>
+
+        </div>
+    </section>
+
+    <aside class="panel-visual-acceso panel-visual-emprendedor">
+        <div class="contenido-visual-acceso">
+
+            <img src="~/images/registro-emprendedor.jpg"
+                 alt="Emprendimiento de Club Creativo"
+                 class="imagen-ovalada-acceso" />
+
+            <h2 class="titulo-visual-acceso">
+                Haz crecer tu marca
+            </h2>
+
+            <p class="texto-visual-acceso">
+                Presenta tus productos, participa en eventos
+                y conecta con una comunidad que valora
+                el talento costarricense.
+            </p>
+        </div>
+    </aside>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
