@@ -50,6 +50,25 @@ namespace ProyectoClubCreativo.Controllers
 
             return RedirectToAction(nameof(Contacto));
         }
-
+        public IActionResult SobreNosotros()
+        {
+            return View();
+        }
+        public IActionResult Reglamento()
+        {
+            return View();
+        }
+        public IActionResult Promociones()
+        {
+            return View();
+        }
+        public IActionResult Noticias()
+        {
+            return View();
+        }
+        public IActionResult DetalleNoticia()
+        {
+            return View();
+        }
     }
 }

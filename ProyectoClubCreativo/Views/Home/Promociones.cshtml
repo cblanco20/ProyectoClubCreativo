@@ -1,0 +1,540 @@
+﻿@{
+    ViewData["Title"] = "Promociones";
+    Layout = "_LayoutExterno";
+}
+
+<!-- HERO -->
+<section class="hero-promociones">
+    <div class="container hero-promociones-grid">
+
+        <div class="hero-promociones-texto">
+            <span class="etiqueta-promociones">
+                Beneficios exclusivos
+            </span>
+
+            <h1>Promociones especiales para nuestra comunidad</h1>
+
+            <p>
+                Aprovecha descuentos, beneficios exclusivos y oportunidades
+                disponibles por tiempo limitado en talleres, eventos y
+                emprendimientos aliados.
+            </p>
+
+            <a href="#promociones-destacadas"
+               class="boton-promociones">
+                Ver promociones
+            </a>
+        </div>
+
+        <div class="hero-promociones-imagen">
+            <img src="~/images/promociones-banner.jpg"
+                 alt="Persona comprando productos y materiales creativos" />
+
+            <div class="descuento-flotante">
+                <span>Hasta</span>
+                <strong>30%</strong>
+                <span>de descuento</span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- INTRODUCCIÓN -->
+<section class="introduccion-promociones">
+    <div class="container">
+
+        <div class="titulo-promociones-centro">
+            <span class="subtitulo-promociones">Oportunidades para ti</span>
+
+            <h2>Disfruta más por menos</h2>
+
+            <p>
+                En Club Creativo MiVo queremos premiar tu participación.
+                Por eso, ofrecemos promociones especiales para que puedas
+                descubrir nuevos talleres, apoyar emprendimientos y compartir
+                experiencias con nuestra comunidad.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- PROMOCIONES DESTACADAS -->
+<section class="promociones-destacadas"
+         id="promociones-destacadas">
+
+    <div class="container">
+
+        <div class="encabezado-promociones">
+            <div>
+                <span class="subtitulo-promociones">Promociones actuales</span>
+                <h2>Beneficios destacados</h2>
+            </div>
+
+            <p>
+                Revisa las condiciones y fechas de cada promoción antes
+                de realizar tu inscripción o compra.
+            </p>
+        </div>
+
+        <div class="grid-promociones">
+
+            <!-- PROMOCIÓN 1 -->
+            <article class="tarjeta-promocion promocion-morada">
+
+                <div class="cabecera-tarjeta-promocion">
+                    <span class="insignia-promocion">Oferta</span>
+
+                    <div class="icono-promocion">
+                        <i class="bi bi-palette-fill"></i>
+                    </div>
+                </div>
+
+                <div class="descuento-promocion">
+                    <strong>20%</strong>
+                    <span>de descuento</span>
+                </div>
+
+                <h3>Talleres de pintura</h3>
+
+                <p>
+                    Obtén un 20% de descuento al inscribirte en uno de nuestros
+                    talleres de pintura seleccionados.
+                </p>
+
+                <div class="vigencia-promocion">
+                    <i class="bi bi-calendar-event"></i>
+                    Válido hasta el 31 de diciembre
+                </div>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="boton-tarjeta-promocion">
+                    Más información
+                </a>
+
+            </article>
+
+
+            <!-- PROMOCIÓN 2 -->
+            <article class="tarjeta-promocion promocion-rosada">
+
+                <div class="cabecera-tarjeta-promocion">
+                    <span class="insignia-promocion">Especial</span>
+
+                    <div class="icono-promocion">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                </div>
+
+                <div class="descuento-promocion">
+                    <strong>2x1</strong>
+                    <span>en entradas</span>
+                </div>
+
+                <h3>Eventos familiares</h3>
+
+                <p>
+                    Compra una entrada y recibe otra sin costo para compartir
+                    una experiencia creativa en familia.
+                </p>
+
+                <div class="vigencia-promocion">
+                    <i class="bi bi-calendar-event"></i>
+                    Disponible en eventos seleccionados
+                </div>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="boton-tarjeta-promocion">
+                    Más información
+                </a>
+
+            </article>
+
+
+            <!-- PROMOCIÓN 3 -->
+            <article class="tarjeta-promocion promocion-amarilla">
+
+                <div class="cabecera-tarjeta-promocion">
+                    <span class="insignia-promocion">Nuevo</span>
+
+                    <div class="icono-promocion">
+                        <i class="bi bi-brush-fill"></i>
+                    </div>
+                </div>
+
+                <div class="descuento-promocion">
+                    <strong>Gratis</strong>
+                    <span>la inscripción</span>
+                </div>
+
+                <h3>Tu primer taller</h3>
+
+                <p>
+                    Regístrate por primera vez y recibe la inscripción gratuita
+                    en una actividad participante.
+                </p>
+
+                <div class="vigencia-promocion">
+                    <i class="bi bi-calendar-event"></i>
+                    Para nuevos participantes
+                </div>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="boton-tarjeta-promocion">
+                    Más información
+                </a>
+
+            </article>
+
+
+            <!-- PROMOCIÓN 4 -->
+            <article class="tarjeta-promocion promocion-azul">
+
+                <div class="cabecera-tarjeta-promocion">
+                    <span class="insignia-promocion">Cupón</span>
+
+                    <div class="icono-promocion">
+                        <i class="bi bi-bag-heart-fill"></i>
+                    </div>
+                </div>
+
+                <div class="descuento-promocion">
+                    <strong>10%</strong>
+                    <span>en productos</span>
+                </div>
+
+                <h3>Emprendimientos aliados</h3>
+
+                <p>
+                    Obtén un descuento especial en productos seleccionados
+                    de emprendimientos de nuestra comunidad.
+                </p>
+
+                <div class="vigencia-promocion">
+                    <i class="bi bi-calendar-event"></i>
+                    Aplican condiciones
+                </div>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="boton-tarjeta-promocion">
+                    Más información
+                </a>
+
+            </article>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- BENEFICIOS -->
+<section class="beneficios-promociones">
+    <div class="container">
+
+        <div class="titulo-promociones-centro">
+            <span class="subtitulo-promociones">
+                Nuestra comunidad
+            </span>
+
+            <h2>Beneficios de formar parte del Club</h2>
+        </div>
+
+        <div class="grid-beneficios-promociones">
+
+            <article class="beneficio-promocion">
+                <div class="icono-beneficio-promocion">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+
+                <h3>Descuentos exclusivos</h3>
+
+                <p>
+                    Accede a promociones especiales en actividades,
+                    productos y servicios seleccionados.
+                </p>
+            </article>
+
+
+            <article class="beneficio-promocion">
+                <div class="icono-beneficio-promocion">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+
+                <h3>Acceso prioritario</h3>
+
+                <p>
+                    Recibe información anticipada sobre cupos y nuevas
+                    actividades creativas.
+                </p>
+            </article>
+
+
+            <article class="beneficio-promocion">
+                <div class="icono-beneficio-promocion">
+                    <i class="bi bi-calendar-heart-fill"></i>
+                </div>
+
+                <h3>Eventos especiales</h3>
+
+                <p>
+                    Participa en actividades exclusivas para miembros
+                    de nuestra comunidad.
+                </p>
+            </article>
+
+
+            <article class="beneficio-promocion">
+                <div class="icono-beneficio-promocion">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <h3>Comunidad creativa</h3>
+
+                <p>
+                    Conecta con artistas, emprendedores y personas que
+                    comparten tus intereses.
+                </p>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- FERIA CREATIVA -->
+<section class="feria-promociones">
+    <div class="container feria-promociones-grid">
+
+        <div class="feria-promociones-imagen">
+            <img src="~/images/feria-promociones.jpg"
+                 alt="Personas visitando una feria de emprendimientos creativos" />
+
+            <div class="etiqueta-feria">
+                <i class="bi bi-shop"></i>
+                Apoya el talento local
+            </div>
+        </div>
+
+        <div class="feria-promociones-texto">
+            <span class="subtitulo-promociones">
+                Emprendimientos aliados
+            </span>
+
+            <h2>Descubre productos únicos y promociones especiales</h2>
+
+            <p>
+                Nuestra comunidad también está formada por emprendimientos
+                que ofrecen productos creativos, artesanales y originales.
+            </p>
+
+            <p>
+                Algunas promociones estarán disponibles únicamente durante
+                ferias, eventos o fechas especiales, por lo que te recomendamos
+                revisar constantemente nuestras novedades.
+            </p>
+
+            <ul class="lista-feria-promociones">
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Productos artesanales y personalizados.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Descuentos en emprendimientos participantes.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Actividades para toda la familia.
+                </li>
+            </ul>
+
+            <a asp-controller="Home"
+               asp-action="Index"
+               class="boton-promociones boton-promociones-secundario">
+                Explorar el sitio
+            </a>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- PROMOCIÓN DEL MES -->
+<section class="promocion-del-mes">
+    <div class="container">
+
+        <div class="tarjeta-promocion-mes">
+
+            <div class="contenido-promocion-mes">
+                <span class="etiqueta-mes">
+                    Promoción del mes
+                </span>
+
+                <h2>Mes Creativo</h2>
+
+                <p>
+                    Inscríbete en una actividad seleccionada y disfruta
+                    beneficios especiales para desarrollar tu creatividad.
+                </p>
+
+                <div class="lista-beneficios-mes">
+
+                    <div>
+                        <i class="bi bi-check2-circle"></i>
+                        Materiales básicos incluidos
+                    </div>
+
+                    <div>
+                        <i class="bi bi-check2-circle"></i>
+                        Certificado de participación
+                    </div>
+
+                    <div>
+                        <i class="bi bi-check2-circle"></i>
+                        15% de descuento
+                    </div>
+
+                </div>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="boton-promociones boton-mes">
+                    Explorar actividades
+                </a>
+            </div>
+
+            <div class="porcentaje-promocion-mes">
+                <span>Ahorra</span>
+                <strong>15%</strong>
+                <small>en actividades seleccionadas</small>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- PREGUNTAS FRECUENTES -->
+<section class="preguntas-promociones">
+    <div class="container">
+
+        <div class="titulo-promociones-centro">
+            <span class="subtitulo-promociones">
+                Información importante
+            </span>
+
+            <h2>Preguntas frecuentes</h2>
+        </div>
+
+        <div class="grid-preguntas-promociones">
+
+            <article class="pregunta-promocion">
+                <div class="numero-pregunta-promocion">01</div>
+
+                <h3>¿Las promociones se pueden combinar?</h3>
+
+                <p>
+                    Generalmente las promociones no son acumulables, salvo
+                    que se indique lo contrario.
+                </p>
+            </article>
+
+
+            <article class="pregunta-promocion">
+                <div class="numero-pregunta-promocion">02</div>
+
+                <h3>¿Hasta cuándo son válidas?</h3>
+
+                <p>
+                    Cada promoción incluye su propia fecha de vigencia
+                    y puede finalizar al agotarse los cupos.
+                </p>
+            </article>
+
+
+            <article class="pregunta-promocion">
+                <div class="numero-pregunta-promocion">03</div>
+
+                <h3>¿Cómo obtengo un cupón?</h3>
+
+                <p>
+                    Algunos cupones se entregan al registrarse, participar
+                    en eventos o completar una compra.
+                </p>
+            </article>
+
+
+            <article class="pregunta-promocion">
+                <div class="numero-pregunta-promocion">04</div>
+
+                <h3>¿Aplican para todos los talleres?</h3>
+
+                <p>
+                    Algunas promociones solo aplican para actividades y
+                    fechas seleccionadas.
+                </p>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- AVISO -->
+<section class="aviso-promociones">
+    <div class="container">
+
+        <div class="caja-aviso-promociones">
+
+            <div class="icono-aviso-promociones">
+                <i class="bi bi-info-circle-fill"></i>
+            </div>
+
+            <div>
+                <h2>Condiciones de las promociones</h2>
+
+                <p>
+                    Las promociones están sujetas a disponibilidad, fechas,
+                    cupos y condiciones específicas. Club Creativo MiVo puede
+                    realizar cambios cuando sea necesario.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- CTA FINAL -->
+<section class="cta-promociones">
+    <div class="container">
+
+        <div class="cta-promociones-contenido">
+            <span>Club Creativo MiVo</span>
+
+            <h2>No dejes pasar estas oportunidades</h2>
+
+            <p>
+                Explora nuestro sitio y descubre nuevas formas de aprender,
+                compartir y apoyar el talento creativo.
+            </p>
+
+            <a asp-controller="Home"
+               asp-action="Index"
+               class="boton-promociones boton-promociones-claro">
+                Explorar el sitio
+            </a>
+        </div>
+
+    </div>
+</section>

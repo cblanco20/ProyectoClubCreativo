@@ -1,0 +1,533 @@
+﻿@{
+    ViewData["Title"] = "Noticias";
+    Layout = "_LayoutExterno";
+}
+
+<!-- HERO -->
+<section class="hero-noticias">
+    <div class="container hero-noticias-grid">
+
+        <div class="hero-noticias-texto">
+            <span class="etiqueta-noticias">
+                Novedades del Club
+            </span>
+
+            <h1>Noticias que inspiran nuestra comunidad creativa</h1>
+
+            <p>
+                Conoce las actividades, eventos, talleres, proyectos y
+                oportunidades más recientes de Club Creativo MiVo.
+            </p>
+
+            <a href="#noticias-recientes"
+               class="boton-noticias">
+                Ver noticias
+            </a>
+        </div>
+
+        <div class="hero-noticias-imagen">
+            <img src="~/images/noticias-banner.jpg"
+                 alt="Personas participando en una actividad creativa" />
+
+            <div class="tarjeta-flotante-noticias">
+                <i class="bi bi-megaphone-fill"></i>
+
+                <div>
+                    <strong>Nuevas historias</strong>
+                    <span>Descubre lo que sucede en el Club</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- INTRODUCCIÓN -->
+<section class="introduccion-noticias">
+    <div class="container">
+
+        <div class="titulo-noticias-centro">
+            <span class="subtitulo-noticias">
+                Mantente informado
+            </span>
+
+            <h2>Lo más reciente de nuestra comunidad</h2>
+
+            <p>
+                En este espacio compartimos noticias sobre nuestros talleres,
+                eventos, emprendimientos, proyectos y actividades especiales.
+                Queremos que siempre conozcas las oportunidades disponibles
+                para aprender, participar y conectar.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- NOTICIA DESTACADA -->
+<section class="noticia-principal">
+    <div class="container">
+
+        <article class="tarjeta-noticia-principal">
+
+            <div class="imagen-noticia-principal">
+                <img src="~/images/noticia-feria.jpg"
+                     alt="Feria de emprendimientos creativos" />
+
+                <span class="categoria-noticia-principal">
+                    Evento destacado
+                </span>
+            </div>
+
+            <div class="contenido-noticia-principal">
+
+                <div class="fecha-noticia">
+                    <i class="bi bi-calendar3"></i>
+                    15 de julio
+                </div>
+
+                <span class="subtitulo-noticias">
+                    Noticia destacada
+                </span>
+
+                <h2>
+                    Club Creativo MiVo prepara una nueva feria de
+                    emprendimientos locales
+                </h2>
+
+                <p>
+                    La próxima feria reunirá artistas, diseñadores,
+                    artesanos y pequeños emprendimientos que ofrecerán
+                    productos únicos y actividades para toda la familia.
+                </p>
+
+                <p>
+                    Durante la actividad también habrá talleres rápidos,
+                    demostraciones creativas y espacios para conocer las
+                    historias de las personas emprendedoras participantes.
+                </p>
+
+                <a asp-controller="Home"
+                   asp-action="DetalleNoticia"
+                   class="boton-leer-noticia">
+                    Leer noticia
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+
+            </div>
+
+        </article>
+
+    </div>
+</section>
+
+
+<!-- NOTICIAS RECIENTES -->
+<section class="noticias-recientes"
+         id="noticias-recientes">
+
+    <div class="container">
+
+        <div class="encabezado-noticias-recientes">
+
+            <div>
+                <span class="subtitulo-noticias">
+                    Actualidad
+                </span>
+
+                <h2>Noticias recientes</h2>
+            </div>
+
+            <p>
+                Explora las novedades, historias y próximos proyectos
+                de Club Creativo MiVo.
+            </p>
+
+        </div>
+
+        <div class="grid-noticias">
+
+            <!-- NOTICIA 1 -->
+            <article class="tarjeta-noticia">
+
+                <div class="imagen-tarjeta-noticia">
+                    <img src="~/images/noticia-taller.jpg"
+                         alt="Personas participando en un taller creativo" />
+
+                    <span class="categoria-tarjeta-noticia">
+                        Talleres
+                    </span>
+                </div>
+
+                <div class="contenido-tarjeta-noticia">
+
+                    <div class="fecha-noticia">
+                        <i class="bi bi-calendar3"></i>
+                        12 de julio
+                    </div>
+
+                    <h3>Nuevos talleres creativos para principiantes</h3>
+
+                    <p>
+                        Se incorporan nuevas actividades de pintura,
+                        manualidades y diseño para personas que desean
+                        desarrollar su creatividad desde cero.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleNoticia"
+                       class="enlace-leer-noticia">
+                        Leer más
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- NOTICIA 2 -->
+            <article class="tarjeta-noticia">
+
+                <div class="imagen-tarjeta-noticia">
+                    <img src="~/images/noticia-emprendimiento.jpg"
+                         alt="Emprendedora mostrando productos artesanales" />
+
+                    <span class="categoria-tarjeta-noticia">
+                        Emprendimientos
+                    </span>
+                </div>
+
+                <div class="contenido-tarjeta-noticia">
+
+                    <div class="fecha-noticia">
+                        <i class="bi bi-calendar3"></i>
+                        8 de julio
+                    </div>
+
+                    <h3>Conoce a los nuevos emprendimientos aliados</h3>
+
+                    <p>
+                        Nuevos proyectos locales se unen a nuestra comunidad
+                        para compartir sus productos, servicios e historias.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleNoticia"
+                       class="enlace-leer-noticia">
+                        Leer más
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- NOTICIA 3 -->
+            <article class="tarjeta-noticia">
+
+                <div class="imagen-tarjeta-noticia">
+                    <img src="~/images/noticia-evento.jpg"
+                         alt="Personas participando en un evento artístico" />
+
+                    <span class="categoria-tarjeta-noticia">
+                        Eventos
+                    </span>
+                </div>
+
+                <div class="contenido-tarjeta-noticia">
+
+                    <div class="fecha-noticia">
+                        <i class="bi bi-calendar3"></i>
+                        5 de julio
+                    </div>
+
+                    <h3>Una tarde llena de arte, música y creatividad</h3>
+
+                    <p>
+                        Nuestra comunidad disfrutó una jornada con
+                        presentaciones, exhibiciones y actividades para
+                        todas las edades.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleNoticia"
+                       class="enlace-leer-noticia">
+                        Leer más
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- NOTICIA 4 -->
+            <article class="tarjeta-noticia">
+
+                <div class="imagen-tarjeta-noticia">
+                    <img src="~/images/noticia-comunidad.jpg"
+                         alt="Personas trabajando juntas en una actividad creativa" />
+
+                    <span class="categoria-tarjeta-noticia">
+                        Comunidad
+                    </span>
+                </div>
+
+                <div class="contenido-tarjeta-noticia">
+
+                    <div class="fecha-noticia">
+                        <i class="bi bi-calendar3"></i>
+                        30 de junio
+                    </div>
+
+                    <h3>La comunidad creativa continúa creciendo</h3>
+
+                    <p>
+                        Cada vez más personas se unen al Club para aprender,
+                        compartir conocimientos y apoyar el talento local.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleNoticia"
+                       class="enlace-leer-noticia">
+                        Leer más
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- NOTICIA 5 -->
+            <article class="tarjeta-noticia">
+
+                <div class="imagen-tarjeta-noticia">
+                    <img src="~/images/noticia-concurso.jpg"
+                         alt="Materiales de arte utilizados en un concurso creativo" />
+
+                    <span class="categoria-tarjeta-noticia">
+                        Concurso
+                    </span>
+                </div>
+
+                <div class="contenido-tarjeta-noticia">
+
+                    <div class="fecha-noticia">
+                        <i class="bi bi-calendar3"></i>
+                        25 de junio
+                    </div>
+
+                    <h3>Participa en nuestro nuevo concurso artístico</h3>
+
+                    <p>
+                        Las personas participantes podrán presentar sus
+                        proyectos y compartir su talento con toda la comunidad.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleNoticia"
+                       class="enlace-leer-noticia">
+                        Leer más
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                </div>
+
+            </article>
+
+
+            <!-- NOTICIA 6 -->
+            <article class="tarjeta-noticia">
+
+                <div class="imagen-tarjeta-noticia">
+                    <img src="~/images/noticia-feria.jpg"
+                         alt="Productos hechos a mano en una feria creativa" />
+
+                    <span class="categoria-tarjeta-noticia">
+                        Feria
+                    </span>
+                </div>
+
+                <div class="contenido-tarjeta-noticia">
+
+                    <div class="fecha-noticia">
+                        <i class="bi bi-calendar3"></i>
+                        20 de junio
+                    </div>
+
+                    <h3>Resultados de nuestra última feria creativa</h3>
+
+                    <p>
+                        La actividad reunió a decenas de emprendimientos
+                        y recibió la visita de familias interesadas en
+                        apoyar los productos locales.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleNoticia"
+                       class="enlace-leer-noticia">
+                        Leer más
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+
+                </div>
+
+            </article>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- CATEGORÍAS -->
+<section class="categorias-noticias">
+    <div class="container">
+
+        <div class="titulo-noticias-centro">
+            <span class="subtitulo-noticias">
+                Explora por tema
+            </span>
+
+            <h2>Categorías de noticias</h2>
+        </div>
+
+        <div class="grid-categorias-noticias">
+
+            <article class="categoria-noticia">
+                <div class="icono-categoria-noticia">
+                    <i class="bi bi-palette-fill"></i>
+                </div>
+
+                <h3>Talleres</h3>
+
+                <p>
+                    Noticias sobre cursos, actividades y espacios
+                    de aprendizaje creativo.
+                </p>
+            </article>
+
+
+            <article class="categoria-noticia">
+                <div class="icono-categoria-noticia">
+                    <i class="bi bi-calendar-event-fill"></i>
+                </div>
+
+                <h3>Eventos</h3>
+
+                <p>
+                    Próximas actividades, ferias, presentaciones
+                    y encuentros de la comunidad.
+                </p>
+            </article>
+
+
+            <article class="categoria-noticia">
+                <div class="icono-categoria-noticia">
+                    <i class="bi bi-shop"></i>
+                </div>
+
+                <h3>Emprendimientos</h3>
+
+                <p>
+                    Historias y novedades de las personas
+                    emprendedoras que forman parte del Club.
+                </p>
+            </article>
+
+
+            <article class="categoria-noticia">
+                <div class="icono-categoria-noticia">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <h3>Comunidad</h3>
+
+                <p>
+                    Proyectos, logros y experiencias compartidas
+                    por nuestros miembros.
+                </p>
+            </article>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- BOLETÍN -->
+<section class="boletin-noticias">
+    <div class="container">
+
+        <div class="caja-boletin-noticias">
+
+            <div class="contenido-boletin-noticias">
+
+                <span class="etiqueta-boletin">
+                    Boletín creativo
+                </span>
+
+                <h2>Recibe nuestras novedades</h2>
+
+                <p>
+                    Mantente informado sobre próximos eventos,
+                    promociones, talleres y oportunidades para
+                    nuestra comunidad.
+                </p>
+
+            </div>
+
+            <form class="formulario-boletin-noticias">
+
+                <label for="correoBoletin"
+                       class="visually-hidden">
+                    Correo electrónico
+                </label>
+
+                <input id="correoBoletin"
+                       type="email"
+                       placeholder="Escribe tu correo electrónico"
+                       required />
+
+                <button type="submit">
+                    Suscribirme
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- CTA FINAL -->
+<section class="cta-noticias">
+    <div class="container">
+
+        <div class="cta-noticias-contenido">
+
+            <span>Club Creativo MiVo</span>
+
+            <h2>Siempre hay algo nuevo por descubrir</h2>
+
+            <p>
+                Forma parte de nuestra comunidad y participa en
+                actividades que conectan personas, ideas y talento.
+            </p>
+
+            <a asp-controller="Home"
+               asp-action="Index"
+               class="boton-noticias boton-noticias-claro">
+                Explorar el sitio
+            </a>
+
+        </div>
+
+    </div>
+</section>
