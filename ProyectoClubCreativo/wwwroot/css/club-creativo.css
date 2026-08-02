@@ -5139,3 +5139,1634 @@ textarea {
         width: 100%;
     }
 }
+
+/* =========================================================
+   PÁGINA: EMPRENDIMIENTOS
+   ========================================================= */
+
+.hero-emprendimientos {
+    position: relative;
+    overflow: hidden;
+    padding: 95px 20px;
+    background: linear-gradient(135deg, #D9600D 0%, #F47A20 55%, #FFC93C 100%);
+    color: #ffffff;
+}
+
+    .hero-emprendimientos::before {
+        content: "";
+        position: absolute;
+        top: -130px;
+        right: -80px;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+.hero-emprendimientos-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 65px;
+    align-items: center;
+}
+
+.hero-emprendimientos-texto h1 {
+    max-width: 620px;
+    margin: 20px 0;
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.18;
+}
+
+.hero-emprendimientos-texto p {
+    max-width: 600px;
+    margin-bottom: 32px;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 1.08rem;
+    line-height: 1.9;
+}
+
+.etiqueta-emprendimientos {
+    display: inline-block;
+    padding: 9px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.boton-emprendimientos {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+    padding: 13px 32px;
+    border: 2px solid transparent;
+    border-radius: 35px;
+    background: #1F1F1F;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 800;
+    transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .boton-emprendimientos:hover {
+        transform: translateY(-4px);
+        background: #ffffff;
+        color: #D9600D;
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18);
+    }
+
+.boton-emprendimientos-claro {
+    background: #ffffff;
+    color: #D9600D;
+}
+
+    .boton-emprendimientos-claro:hover {
+        background: #1F1F1F;
+        color: #ffffff;
+    }
+
+.hero-emprendimientos-imagen {
+    position: relative;
+}
+
+    .hero-emprendimientos-imagen img {
+        display: block;
+        width: 100%;
+        height: 420px;
+        object-fit: cover;
+        border: 6px solid rgba(255, 255, 255, 0.18);
+        border-radius: 28px;
+        box-shadow: 0 25px 50px rgba(60, 30, 0, 0.3);
+    }
+
+.insignia-flotante-emprendimientos {
+    position: absolute;
+    left: -20px;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 260px;
+    padding: 16px 20px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #4a3420;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+    .insignia-flotante-emprendimientos i {
+        font-size: 1.7rem;
+        color: #D9600D;
+    }
+
+    .insignia-flotante-emprendimientos strong {
+        display: block;
+        margin-bottom: 2px;
+        color: #D9600D;
+        font-size: 0.98rem;
+    }
+
+    .insignia-flotante-emprendimientos span {
+        color: #706256;
+        font-size: 0.8rem;
+    }
+
+.introduccion-emprendimientos {
+    padding: 90px 20px 20px;
+    background: #ffffff;
+}
+
+.titulo-emprendimientos-centro {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    text-align: center;
+}
+
+.subtitulo-emprendimientos {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #D9600D;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+}
+
+.titulo-emprendimientos-centro h2 {
+    margin: 0 0 18px;
+    color: #1F1F1F;
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.titulo-emprendimientos-centro p {
+    margin: 0 auto;
+    color: #4A4A4A;
+    font-size: 1.02rem;
+    line-height: 1.85;
+}
+
+.categorias-emprendimientos {
+    padding: 30px 20px;
+    background: #ffffff;
+}
+
+.lista-categorias-emprendimientos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.categoria-chip {
+    padding: 10px 20px;
+    border: 1px solid var(--color-gris-medio);
+    border-radius: 30px;
+    background: var(--color-gris-claro);
+    color: var(--color-gris-oscuro);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: default;
+    transition: all 0.25s ease;
+}
+
+.categoria-chip-activa {
+    border-color: #D9600D;
+    background: #D9600D;
+    color: #ffffff;
+}
+
+.emprendimientos-listado {
+    padding: 40px 20px 90px;
+    background: #ffffff;
+}
+
+.grid-emprendimientos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+}
+
+.tarjeta-emprendimiento {
+    overflow: hidden;
+    border-radius: var(--radio-medio);
+    background: var(--color-gris-claro);
+    box-shadow: var(--sombra-suave);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .tarjeta-emprendimiento:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 35px rgba(31, 31, 31, 0.14);
+    }
+
+.imagen-tarjeta-emprendimiento {
+    position: relative;
+}
+
+    .imagen-tarjeta-emprendimiento img {
+        width: 100%;
+        height: 210px;
+        object-fit: cover;
+    }
+
+.categoria-tarjeta-emprendimiento {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(31, 31, 31, 0.75);
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.cuerpo-tarjeta-emprendimiento {
+    padding: 22px 24px 26px;
+}
+
+    .cuerpo-tarjeta-emprendimiento h3 {
+        margin-bottom: 8px;
+        color: #1F1F1F;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .cuerpo-tarjeta-emprendimiento p {
+        margin-bottom: 16px;
+        color: var(--color-gris-oscuro);
+        font-size: 0.94rem;
+        line-height: 1.7;
+    }
+
+.datos-tarjeta-emprendimiento {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    color: var(--color-gris-oscuro);
+    font-size: 0.85rem;
+}
+
+    .datos-tarjeta-emprendimiento i {
+        margin-right: 4px;
+        color: #D9600D;
+    }
+
+.enlace-tarjeta-emprendimiento {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #D9600D;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: gap 0.25s ease;
+}
+
+    .enlace-tarjeta-emprendimiento:hover {
+        gap: 12px;
+    }
+
+.beneficios-emprendimientos {
+    padding: 90px 20px;
+    background: var(--color-gris-claro);
+}
+
+.grid-beneficios-emprendimientos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+}
+
+.beneficio-emprendimiento {
+    padding: 34px 28px;
+    border-radius: var(--radio-medio);
+    background: #ffffff;
+    box-shadow: var(--sombra-suave);
+    text-align: center;
+}
+
+.icono-beneficio-emprendimiento {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 62px;
+    height: 62px;
+    margin-bottom: 18px;
+    border-radius: 50%;
+    background: rgba(217, 96, 13, 0.12);
+    color: #D9600D;
+    font-size: 1.5rem;
+}
+
+.beneficio-emprendimiento h3 {
+    margin-bottom: 10px;
+    color: #1F1F1F;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.beneficio-emprendimiento p {
+    color: var(--color-gris-oscuro);
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+
+.cta-emprendimientos {
+    padding: 90px 20px;
+    background: linear-gradient(135deg, #1F1F1F 0%, #4a3420 100%);
+    color: #ffffff;
+    text-align: center;
+}
+
+.cta-emprendimientos-contenido {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+    .cta-emprendimientos-contenido span {
+        display: inline-block;
+        margin-bottom: 14px;
+        color: #FFC93C;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .cta-emprendimientos-contenido h2 {
+        margin-bottom: 16px;
+        font-size: 2.2rem;
+        font-weight: 800;
+    }
+
+    .cta-emprendimientos-contenido p {
+        margin-bottom: 28px;
+        color: rgba(255, 255, 255, 0.85);
+        line-height: 1.8;
+    }
+
+
+/* =========================================================
+   PÁGINA: DETALLE DE EMPRENDIMIENTO
+   ========================================================= */
+
+.encabezado-detalle-emprendimiento {
+    padding: 60px 20px 50px;
+    background: linear-gradient(135deg, #D9600D 0%, #F47A20 55%, #FFC93C 100%);
+    color: #ffffff;
+}
+
+.migas-detalle-emprendimiento {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 35px;
+    font-size: 0.92rem;
+}
+
+    .migas-detalle-emprendimiento a {
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+    }
+
+        .migas-detalle-emprendimiento a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+    .migas-detalle-emprendimiento i {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+.perfil-detalle-emprendimiento {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.logo-detalle-emprendimiento {
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+}
+
+.categoria-detalle-emprendimiento {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.informacion-perfil-emprendimiento h1 {
+    margin-bottom: 12px;
+    font-size: 2.4rem;
+    font-weight: 800;
+}
+
+.resumen-detalle-emprendimiento {
+    max-width: 600px;
+    margin-bottom: 16px;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.7;
+}
+
+.datos-perfil-emprendimiento {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+    .datos-perfil-emprendimiento i {
+        margin-right: 6px;
+    }
+
+.galeria-detalle-emprendimiento {
+    padding: 40px 20px;
+    background: #ffffff;
+}
+
+.grid-galeria-emprendimiento {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 16px;
+}
+
+    .grid-galeria-emprendimiento img {
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+        border-radius: var(--radio-medio);
+    }
+
+.contenido-detalle-emprendimiento {
+    padding: 20px 20px 90px;
+    background: #ffffff;
+}
+
+.distribucion-detalle-emprendimiento {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 55px;
+    align-items: start;
+}
+
+.informacion-detalle-emprendimiento h2 {
+    margin: 30px 0 16px;
+    color: #1F1F1F;
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+    .informacion-detalle-emprendimiento h2:first-child {
+        margin-top: 0;
+    }
+
+.informacion-detalle-emprendimiento p {
+    margin-bottom: 16px;
+    color: var(--color-gris-oscuro);
+    font-size: 1.02rem;
+    line-height: 1.85;
+}
+
+.grid-productos-emprendimiento {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.producto-detalle-emprendimiento {
+    border-radius: var(--radio-medio);
+    overflow: hidden;
+    background: var(--color-gris-claro);
+    box-shadow: var(--sombra-suave);
+}
+
+    .producto-detalle-emprendimiento img {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+    }
+
+    .producto-detalle-emprendimiento h3 {
+        margin: 14px 16px 6px;
+        font-size: 1rem;
+        color: #1F1F1F;
+    }
+
+    .producto-detalle-emprendimiento p {
+        margin: 0 16px 16px;
+        color: var(--color-gris-oscuro);
+        font-size: 0.85rem;
+        line-height: 1.6;
+    }
+
+.tarjeta-contacto-emprendimiento {
+    position: sticky;
+    top: 130px;
+    padding: 30px 26px;
+    border-radius: var(--radio-medio);
+    background: var(--color-gris-claro);
+    box-shadow: var(--sombra-suave);
+}
+
+    .tarjeta-contacto-emprendimiento h2 {
+        margin-bottom: 18px;
+        color: #1F1F1F;
+        font-size: 1.2rem;
+        font-weight: 800;
+    }
+
+.lista-contacto-emprendimiento {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+    .lista-contacto-emprendimiento li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--color-gris-oscuro);
+        font-size: 0.92rem;
+    }
+
+    .lista-contacto-emprendimiento i {
+        color: #D9600D;
+        font-size: 1.05rem;
+    }
+
+.boton-contacto-emprendimiento {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 48px;
+    border-radius: 30px;
+    background: #D9600D;
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.25s ease;
+}
+
+    .boton-contacto-emprendimiento:hover {
+        background: #b34f0a;
+    }
+
+.relacionados-detalle-emprendimiento {
+    padding: 20px 20px 90px;
+    background: var(--color-gris-claro);
+}
+
+.encabezado-relacionados-emprendimiento {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 34px;
+}
+
+    .encabezado-relacionados-emprendimiento h2 {
+        margin-top: 6px;
+        color: #1F1F1F;
+        font-size: 1.7rem;
+        font-weight: 800;
+    }
+
+    .encabezado-relacionados-emprendimiento a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #D9600D;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+.grid-relacionados-emprendimiento {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.tarjeta-relacionada-emprendimiento {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 18px;
+    padding: 16px;
+    border-radius: var(--radio-medio);
+    background: #ffffff;
+    box-shadow: var(--sombra-suave);
+}
+
+    .tarjeta-relacionada-emprendimiento img {
+        width: 100%;
+        height: 100%;
+        min-height: 110px;
+        object-fit: cover;
+        border-radius: var(--radio-pequeno);
+    }
+
+    .tarjeta-relacionada-emprendimiento span {
+        color: #D9600D;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .tarjeta-relacionada-emprendimiento h3 {
+        margin: 6px 0 12px;
+        color: #1F1F1F;
+        font-size: 1.05rem;
+    }
+
+    .tarjeta-relacionada-emprendimiento a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #D9600D;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+.cta-detalle-emprendimiento {
+    padding: 90px 20px;
+    background: linear-gradient(135deg, #1F1F1F 0%, #4a3420 100%);
+    color: #ffffff;
+    text-align: center;
+}
+
+.contenido-cta-detalle-emprendimiento {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+    .contenido-cta-detalle-emprendimiento span {
+        display: inline-block;
+        margin-bottom: 14px;
+        color: #FFC93C;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .contenido-cta-detalle-emprendimiento h2 {
+        margin-bottom: 16px;
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    .contenido-cta-detalle-emprendimiento p {
+        margin-bottom: 26px;
+        color: rgba(255, 255, 255, 0.85);
+        line-height: 1.8;
+    }
+
+.boton-cta-detalle-emprendimiento {
+    display: inline-flex;
+    min-height: 50px;
+    padding: 13px 32px;
+    align-items: center;
+    border-radius: 35px;
+    background: #ffffff;
+    color: #D9600D;
+    font-weight: 800;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+    .boton-cta-detalle-emprendimiento:hover {
+        transform: translateY(-4px);
+    }
+
+
+/* =========================================================
+   PÁGINA: EVENTOS
+   ========================================================= */
+
+.hero-eventos {
+    position: relative;
+    overflow: hidden;
+    padding: 95px 20px;
+    background: linear-gradient(135deg, #2069C5 0%, #3D8BEA 55%, #6fd0ff 100%);
+    color: #ffffff;
+}
+
+    .hero-eventos::before {
+        content: "";
+        position: absolute;
+        top: -120px;
+        left: -90px;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+.hero-eventos-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 65px;
+    align-items: center;
+}
+
+.hero-eventos-texto h1 {
+    max-width: 620px;
+    margin: 20px 0;
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.18;
+}
+
+.hero-eventos-texto p {
+    max-width: 600px;
+    margin-bottom: 32px;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 1.08rem;
+    line-height: 1.9;
+}
+
+.etiqueta-eventos {
+    display: inline-block;
+    padding: 9px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.boton-eventos {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+    padding: 13px 32px;
+    border: 2px solid transparent;
+    border-radius: 35px;
+    background: #1F1F1F;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 800;
+    transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .boton-eventos:hover {
+        transform: translateY(-4px);
+        background: #ffffff;
+        color: #2069C5;
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18);
+    }
+
+.boton-eventos-claro {
+    background: #ffffff;
+    color: #2069C5;
+}
+
+    .boton-eventos-claro:hover {
+        background: #1F1F1F;
+        color: #ffffff;
+    }
+
+.hero-eventos-imagen {
+    position: relative;
+}
+
+    .hero-eventos-imagen img {
+        display: block;
+        width: 100%;
+        height: 420px;
+        object-fit: cover;
+        border: 6px solid rgba(255, 255, 255, 0.18);
+        border-radius: 28px;
+        box-shadow: 0 25px 50px rgba(10, 35, 70, 0.3);
+    }
+
+.tarjeta-flotante-eventos {
+    position: absolute;
+    left: -20px;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 260px;
+    padding: 16px 20px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #253345;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+    .tarjeta-flotante-eventos i {
+        font-size: 1.7rem;
+        color: #2069C5;
+    }
+
+    .tarjeta-flotante-eventos strong {
+        display: block;
+        margin-bottom: 2px;
+        color: #2069C5;
+        font-size: 0.98rem;
+    }
+
+    .tarjeta-flotante-eventos span {
+        color: #5d6b7a;
+        font-size: 0.8rem;
+    }
+
+.introduccion-eventos {
+    padding: 90px 20px 50px;
+    background: #ffffff;
+}
+
+.titulo-eventos-centro {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.subtitulo-eventos {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #2069C5;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+}
+
+.titulo-eventos-centro h2 {
+    margin: 0 0 18px;
+    color: #1F1F1F;
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.titulo-eventos-centro p {
+    margin: 0 auto;
+    color: #4A4A4A;
+    font-size: 1.02rem;
+    line-height: 1.85;
+}
+
+.eventos-listado {
+    padding: 20px 20px 90px;
+    background: #ffffff;
+}
+
+.grid-eventos-pagina {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+}
+
+.tarjeta-evento-pagina {
+    overflow: hidden;
+    border-radius: var(--radio-medio);
+    background: var(--color-gris-claro);
+    box-shadow: var(--sombra-suave);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .tarjeta-evento-pagina:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 35px rgba(31, 31, 31, 0.14);
+    }
+
+    .tarjeta-evento-pagina img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+.cuerpo-evento-pagina {
+    padding: 22px 24px 26px;
+}
+
+.fecha-evento-pagina {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: rgba(32, 105, 197, 0.12);
+    color: #2069C5;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.cuerpo-evento-pagina h3 {
+    margin-bottom: 8px;
+    color: #1F1F1F;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.cuerpo-evento-pagina p {
+    margin-bottom: 16px;
+    color: var(--color-gris-oscuro);
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+
+.datos-evento-pagina {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    color: var(--color-gris-oscuro);
+    font-size: 0.85rem;
+}
+
+    .datos-evento-pagina i {
+        margin-right: 4px;
+        color: #2069C5;
+    }
+
+.enlace-evento-pagina {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #2069C5;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: gap 0.25s ease;
+}
+
+    .enlace-evento-pagina:hover {
+        gap: 12px;
+    }
+
+.cta-eventos {
+    padding: 90px 20px;
+    background: linear-gradient(135deg, #12305c 0%, #2069C5 100%);
+    color: #ffffff;
+    text-align: center;
+}
+
+.cta-eventos-contenido {
+    max-width: 620px;
+    margin: 0 auto;
+}
+
+    .cta-eventos-contenido span {
+        display: inline-block;
+        margin-bottom: 14px;
+        color: #6fd0ff;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .cta-eventos-contenido h2 {
+        margin-bottom: 16px;
+        font-size: 2.2rem;
+        font-weight: 800;
+    }
+
+    .cta-eventos-contenido p {
+        margin-bottom: 28px;
+        color: rgba(255, 255, 255, 0.85);
+        line-height: 1.8;
+    }
+
+
+/* =========================================================
+   PÁGINA: TALLERES
+   ========================================================= */
+
+.hero-talleres {
+    position: relative;
+    overflow: hidden;
+    padding: 95px 20px;
+    background: linear-gradient(135deg, #a855c7 0%, #E8A6D8 55%, #FFE548 100%);
+    color: #1F1F1F;
+}
+
+.hero-talleres-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 65px;
+    align-items: center;
+}
+
+.hero-talleres-texto h1 {
+    max-width: 600px;
+    margin: 20px 0;
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.18;
+}
+
+.hero-talleres-texto p {
+    max-width: 580px;
+    margin-bottom: 32px;
+    color: rgba(31, 31, 31, 0.82);
+    font-size: 1.08rem;
+    line-height: 1.9;
+}
+
+.etiqueta-talleres {
+    display: inline-block;
+    padding: 9px 18px;
+    border: 1px solid rgba(31, 31, 31, 0.2);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.4);
+    color: #1F1F1F;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.boton-talleres {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+    padding: 13px 32px;
+    border: 2px solid transparent;
+    border-radius: 35px;
+    background: #1F1F1F;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 800;
+    transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .boton-talleres:hover {
+        transform: translateY(-4px);
+        background: #ffffff;
+        color: #a855c7;
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18);
+    }
+
+.boton-talleres-claro {
+    background: #ffffff;
+    color: #a855c7;
+}
+
+    .boton-talleres-claro:hover {
+        background: #1F1F1F;
+        color: #ffffff;
+    }
+
+.hero-talleres-imagen {
+    position: relative;
+}
+
+    .hero-talleres-imagen img {
+        display: block;
+        width: 100%;
+        height: 420px;
+        object-fit: cover;
+        border: 6px solid rgba(255, 255, 255, 0.4);
+        border-radius: 28px;
+        box-shadow: 0 25px 50px rgba(90, 40, 90, 0.25);
+    }
+
+.insignia-flotante-talleres {
+    position: absolute;
+    right: -18px;
+    top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: 50%;
+    width: 92px;
+    height: 92px;
+    justify-content: center;
+    background: #1F1F1F;
+    color: #ffffff;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+}
+
+    .insignia-flotante-talleres span {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .insignia-flotante-talleres strong {
+        font-size: 1rem;
+        color: #FFE548;
+    }
+
+.introduccion-talleres {
+    padding: 90px 20px 50px;
+    background: #ffffff;
+}
+
+.titulo-talleres-centro {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.subtitulo-talleres {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #a855c7;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+}
+
+.titulo-talleres-centro h2 {
+    margin: 0 0 18px;
+    color: #1F1F1F;
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.titulo-talleres-centro p {
+    margin: 0 auto;
+    color: #4A4A4A;
+    font-size: 1.02rem;
+    line-height: 1.85;
+}
+
+.talleres-listado {
+    padding: 20px 20px 90px;
+    background: #ffffff;
+}
+
+.grid-talleres-pagina {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+}
+
+.tarjeta-taller-pagina {
+    overflow: hidden;
+    border-radius: var(--radio-medio);
+    background: var(--color-gris-claro);
+    box-shadow: var(--sombra-suave);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .tarjeta-taller-pagina:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 35px rgba(31, 31, 31, 0.14);
+    }
+
+    .tarjeta-taller-pagina img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+.cuerpo-taller-pagina {
+    padding: 22px 24px 26px;
+}
+
+.disponibilidad-taller-pagina {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: rgba(168, 85, 199, 0.14);
+    color: #a855c7;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.disponibilidad-taller-limitada {
+    background: rgba(217, 96, 13, 0.14);
+    color: #D9600D;
+}
+
+.cuerpo-taller-pagina h3 {
+    margin-bottom: 8px;
+    color: #1F1F1F;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.cuerpo-taller-pagina p {
+    margin-bottom: 16px;
+    color: var(--color-gris-oscuro);
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+
+.datos-taller-pagina {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    color: var(--color-gris-oscuro);
+    font-size: 0.85rem;
+}
+
+    .datos-taller-pagina i {
+        margin-right: 4px;
+        color: #a855c7;
+    }
+
+.enlace-taller-pagina {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #a855c7;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: gap 0.25s ease;
+}
+
+    .enlace-taller-pagina:hover {
+        gap: 12px;
+    }
+
+.beneficios-talleres {
+    padding: 90px 20px;
+    background: var(--color-gris-claro);
+}
+
+.grid-beneficios-talleres {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+}
+
+.beneficio-taller {
+    padding: 34px 28px;
+    border-radius: var(--radio-medio);
+    background: #ffffff;
+    box-shadow: var(--sombra-suave);
+    text-align: center;
+}
+
+.icono-beneficio-taller {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 62px;
+    height: 62px;
+    margin-bottom: 18px;
+    border-radius: 50%;
+    background: rgba(168, 85, 199, 0.12);
+    color: #a855c7;
+    font-size: 1.5rem;
+}
+
+.beneficio-taller h3 {
+    margin-bottom: 10px;
+    color: #1F1F1F;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.beneficio-taller p {
+    color: var(--color-gris-oscuro);
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+
+.cta-talleres {
+    padding: 90px 20px;
+    background: linear-gradient(135deg, #5d2a70 0%, #a855c7 100%);
+    color: #ffffff;
+    text-align: center;
+}
+
+.cta-talleres-contenido {
+    max-width: 620px;
+    margin: 0 auto;
+}
+
+    .cta-talleres-contenido span {
+        display: inline-block;
+        margin-bottom: 14px;
+        color: #FFE548;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .cta-talleres-contenido h2 {
+        margin-bottom: 16px;
+        font-size: 2.2rem;
+        font-weight: 800;
+    }
+
+    .cta-talleres-contenido p {
+        margin-bottom: 28px;
+        color: rgba(255, 255, 255, 0.85);
+        line-height: 1.8;
+    }
+
+
+/* =========================================================
+   PÁGINA: PREGUNTAS FRECUENTES
+   ========================================================= */
+
+.hero-preguntas {
+    position: relative;
+    overflow: hidden;
+    padding: 90px 20px;
+    background: linear-gradient(135deg, #2069C5 0%, #6f42c1 55%, #a855c7 100%);
+    color: #ffffff;
+}
+
+.hero-preguntas-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 60px;
+    align-items: center;
+}
+
+.hero-preguntas-texto h1 {
+    margin: 20px 0;
+    font-size: 2.9rem;
+    font-weight: 800;
+    line-height: 1.18;
+}
+
+.hero-preguntas-texto p {
+    max-width: 560px;
+    margin-bottom: 32px;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 1.05rem;
+    line-height: 1.9;
+}
+
+.etiqueta-preguntas {
+    display: inline-block;
+    padding: 9px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.boton-preguntas {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+    padding: 13px 32px;
+    border-radius: 35px;
+    background: #ffffff;
+    color: #6f42c1;
+    text-decoration: none;
+    font-weight: 800;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .boton-preguntas:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+    }
+
+.hero-preguntas-imagen img {
+    display: block;
+    width: 100%;
+    height: 360px;
+    object-fit: cover;
+    border: 6px solid rgba(255, 255, 255, 0.18);
+    border-radius: 28px;
+    box-shadow: 0 25px 50px rgba(30, 20, 60, 0.3);
+}
+
+.preguntas-listado {
+    padding: 90px 20px;
+    background: #ffffff;
+}
+
+.titulo-preguntas-centro {
+    max-width: 800px;
+    margin: 0 auto 55px;
+    text-align: center;
+}
+
+.subtitulo-preguntas {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #6f42c1;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+}
+
+.titulo-preguntas-centro h2 {
+    margin: 0;
+    color: #1F1F1F;
+    font-size: 2.3rem;
+    font-weight: 800;
+}
+
+.grupo-preguntas {
+    max-width: 860px;
+    margin: 0 auto 50px;
+}
+
+.titulo-grupo-preguntas {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    color: #1F1F1F;
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+    .titulo-grupo-preguntas i {
+        color: #6f42c1;
+        font-size: 1.2rem;
+    }
+
+.accordion-preguntas {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.item-pregunta {
+    border-radius: var(--radio-medio);
+    background: var(--color-gris-claro);
+    overflow: hidden;
+}
+
+.boton-pregunta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 18px 24px;
+    border: none;
+    background: transparent;
+    color: #1F1F1F;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+    .boton-pregunta i {
+        flex-shrink: 0;
+        margin-left: 16px;
+        color: #6f42c1;
+        transition: transform 0.3s ease;
+    }
+
+    .boton-pregunta:not(.collapsed) i {
+        transform: rotate(180deg);
+    }
+
+.cuerpo-pregunta {
+    padding: 0 24px 20px;
+    color: var(--color-gris-oscuro);
+    font-size: 0.95rem;
+    line-height: 1.8;
+}
+
+.contacto-preguntas {
+    padding: 0 20px 90px;
+    background: #ffffff;
+}
+
+.caja-contacto-preguntas {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 34px 36px;
+    border-radius: var(--radio-medio);
+    background: var(--color-gris-claro);
+    box-shadow: var(--sombra-suave);
+}
+
+.icono-contacto-preguntas {
+    display: inline-flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(111, 66, 193, 0.14);
+    color: #6f42c1;
+    font-size: 1.6rem;
+}
+
+.caja-contacto-preguntas h2 {
+    margin-bottom: 6px;
+    color: #1F1F1F;
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.caja-contacto-preguntas p {
+    color: var(--color-gris-oscuro);
+    font-size: 0.94rem;
+    line-height: 1.7;
+}
+
+.boton-contacto-preguntas {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 12px 26px;
+    margin-left: auto;
+    border-radius: 30px;
+    background: #6f42c1;
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.25s ease;
+}
+
+    .boton-contacto-preguntas:hover {
+        background: #5a3499;
+    }
+
+
+/* =========================================================
+   RESPONSIVE — VISTAS NUEVAS
+   ========================================================= */
+
+@media (max-width: 992px) {
+    .hero-emprendimientos-grid,
+    .hero-eventos-grid,
+    .hero-talleres-grid,
+    .hero-preguntas-grid,
+    .distribucion-detalle-emprendimiento,
+    .grid-emprendimientos,
+    .grid-eventos-pagina,
+    .grid-talleres-pagina,
+    .grid-beneficios-emprendimientos,
+    .grid-beneficios-talleres,
+    .grid-productos-emprendimiento,
+    .grid-galeria-emprendimiento,
+    .grid-relacionados-emprendimiento {
+        grid-template-columns: 1fr;
+    }
+
+    .perfil-detalle-emprendimiento {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .tarjeta-contacto-emprendimiento {
+        position: static;
+    }
+
+    .caja-contacto-preguntas {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .boton-contacto-preguntas {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .grid-emprendimientos,
+    .grid-eventos-pagina,
+    .grid-talleres-pagina,
+    .grid-beneficios-emprendimientos,
+    .grid-beneficios-talleres {
+        grid-template-columns: 1fr;
+    }
+}

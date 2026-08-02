@@ -1,0 +1,314 @@
+﻿@{
+    ViewData["Title"] = "Preguntas Frecuentes";
+    Layout = "_LayoutExterno";
+}
+
+<!-- HERO -->
+<section class="hero-preguntas">
+    <div class="container hero-preguntas-grid">
+
+        <div class="hero-preguntas-texto">
+            <span class="etiqueta-preguntas">
+                Centro de ayuda
+            </span>
+
+            <h1>Preguntas frecuentes</h1>
+
+            <p>
+                Resolvé tus dudas sobre registro, talleres, eventos,
+                emprendimientos y promociones de Club Creativo MiVo.
+            </p>
+
+            <a href="#preguntas-listado"
+               class="boton-preguntas">
+                Ver preguntas
+            </a>
+        </div>
+
+        <div class="hero-preguntas-imagen">
+            <img src="~/images/convivencia.jpg"
+                 alt="Personas conversando en una actividad del Club" />
+        </div>
+
+    </div>
+</section>
+
+
+<!-- LISTADO -->
+<section class="preguntas-listado" id="preguntas-listado">
+    <div class="container">
+
+        <div class="titulo-preguntas-centro">
+            <span class="subtitulo-preguntas">
+                Por categoría
+            </span>
+
+            <h2>Encontrá la respuesta que buscás</h2>
+        </div>
+
+        <!-- CUENTA Y REGISTRO -->
+        <div class="grupo-preguntas">
+            <h3 class="titulo-grupo-preguntas">
+                <i class="bi bi-person-circle"></i>
+                Cuenta y registro
+            </h3>
+
+            <div class="accordion accordion-preguntas" id="acordeonCuenta">
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaCuenta1">
+                            ¿Cómo me registro en Club Creativo MiVo?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaCuenta1"
+                         class="collapse"
+                         data-bs-parent="#acordeonCuenta">
+                        <div class="cuerpo-pregunta">
+                            Podés registrarte como usuario o como
+                            emprendimiento desde la opción "Crear una
+                            cuenta" ubicada en el menú principal.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaCuenta2">
+                            Olvidé mi contraseña, ¿qué puedo hacer?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaCuenta2"
+                         class="collapse"
+                         data-bs-parent="#acordeonCuenta">
+                        <div class="cuerpo-pregunta">
+                            Utilizá la opción "Recuperar contraseña" en
+                            la pantalla de inicio de sesión para recibir
+                            instrucciones y restablecerla.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaCuenta3">
+                            ¿Puedo tener una cuenta de usuario y de
+                            emprendimiento al mismo tiempo?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaCuenta3"
+                         class="collapse"
+                         data-bs-parent="#acordeonCuenta">
+                        <div class="cuerpo-pregunta">
+                            Sí, ambos perfiles pueden convivir con el
+                            mismo correo electrónico registrado en
+                            el Club.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TALLERES Y EVENTOS -->
+        <div class="grupo-preguntas">
+            <h3 class="titulo-grupo-preguntas">
+                <i class="bi bi-calendar-event-fill"></i>
+                Talleres y eventos
+            </h3>
+
+            <div class="accordion accordion-preguntas" id="acordeonEventos">
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaEventos1">
+                            ¿Cómo reservo un cupo en un taller?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaEventos1"
+                         class="collapse"
+                         data-bs-parent="#acordeonEventos">
+                        <div class="cuerpo-pregunta">
+                            Ingresá a la sección de Talleres, elegí la
+                            actividad de tu interés y seguí el enlace
+                            para reservar tu cupo.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaEventos2">
+                            ¿Los eventos tienen costo de entrada?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaEventos2"
+                         class="collapse"
+                         data-bs-parent="#acordeonEventos">
+                        <div class="cuerpo-pregunta">
+                            Depende de cada actividad. La información
+                            de costo, si aplica, se detalla en la
+                            página del evento.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaEventos3">
+                            ¿Qué pasa si no puedo asistir a un taller
+                            reservado?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaEventos3"
+                         class="collapse"
+                         data-bs-parent="#acordeonEventos">
+                        <div class="cuerpo-pregunta">
+                            Te recomendamos avisar con anticipación para
+                            liberar el cupo a otra persona interesada.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- EMPRENDIMIENTOS Y PROMOCIONES -->
+        <div class="grupo-preguntas">
+            <h3 class="titulo-grupo-preguntas">
+                <i class="bi bi-shop"></i>
+                Emprendimientos y promociones
+            </h3>
+
+            <div class="accordion accordion-preguntas" id="acordeonEmprendimientos">
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaEmp1">
+                            ¿Cómo registro mi emprendimiento en el Club?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaEmp1"
+                         class="collapse"
+                         data-bs-parent="#acordeonEmprendimientos">
+                        <div class="cuerpo-pregunta">
+                            Completá el formulario de "Registro de
+                            emprendedor" y aceptá los términos de
+                            participación. Tu solicitud será revisada.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaEmp2">
+                            ¿Las promociones se pueden combinar entre sí?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaEmp2"
+                         class="collapse"
+                         data-bs-parent="#acordeonEmprendimientos">
+                        <div class="cuerpo-pregunta">
+                            Generalmente no son acumulables, salvo que
+                            se indique lo contrario en la promoción.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-pregunta">
+                    <h4 class="cabecera-pregunta">
+                        <button class="boton-pregunta"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#preguntaEmp3">
+                            ¿Qué tipo de emprendimientos pueden participar?
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h4>
+
+                    <div id="preguntaEmp3"
+                         class="collapse"
+                         data-bs-parent="#acordeonEmprendimientos">
+                        <div class="cuerpo-pregunta">
+                            Proyectos relacionados con el arte, el diseño,
+                            la creatividad o la producción artesanal local.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- CONTACTO -->
+<section class="contacto-preguntas">
+    <div class="container">
+
+        <div class="caja-contacto-preguntas">
+
+            <div class="icono-contacto-preguntas">
+                <i class="bi bi-chat-dots-fill"></i>
+            </div>
+
+            <div>
+                <h2>¿No encontraste tu respuesta?</h2>
+
+                <p>
+                    Escribinos y con gusto te ayudamos a resolver
+                    cualquier duda sobre el Club.
+                </p>
+            </div>
+
+            <a asp-controller="Home"
+               asp-action="Contacto"
+               class="boton-contacto-preguntas">
+                Contactar al equipo
+            </a>
+
+        </div>
+
+    </div>
+</section>

@@ -70,5 +70,26 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View();
         }
+        public IActionResult Emprendimientos()
+        {
+            return View();
+        }
+        public IActionResult DetalleEmprendimiento(string name)
+        {
+            ViewData["NombreEmprendimiento"] = string.IsNullOrWhiteSpace(name) ? "Orquídea" : name;
+            return View();
+        }
+        public IActionResult Eventos()
+        {
+            return View();
+        }
+        public IActionResult Talleres()
+        {
+            return View();
+        }
+        public IActionResult PreguntasFrecuentes()
+        {
+            return View();
+        }
     }
 }

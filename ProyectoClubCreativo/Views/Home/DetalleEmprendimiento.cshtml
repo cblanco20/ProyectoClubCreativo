@@ -1,0 +1,240 @@
+﻿@{
+    ViewData["Title"] = "Detalle de Emprendimiento";
+    Layout = "_LayoutExterno";
+}
+
+<!-- ENCABEZADO -->
+<section class="encabezado-detalle-emprendimiento">
+    <div class="container">
+
+        <nav class="migas-detalle-emprendimiento"
+             aria-label="Navegación secundaria">
+
+            <a asp-controller="Home"
+               asp-action="Index">
+                Inicio
+            </a>
+
+            <i class="bi bi-chevron-right"></i>
+
+            <a asp-controller="Home"
+               asp-action="Emprendimientos">
+                Emprendimientos
+            </a>
+
+            <i class="bi bi-chevron-right"></i>
+
+            <span>Orquídea</span>
+        </nav>
+
+        <div class="perfil-detalle-emprendimiento">
+
+            <img src="~/images/producto-1.jpg"
+                 alt="Logo del emprendimiento Orquídea"
+                 class="logo-detalle-emprendimiento" />
+
+            <div class="informacion-perfil-emprendimiento">
+                <span class="categoria-detalle-emprendimiento">
+                    Accesorios
+                </span>
+
+                <h1>Orquídea</h1>
+
+                <p class="resumen-detalle-emprendimiento">
+                    Accesorios artesanales hechos a mano con materiales
+                    naturales de distintas zonas de Costa Rica.
+                </p>
+
+                <div class="datos-perfil-emprendimiento">
+                    <span><i class="bi bi-geo-alt-fill"></i> Escazú, San José</span>
+                    <span><i class="bi bi-star-fill"></i> 4.9 (86 reseñas)</span>
+                    <span><i class="bi bi-patch-check-fill"></i> Emprendimiento verificado</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- GALERÍA -->
+<section class="galeria-detalle-emprendimiento">
+    <div class="container">
+
+        <div class="grid-galeria-emprendimiento">
+            <img src="~/images/producto-1.jpg" alt="Accesorios de Orquídea, vista principal" />
+            <img src="~/images/producto-2.jpg" alt="Accesorios de Orquídea, segunda vista" />
+            <img src="~/images/producto-3.jpg" alt="Accesorios de Orquídea, tercera vista" />
+        </div>
+
+    </div>
+</section>
+
+
+<!-- CONTENIDO -->
+<section class="contenido-detalle-emprendimiento">
+    <div class="container distribucion-detalle-emprendimiento">
+
+        <article class="informacion-detalle-emprendimiento">
+
+            <h2>Nuestra historia</h2>
+
+            <p>
+                Orquídea nació en el año 2021 como un proyecto familiar
+                dedicado a la elaboración de accesorios artesanales. Cada
+                pieza se diseña y produce a mano, utilizando materiales
+                naturales provenientes de distintas zonas del país.
+            </p>
+
+            <p>
+                Con el tiempo, el emprendimiento se ha convertido en parte
+                activa de la comunidad de Club Creativo MiVo, participando
+                en ferias, talleres y actividades que fortalecen el
+                talento local.
+            </p>
+
+            <h2>Productos destacados</h2>
+
+            <div class="grid-productos-emprendimiento">
+
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/producto-1.jpg" alt="Aretes artesanales" />
+                    <h3>Aretes tejidos</h3>
+                    <p>Elaborados a mano con hilo encerado y semillas.</p>
+                </article>
+
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/producto-2.jpg" alt="Collares artesanales" />
+                    <h3>Collares naturales</h3>
+                    <p>Piezas únicas con materiales recolectados localmente.</p>
+                </article>
+
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/producto-4.jpg" alt="Pulseras artesanales" />
+                    <h3>Pulseras artesanales</h3>
+                    <p>Combinaciones de colores inspiradas en la naturaleza.</p>
+                </article>
+
+            </div>
+
+        </article>
+
+        <aside class="tarjeta-contacto-emprendimiento">
+
+            <h2>Contacto</h2>
+
+            <ul class="lista-contacto-emprendimiento">
+                <li>
+                    <i class="bi bi-whatsapp"></i>
+                    <span>+506 7130-1389</span>
+                </li>
+
+                <li>
+                    <i class="bi bi-envelope-fill"></i>
+                    <span>orquidea@clubcreativomivo.com</span>
+                </li>
+
+                <li>
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span>Escazú, San José, Costa Rica</span>
+                </li>
+
+                <li>
+                    <i class="bi bi-instagram"></i>
+                    <span>@@orquidea.cr</span>
+                </li>
+            </ul>
+
+            <a href="#"
+               class="boton-contacto-emprendimiento">
+                Escribir por WhatsApp
+            </a>
+
+        </aside>
+
+    </div>
+</section>
+
+
+<!-- EMPRENDIMIENTOS RELACIONADOS -->
+<section class="relacionados-detalle-emprendimiento">
+    <div class="container">
+
+        <div class="encabezado-relacionados-emprendimiento">
+            <div>
+                <span class="subtitulo-emprendimientos">
+                    Sigue explorando
+                </span>
+
+                <h2>Otros emprendimientos que te pueden interesar</h2>
+            </div>
+
+            <a asp-controller="Home"
+               asp-action="Emprendimientos">
+                Ver todos los emprendimientos
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="grid-relacionados-emprendimiento">
+
+            <article class="tarjeta-relacionada-emprendimiento">
+                <img src="~/images/producto-2.jpg" alt="Bolsos y accesorios de Moras" />
+
+                <div>
+                    <span>Bolsos y textiles</span>
+                    <h3>Moras</h3>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-relacionada-emprendimiento">
+                <img src="~/images/producto-3.jpg" alt="Velas artesanales de Luz Natural" />
+
+                <div>
+                    <span>Velas y aromas</span>
+                    <h3>Luz Natural</h3>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- CTA FINAL -->
+<section class="cta-detalle-emprendimiento">
+    <div class="container">
+
+        <div class="contenido-cta-detalle-emprendimiento">
+            <span>Club Creativo MiVo</span>
+
+            <h2>¿Querés conocer más talento local?</h2>
+
+            <p>
+                Explorá el directorio completo de emprendimientos y
+                descubrí productos hechos con dedicación.
+            </p>
+
+            <a asp-controller="Home"
+               asp-action="Emprendimientos"
+               class="boton-cta-detalle-emprendimiento">
+                Ver emprendimientos
+            </a>
+        </div>
+
+    </div>
+</section>

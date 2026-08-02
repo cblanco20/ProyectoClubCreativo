@@ -14,6 +14,9 @@
           href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
     <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <link rel="stylesheet"
           href="~/css/club-creativo.css"
           asp-append-version="true" />
 
@@ -74,19 +77,22 @@
                 </li>
 
                 <li>
-                    <a href="#emprendimientos">
+                    <a asp-controller="Home"
+                       asp-action="Emprendimientos">
                         Emprendimientos
                     </a>
                 </li>
 
                 <li>
-                    <a href="#eventos">
+                    <a asp-controller="Home"
+                       asp-action="Eventos">
                         Eventos
                     </a>
                 </li>
 
                 <li>
-                    <a href="#talleres">
+                    <a asp-controller="Home"
+                       asp-action="Talleres">
                         Talleres
                     </a>
                 </li>
@@ -179,11 +185,22 @@
             <nav class="menu-superior"
                  aria-label="Navegación principal">
 
+                @{
+                    var accionActual = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+                    string ClaseMenu(params string[] acciones)
+                    {
+                        return acciones.Contains(accionActual, StringComparer.OrdinalIgnoreCase)
+                            ? "enlace-menu activo"
+                            : "enlace-menu";
+                    }
+                }
+
                 <ul class="lista-menu-superior">
                     <li>
                         <a asp-controller="Home"
                            asp-action="Index"
-                           class="enlace-menu activo">
+                           class="@ClaseMenu("Index")">
                             Inicio
                         </a>
                     </li>
@@ -191,7 +208,7 @@
                     <li>
                         <a asp-controller="Home"
                            asp-action="SobreNosotros"
-                           class="enlace-menu">
+                           class="@ClaseMenu("SobreNosotros")">
                             Sobre Nosotros
                         </a>
                     </li>
@@ -204,22 +221,25 @@
                     </li>
 
                     <li>
-                        <a href="#emprendimientos"
-                           class="enlace-menu">
+                        <a asp-controller="Home"
+                           asp-action="Emprendimientos"
+                           class="@ClaseMenu("Emprendimientos", "DetalleEmprendimiento")">
                             Emprendimientos
                         </a>
                     </li>
 
                     <li>
-                        <a href="#eventos"
-                           class="enlace-menu">
+                        <a asp-controller="Home"
+                           asp-action="Eventos"
+                           class="@ClaseMenu("Eventos")">
                             Eventos
                         </a>
                     </li>
 
                     <li>
-                        <a href="#talleres"
-                           class="enlace-menu">
+                        <a asp-controller="Home"
+                           asp-action="Talleres"
+                           class="@ClaseMenu("Talleres")">
                             Talleres
                         </a>
                     </li>
@@ -227,7 +247,7 @@
                     <li>
                         <a asp-controller="Home"
                            asp-action="Noticias"
-                           class="enlace-menu">
+                           class="@ClaseMenu("Noticias", "DetalleNoticia")">
                             Noticias
                         </a>
                     </li>
@@ -235,14 +255,14 @@
                     <li>
                         <a asp-controller="Home"
                            asp-action="Reglamento"
-                           class="enlace-menu">
+                           class="@ClaseMenu("Reglamento")">
                             Reglamento
                         </a>
                     </li>
                     <li>
                         <a asp-controller="Home"
                            asp-action="Promociones"
-                           class="enlace-menu">
+                           class="@ClaseMenu("Promociones")">
                             Promociones
                         </a>
                     </li>
@@ -250,7 +270,7 @@
                     <li>
                         <a asp-controller="Home"
                            asp-action="Contacto"
-                           class="enlace-menu">
+                           class="@ClaseMenu("Contacto")">
                             Contacto
                         </a>
                     </li>
@@ -346,19 +366,22 @@
                     </li>
 
                     <li>
-                        <a href="#emprendimientos">
+                        <a asp-controller="Home"
+                           asp-action="Emprendimientos">
                             Emprendimientos
                         </a>
                     </li>
 
                     <li>
-                        <a href="#eventos">
+                        <a asp-controller="Home"
+                           asp-action="Eventos">
                             Eventos
                         </a>
                     </li>
 
                     <li>
-                        <a href="#talleres">
+                        <a asp-controller="Home"
+                           asp-action="Talleres">
                             Talleres
                         </a>
                     </li>
@@ -389,7 +412,12 @@
                 <h2 class="titulo-footer">Ayuda</h2>
 
                 <ul class="lista-footer">
-                    <li><a href="#">Preguntas frecuentes</a></li>
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="PreguntasFrecuentes">
+                            Preguntas frecuentes
+                        </a>
+                    </li>
                     <li><a href="#">Envíos y entregas</a></li>
                     <li><a href="#">Métodos de pago</a></li>
                     <li><a href="#">Devoluciones</a></li>

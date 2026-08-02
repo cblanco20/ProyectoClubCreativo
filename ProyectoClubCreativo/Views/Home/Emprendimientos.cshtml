@@ -1,0 +1,350 @@
+﻿@{
+    ViewData["Title"] = "Emprendimientos";
+    Layout = "_LayoutExterno";
+}
+
+<section class="hero-emprendimientos">
+    <div class="container hero-emprendimientos-grid">
+
+        <div class="hero-emprendimientos-texto">
+            <span class="etiqueta-emprendimientos">
+                Talento costarricense
+            </span>
+
+            <h1>Conocé los emprendimientos de nuestra comunidad</h1>
+
+            <p>
+                Marcas, artistas y proyectos locales que crean productos
+                únicos con dedicación, creatividad y mucho cariño.
+            </p>
+
+            <a href="#emprendimientos-listado"
+               class="boton-emprendimientos">
+                Ver emprendimientos
+            </a>
+        </div>
+
+        <div class="hero-emprendimientos-imagen">
+            <img src="~/images/producto-2.jpg"
+                 alt="Emprendedora mostrando sus productos artesanales" />
+
+            <div class="insignia-flotante-emprendimientos">
+                <i class="bi bi-shop-window"></i>
+
+                <div>
+                    <strong>+40 emprendimientos</strong>
+                    <span>forman parte del Club</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<section class="introduccion-emprendimientos">
+    <div class="container">
+
+        <div class="titulo-emprendimientos-centro">
+            <span class="subtitulo-emprendimientos">
+                Apoyá lo local
+            </span>
+
+            <h2>Cada compra impulsa un sueño</h2>
+
+            <p>
+                Los emprendimientos de Club Creativo MiVo nacen de la
+                pasión por el arte, el diseño y la creatividad. Aquí
+                podés descubrirlos, conocer su historia y apoyarlos.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+
+<section class="categorias-emprendimientos">
+    <div class="container">
+
+        <div class="lista-categorias-emprendimientos">
+            <span class="categoria-chip categoria-chip-activa">Todos</span>
+            <span class="categoria-chip">Accesorios</span>
+            <span class="categoria-chip">Arte e ilustración</span>
+            <span class="categoria-chip">Velas y aromas</span>
+            <span class="categoria-chip">Bolsos y textiles</span>
+            <span class="categoria-chip">Joyería</span>
+        </div>
+
+    </div>
+</section>
+
+
+<section class="emprendimientos-listado" id="emprendimientos-listado">
+    <div class="container">
+
+        <div class="grid-emprendimientos">
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-1.jpg"
+                         alt="Accesorios artesanales de Orquídea" />
+                    <span class="categoria-tarjeta-emprendimiento">Accesorios</span>
+                </div>
+
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Orquídea</h3>
+
+                    <p>
+                        Accesorios artesanales hechos a mano con materiales
+                        naturales de distintas zonas del país.
+                    </p>
+
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span><i class="bi bi-geo-alt-fill"></i> Escazú</span>
+                        <span><i class="bi bi-star-fill"></i> 4.9</span>
+                    </div>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento"
+                       asp-route-name="Orquídea"
+                       class="enlace-tarjeta-emprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-2.jpg"
+                         alt="Bolsos y accesorios de Moras" />
+                    <span class="categoria-tarjeta-emprendimiento">Bolsos y textiles</span>
+                </div>
+
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Moras</h3>
+
+                    <p>
+                        Bolsos y accesorios textiles diseñados y confeccionados
+                        artesanalmente en pequeños lotes.
+                    </p>
+
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span><i class="bi bi-geo-alt-fill"></i> Santa Ana</span>
+                        <span><i class="bi bi-star-fill"></i> 4.8</span>
+                    </div>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento"
+                       asp-route-name="Moras"
+                       class="enlace-tarjeta-emprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-3.jpg"
+                         alt="Velas artesanales de Luz Natural" />
+                    <span class="categoria-tarjeta-emprendimiento">Velas y aromas</span>
+                </div>
+
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Luz Natural</h3>
+
+                    <p>
+                        Velas artesanales elaboradas con cera vegetal y
+                        aromas naturales inspirados en Costa Rica.
+                    </p>
+
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span><i class="bi bi-geo-alt-fill"></i> Heredia</span>
+                        <span><i class="bi bi-star-fill"></i> 5.0</span>
+                    </div>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento"
+                       asp-route-name="Luz Natural"
+                       class="enlace-tarjeta-emprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-4.jpg"
+                         alt="Ilustraciones de Pinta Bonito" />
+                    <span class="categoria-tarjeta-emprendimiento">Arte e ilustración</span>
+                </div>
+
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Pinta Bonito</h3>
+
+                    <p>
+                        Ilustraciones y arte original que celebra la cultura
+                        y los paisajes costarricenses.
+                    </p>
+
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span><i class="bi bi-geo-alt-fill"></i> San José</span>
+                        <span><i class="bi bi-star-fill"></i> 4.7</span>
+                    </div>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento"
+                       asp-route-name="Pinta Bonito"
+                       class="enlace-tarjeta-emprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/taller-joyeria.jpg"
+                         alt="Joyería artesanal en arcilla" />
+                    <span class="categoria-tarjeta-emprendimiento">Joyería</span>
+                </div>
+
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Arcilla Viva</h3>
+
+                    <p>
+                        Piezas de joyería en arcilla polimérica, pintadas y
+                        horneadas a mano en pequeños talleres.
+                    </p>
+
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span><i class="bi bi-geo-alt-fill"></i> Alajuela</span>
+                        <span><i class="bi bi-star-fill"></i> 4.9</span>
+                    </div>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento"
+                       class="enlace-tarjeta-emprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/taller-bordado.jpg"
+                         alt="Bordado creativo hecho a mano" />
+                    <span class="categoria-tarjeta-emprendimiento">Bolsos y textiles</span>
+                </div>
+
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Hilo y Flor</h3>
+
+                    <p>
+                        Bordados creativos sobre prendas y accesorios,
+                        personalizados según cada historia.
+                    </p>
+
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span><i class="bi bi-geo-alt-fill"></i> San Pedro</span>
+                        <span><i class="bi bi-star-fill"></i> 4.8</span>
+                    </div>
+
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento"
+                       class="enlace-tarjeta-emprendimiento">
+                        Ver emprendimiento
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+        </div>
+
+    </div>
+</section>
+
+
+<section class="beneficios-emprendimientos">
+    <div class="container">
+
+        <div class="titulo-emprendimientos-centro">
+            <span class="subtitulo-emprendimientos">
+                Para personas emprendedoras
+            </span>
+
+            <h2>¿Por qué sumar tu emprendimiento?</h2>
+        </div>
+
+        <div class="grid-beneficios-emprendimientos">
+
+            <article class="beneficio-emprendimiento">
+                <div class="icono-beneficio-emprendimiento">
+                    <i class="bi bi-megaphone-fill"></i>
+                </div>
+
+                <h3>Visibilidad</h3>
+
+                <p>
+                    Mostrá tus productos a una comunidad interesada en
+                    apoyar el talento local.
+                </p>
+            </article>
+
+            <article class="beneficio-emprendimiento">
+                <div class="icono-beneficio-emprendimiento">
+                    <i class="bi bi-calendar-event-fill"></i>
+                </div>
+
+                <h3>Ferias y eventos</h3>
+
+                <p>
+                    Participá en ferias, mercados y actividades organizadas
+                    por el Club durante todo el año.
+                </p>
+            </article>
+
+            <article class="beneficio-emprendimiento">
+                <div class="icono-beneficio-emprendimiento">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+
+                <h3>Comunidad</h3>
+
+                <p>
+                    Conectá con otras personas emprendedoras y compartí
+                    experiencias, retos y aprendizajes.
+                </p>
+            </article>
+
+        </div>
+
+    </div>
+</section>
+
+
+<section class="cta-emprendimientos">
+    <div class="container">
+
+        <div class="cta-emprendimientos-contenido">
+            <span>Club Creativo MiVo</span>
+
+            <h2>¿Tenés un emprendimiento creativo?</h2>
+
+            <p>
+                Sumate a nuestra comunidad y formá parte del directorio
+                de emprendimientos de Club Creativo MiVo.
+            </p>
+
+            <a asp-controller="Cuenta"
+               asp-action="RegistroEmprendedor"
+               class="boton-emprendimientos boton-emprendimientos-claro">
+                Registrar mi emprendimiento
+            </a>
+        </div>
+
+    </div>
+</section>

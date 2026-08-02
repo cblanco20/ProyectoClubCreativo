@@ -3,9 +3,7 @@
     Layout = "~/Views/Shared/_LayoutExterno.cshtml";
 }
 
-<!-- ======================================================
-     BANNER PRINCIPAL
-     ====================================================== -->
+<!-- BANNER PRINCIPAL-->
 <section class="seccion-hero">
     <div class="contenedor-club">
 
@@ -103,9 +101,7 @@
     </div>
 </section>
 
-<!-- ======================================================
-     PRÓXIMOS EVENTOS
-     ====================================================== -->
+<!-- PRÓXIMOS EVENTOS-->
 <section id="eventos"
          class="seccion-contenido">
     <div class="burbuja-seccion burbuja-rosada">
@@ -124,7 +120,8 @@
                 </p>
             </div>
 
-            <a href="#"
+            <a asp-controller="Home"
+               asp-action="Eventos"
                class="enlace-ver-todos">
                 Ver todos los eventos →
             </a>
@@ -230,9 +227,7 @@
     </div>
 </section>
 
-<!-- ======================================================
-     TALLERES
-     ====================================================== -->
+<!-- TALLERES-->
 <section id="talleres"
          class="seccion-contenido">
     <div class="burbuja-seccion burbuja-blanca">
@@ -250,7 +245,8 @@
                 </p>
             </div>
 
-            <a href="#"
+            <a asp-controller="Home"
+               asp-action="Talleres"
                class="enlace-ver-todos">
                 Ver todos los talleres →
             </a>
@@ -347,9 +343,7 @@
     </div>
 </section>
 
-<!-- ======================================================
-     EMPRENDIMIENTOS Y PRODUCTOS
-     ====================================================== -->
+<!-- EMPRENDIMIENTOS Y PRODUCTOS-->
 <section id="productos"
          class="seccion-contenido seccion-fondo-morado">
 
@@ -369,7 +363,8 @@
                 </p>
             </div>
 
-            <a href="#"
+            <a asp-controller="Home"
+               asp-action="Emprendimientos"
                class="enlace-ver-todos">
                 Ver todos →
             </a>
@@ -384,14 +379,21 @@
                     ♡
                 </button>
 
-                <img src="~/images/producto-1.jpg"
-                     alt="Accesorios artesanales"
-                     class="imagen-tarjeta" />
+                <a asp-controller="Home"
+                   asp-action="DetalleEmprendimiento"
+                   asp-route-name="Orquídea"
+                   class="enlace-tarjeta-producto">
 
-                <div class="cuerpo-tarjeta">
-                    <h3 class="titulo-tarjeta">Orquídea</h3>
-                    <p class="texto-tarjeta">Accesorios artesanales</p>
-                </div>
+                    <img src="~/images/producto-1.jpg"
+                         alt="Accesorios artesanales"
+                         class="imagen-tarjeta" />
+
+                    <div class="cuerpo-tarjeta">
+                        <h3 class="titulo-tarjeta">Orquídea</h3>
+                        <p class="texto-tarjeta">Accesorios artesanales</p>
+                    </div>
+
+                </a>
             </article>
 
             <article class="tarjeta-contenido tarjeta-producto">
@@ -401,14 +403,21 @@
                     ♡
                 </button>
 
-                <img src="~/images/producto-2.jpg"
-                     alt="Bolsos y accesorios"
-                     class="imagen-tarjeta" />
+                <a asp-controller="Home"
+                   asp-action="DetalleEmprendimiento"
+                   asp-route-name="Moras"
+                   class="enlace-tarjeta-producto">
 
-                <div class="cuerpo-tarjeta">
-                    <h3 class="titulo-tarjeta">Moras</h3>
-                    <p class="texto-tarjeta">Bolsos y accesorios</p>
-                </div>
+                    <img src="~/images/producto-2.jpg"
+                         alt="Bolsos y accesorios"
+                         class="imagen-tarjeta" />
+
+                    <div class="cuerpo-tarjeta">
+                        <h3 class="titulo-tarjeta">Moras</h3>
+                        <p class="texto-tarjeta">Bolsos y accesorios</p>
+                    </div>
+
+                </a>
             </article>
 
             <article class="tarjeta-contenido tarjeta-producto">
@@ -418,14 +427,21 @@
                     ♡
                 </button>
 
-                <img src="~/images/producto-3.jpg"
-                     alt="Velas artesanales"
-                     class="imagen-tarjeta" />
+                <a asp-controller="Home"
+                   asp-action="DetalleEmprendimiento"
+                   asp-route-name="Luz Natural"
+                   class="enlace-tarjeta-producto">
 
-                <div class="cuerpo-tarjeta">
-                    <h3 class="titulo-tarjeta">Luz Natural</h3>
-                    <p class="texto-tarjeta">Velas artesanales</p>
-                </div>
+                    <img src="~/images/producto-3.jpg"
+                         alt="Velas artesanales"
+                         class="imagen-tarjeta" />
+
+                    <div class="cuerpo-tarjeta">
+                        <h3 class="titulo-tarjeta">Luz Natural</h3>
+                        <p class="texto-tarjeta">Velas artesanales</p>
+                    </div>
+
+                </a>
             </article>
 
             <article class="tarjeta-contenido tarjeta-producto">
@@ -435,14 +451,21 @@
                     ♡
                 </button>
 
-                <img src="~/images/producto-4.jpg"
-                     alt="Arte e ilustración"
-                     class="imagen-tarjeta" />
+                <a asp-controller="Home"
+                   asp-action="DetalleEmprendimiento"
+                   asp-route-name="Pinta Bonito"
+                   class="enlace-tarjeta-producto">
 
-                <div class="cuerpo-tarjeta">
-                    <h3 class="titulo-tarjeta">Pinta Bonito</h3>
-                    <p class="texto-tarjeta">Arte e ilustración</p>
-                </div>
+                    <img src="~/images/producto-4.jpg"
+                         alt="Arte e ilustración"
+                         class="imagen-tarjeta" />
+
+                    <div class="cuerpo-tarjeta">
+                        <h3 class="titulo-tarjeta">Pinta Bonito</h3>
+                        <p class="texto-tarjeta">Arte e ilustración</p>
+                    </div>
+
+                </a>
             </article>
 
         </div>
@@ -450,9 +473,7 @@
     </div>
 </section>
 
-<!-- ======================================================
-     PROMOCIONES
-     ====================================================== -->
+<!-- PROMOCIONES -->
 <section id="promociones"
          class="seccion-contenido">
 
@@ -500,9 +521,7 @@
     </div>
 </section>
 
-<!-- ======================================================
-     COMUNIDAD
-     ====================================================== -->
+<!-- COMUNIDAD-->
 <section id="comunidad"
          class="seccion-contenido">
 
