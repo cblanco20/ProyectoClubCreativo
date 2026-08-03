@@ -71,7 +71,8 @@
                 </li>
 
                 <li>
-                    <a href="#productos">
+                    <a asp-controller="Home"
+                       asp-action="CatalogoProductos">
                         Productos cool
                     </a>
                 </li>
@@ -112,8 +113,9 @@
                 </li>
 
                 <li>
-                    <a href="#comunidad">
-                        Comunidad creativa
+                    <a asp-controller="Home"
+                       asp-action="GaleriaMultimedia">
+                        Comunidad Creativa
                     </a>
                 </li>
 
@@ -214,8 +216,9 @@
                     </li>
 
                     <li>
-                        <a href="#productos"
-                           class="enlace-menu">
+                        <a asp-controller="Home"
+                           asp-action="CatalogoProductos"
+                           class="@ClaseMenu("CatalogoProductos")">
                             Productos
                         </a>
                     </li>
@@ -360,7 +363,8 @@
                     </li>
 
                     <li>
-                        <a href="#productos">
+                        <a asp-controller="Home"
+                           asp-action="CatalogoProductos">
                             Productos cool
                         </a>
                     </li>
@@ -401,7 +405,8 @@
                     </li>
 
                     <li>
-                        <a href="#comunidad">
+                        <a asp-controller="Home"
+                           asp-action="GaleriaMultimedia">
                             Comunidad
                         </a>
                     </li>

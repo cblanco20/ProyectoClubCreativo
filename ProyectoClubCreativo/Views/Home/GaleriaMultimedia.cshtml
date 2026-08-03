@@ -1,0 +1,97 @@
+﻿@{
+    ViewData["Title"] = "Galería Multimedia";
+    Layout = "_LayoutExterno";
+}
+
+<section class="hero-eventos">
+    <div class="container hero-eventos-grid">
+        <div class="hero-eventos-texto">
+            <span class="etiqueta-eventos">Momentos del Club</span>
+            <h1>Galería de nuestra comunidad creativa</h1>
+            <p>
+                Revive los mejores momentos de ferias, talleres, emprendimientos y
+                productos de Club Creativo MiVo.
+            </p>
+            <a href="#galeria-listado" class="boton-eventos">Ver galería</a>
+        </div>
+        <div class="hero-eventos-imagen">
+            <img src="~/images/galeria-portada.jpg" alt="Collage de actividades de Club Creativo" />
+            <div class="tarjeta-flotante-eventos">
+                <i class="bi bi-images"></i>
+                <div>
+                    <strong>+300 fotos</strong>
+                    <span>de nuestras actividades</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="categorias-emprendimientos">
+    <div class="container">
+        <div class="lista-categorias-emprendimientos">
+            <span class="categoria-chip categoria-chip-activa">Todas</span>
+            <span class="categoria-chip">Eventos</span>
+            <span class="categoria-chip">Talleres</span>
+            <span class="categoria-chip">Emprendimientos</span>
+            <span class="categoria-chip">Productos</span>
+            <span class="categoria-chip">Ediciones anteriores</span>
+        </div>
+    </div>
+</section>
+
+<section class="emprendimientos-listado" id="galeria-listado">
+    <div class="container">
+        <div class="grid-galeria-multimedia">
+            <div class="item-galeria-multimedia">
+                <img src="~/images/hero-feria.jpg" alt="Feria de emprendimientos" />
+                <span>Eventos</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/taller-ceramica.jpg" alt="Taller de cerámica" />
+                <span>Talleres</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/producto-1.jpg" alt="Producto de Orquídea" />
+                <span>Productos</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/evento-santa-ana.jpg" alt="Feria Creativa Santa Ana" />
+                <span>Eventos</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/taller-bordado.jpg" alt="Taller de bordado" />
+                <span>Talleres</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/producto-3.jpg" alt="Velas Luz Natural" />
+                <span>Productos</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/convivencia.jpg" alt="Convivencia comunidad Club Creativo" />
+                <span>Emprendimientos</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/evento-madres.jpg" alt="Feria del Día de las Madres" />
+                <span>Ediciones anteriores</span>
+            </div>
+            <div class="item-galeria-multimedia">
+                <img src="~/images/taller-joyeria.jpg" alt="Taller de joyería" />
+                <span>Talleres</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-emprendimientos">
+    <div class="container">
+        <div class="cta-emprendimientos-contenido">
+            <span>Club Creativo MiVo</span>
+            <h2>¿Estuviste en una de nuestras actividades?</h2>
+            <p>Compartí tus fotos con nosotros y formá parte de la próxima galería.</p>
+            <a asp-controller="Home" asp-action="Contacto" class="boton-emprendimientos boton-emprendimientos-claro">
+                Enviar mis fotos
+            </a>
+        </div>
+    </div>
+</section>

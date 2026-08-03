@@ -1,0 +1,141 @@
+﻿@{
+    ViewData["Title"] = "Detalle de Taller";
+    Layout = "_LayoutExterno";
+}
+
+<section class="encabezado-detalle-emprendimiento">
+    <div class="container">
+        <nav class="migas-detalle-emprendimiento" aria-label="Navegación secundaria">
+            <a asp-controller="Home" asp-action="Index">Inicio</a>
+            <i class="bi bi-chevron-right"></i>
+            <a asp-controller="Home" asp-action="Talleres">Talleres</a>
+            <i class="bi bi-chevron-right"></i>
+            <span>@ViewData["NombreTaller"]</span>
+        </nav>
+
+        <div class="perfil-detalle-emprendimiento">
+            <img src="~/images/taller-ceramica.jpg" alt="Foto del taller" class="logo-detalle-emprendimiento" />
+
+            <div class="informacion-perfil-emprendimiento">
+                <span class="categoria-detalle-emprendimiento">Taller práctico</span>
+                <h1>@ViewData["NombreTaller"]</h1>
+                <p class="resumen-detalle-emprendimiento">
+                    Aprendé las técnicas básicas del modelado y creá tu primera pieza en arcilla,
+                    en un espacio pequeño y con materiales incluidos.
+                </p>
+                <div class="datos-perfil-emprendimiento">
+                    <span><i class="bi bi-calendar3"></i> Sábado 23, 9:00 a. m.</span>
+                    <span><i class="bi bi-geo-alt-fill"></i> Escazú, San José</span>
+                    <span><i class="bi bi-people-fill"></i> Cupos disponibles</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="galeria-detalle-emprendimiento">
+    <div class="container">
+        <div class="grid-galeria-emprendimiento">
+            <img src="~/images/taller-ceramica.jpg" alt="Taller, vista principal" />
+            <img src="~/images/taller-joyeria.jpg" alt="Materiales del taller" />
+            <img src="~/images/convivencia.jpg" alt="Participantes en el taller" />
+        </div>
+    </div>
+</section>
+
+<section class="contenido-detalle-emprendimiento">
+    <div class="container distribucion-detalle-emprendimiento">
+        <article class="informacion-detalle-emprendimiento">
+            <h2>Descripción del taller</h2>
+            <p>
+                Un espacio pensado para principiantes donde aprenderás las técnicas básicas del
+                modelado en arcilla, de la mano de una facilitadora con años de experiencia.
+            </p>
+            <p>
+                Al finalizar, cada participante se lleva su propia pieza terminada y horneada.
+            </p>
+
+            <h2>Materiales requeridos</h2>
+            <div class="grid-productos-emprendimiento">
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/taller-ceramica.jpg" alt="Arcilla" />
+                    <h3>Arcilla</h3>
+                    <p>Incluida en el precio del taller.</p>
+                </article>
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/taller-joyeria.jpg" alt="Herramientas" />
+                    <h3>Herramientas</h3>
+                    <p>El club las facilita durante la sesión.</p>
+                </article>
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/convivencia.jpg" alt="Delantal" />
+                    <h3>Delantal</h3>
+                    <p>Recomendado traer ropa cómoda.</p>
+                </article>
+            </div>
+        </article>
+
+        <aside class="tarjeta-contacto-emprendimiento">
+            <h2>Detalles del taller</h2>
+            <ul class="lista-contacto-emprendimiento">
+                <li><i class="bi bi-calendar3"></i><span>Sábado 23, 9:00 a. m.</span></li>
+                <li><i class="bi bi-person-fill"></i><span>Facilitadora: Ana Rodríguez</span></li>
+                <li><i class="bi bi-geo-alt-fill"></i><span>Escazú, San José</span></li>
+                <li><i class="bi bi-cash-coin"></i><span>₡12.000 por persona</span></li>
+            </ul>
+            <a href="#" class="boton-contacto-emprendimiento">
+                Reservar cupo
+            </a>
+        </aside>
+    </div>
+</section>
+
+<section class="relacionados-detalle-emprendimiento">
+    <div class="container">
+        <div class="encabezado-relacionados-emprendimiento">
+            <div>
+                <span class="subtitulo-talleres">Nuestra oferta</span>
+                <h2>Otros talleres que te pueden interesar</h2>
+            </div>
+            <a asp-controller="Home" asp-action="Talleres">
+                Ver todos los talleres <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="grid-relacionados-emprendimiento">
+            <article class="tarjeta-relacionada-emprendimiento">
+                <img src="~/images/taller-bordado.jpg" alt="Bordado creativo" />
+                <div>
+                    <span>Domingo 24</span>
+                    <h3>Bordado creativo</h3>
+                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Bordado creativo">
+                        Ver taller <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+            <article class="tarjeta-relacionada-emprendimiento">
+                <img src="~/images/taller-velas.jpg" alt="Taller de velas" />
+                <div>
+                    <span>Próximamente</span>
+                    <h3>Velas aromáticas</h3>
+                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Velas aromáticas">
+                        Ver taller <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="cta-detalle-emprendimiento">
+    <div class="container">
+        <div class="contenido-cta-detalle-emprendimiento">
+            <span>Club Creativo MiVo</span>
+            <h2>¿Querés seguir aprendiendo?</h2>
+            <p>Revisá la oferta completa de talleres y encontrá el que va con vos.</p>
+            <a asp-controller="Home" asp-action="Talleres" class="boton-cta-detalle-emprendimiento">
+                Ver talleres
+            </a>
+        </div>
+    </div>
+</section>

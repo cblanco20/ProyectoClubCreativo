@@ -91,5 +91,28 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View();
         }
+        public IActionResult CatalogoProductos()
+        {
+            return View();
+        }
+        public IActionResult DetalleProducto(string name)
+        {
+            ViewData["NombreProducto"] = string.IsNullOrWhiteSpace(name) ? "Aretes tejidos" : name;
+            return View();
+        }
+        public IActionResult DetalleEvento(string name)
+        {
+            ViewData["NombreEvento"] = string.IsNullOrWhiteSpace(name) ? "Arte Inarrivo San Pedro" : name;
+            return View();
+        }
+        public IActionResult DetalleTaller(string name)
+        {
+            ViewData["NombreTaller"] = string.IsNullOrWhiteSpace(name) ? "Cerámica para principiantes" : name;
+            return View();
+        }
+        public IActionResult GaleriaMultimedia()
+        {
+            return View();
+        }
     }
 }

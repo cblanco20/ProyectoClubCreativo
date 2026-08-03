@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "Detalle de Evento";
+    Layout = "_LayoutExterno";
+}
+
+<section class="encabezado-detalle-emprendimiento">
+    <div class="container">
+        <nav class="migas-detalle-emprendimiento" aria-label="Navegación secundaria">
+            <a asp-controller="Home" asp-action="Index">Inicio</a>
+            <i class="bi bi-chevron-right"></i>
+            <a asp-controller="Home" asp-action="Eventos">Eventos</a>
+            <i class="bi bi-chevron-right"></i>
+            <span>@ViewData["NombreEvento"]</span>
+        </nav>
+
+        <div class="perfil-detalle-emprendimiento">
+            <img src="~/images/evento-san-pedro.jpg" alt="Portada del evento" class="logo-detalle-emprendimiento" />
+
+            <div class="informacion-perfil-emprendimiento">
+                <span class="categoria-detalle-emprendimiento">Feria creativa</span>
+                <h1>@ViewData["NombreEvento"]</h1>
+                <p class="resumen-detalle-emprendimiento">
+                    Una edición especial con arte, diseño y emprendimientos locales, pensada
+                    para toda la familia.
+                </p>
+                <div class="datos-perfil-emprendimiento">
+                    <span><i class="bi bi-calendar3"></i> 15 y 16 de agosto</span>
+                    <span><i class="bi bi-clock-fill"></i> 12:00 p. m.</span>
+                    <span><i class="bi bi-geo-alt-fill"></i> San Pedro, San José</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="galeria-detalle-emprendimiento">
+    <div class="container">
+        <div class="grid-galeria-emprendimiento">
+            <img src="~/images/evento-san-pedro.jpg" alt="Evento, vista principal" />
+            <img src="~/images/evento-santa-ana.jpg" alt="Evento, ediciones anteriores" />
+            <img src="~/images/convivencia.jpg" alt="Ambiente del evento" />
+        </div>
+    </div>
+</section>
+
+<section class="contenido-detalle-emprendimiento">
+    <div class="container distribucion-detalle-emprendimiento">
+        <article class="informacion-detalle-emprendimiento">
+            <h2>Sobre el evento</h2>
+            <p>
+                Arte Inarrivo San Pedro reúne a decenas de emprendimientos creativos en una
+                jornada de exposición, venta y actividades para toda la comunidad.
+            </p>
+            <p>
+                Habrá zonas de comida, música en vivo y espacios infantiles, además de talleres
+                cortos para quienes quieran aprender algo nuevo ese mismo día.
+            </p>
+
+            <h2>Emprendimientos participantes</h2>
+            <div class="grid-productos-emprendimiento">
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/producto-1.jpg" alt="Orquídea" />
+                    <h3>Orquídea</h3>
+                    <p>Accesorios artesanales.</p>
+                </article>
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/producto-3.jpg" alt="Luz Natural" />
+                    <h3>Luz Natural</h3>
+                    <p>Velas artesanales.</p>
+                </article>
+                <article class="producto-detalle-emprendimiento">
+                    <img src="~/images/taller-joyeria.jpg" alt="Arcilla Viva" />
+                    <h3>Arcilla Viva</h3>
+                    <p>Joyería en arcilla polimérica.</p>
+                </article>
+            </div>
+        </article>
+
+        <aside class="tarjeta-contacto-emprendimiento">
+            <h2>Detalles del evento</h2>
+            <ul class="lista-contacto-emprendimiento">
+                <li><i class="bi bi-calendar3"></i><span>15 y 16 de agosto</span></li>
+                <li><i class="bi bi-clock-fill"></i><span>12:00 p. m. a 6:00 p. m.</span></li>
+                <li><i class="bi bi-geo-alt-fill"></i><span>San Pedro, San José</span></li>
+                <li><i class="bi bi-people-fill"></i><span>Entrada libre, cupo abierto</span></li>
+            </ul>
+            <a href="#" class="boton-contacto-emprendimiento">
+                Inscribirme al evento
+            </a>
+        </aside>
+    </div>
+</section>
+
+<section class="relacionados-detalle-emprendimiento">
+    <div class="container">
+        <div class="encabezado-relacionados-emprendimiento">
+            <div>
+                <span class="subtitulo-eventos">Agenda</span>
+                <h2>Otros eventos que te pueden interesar</h2>
+            </div>
+            <a asp-controller="Home" asp-action="Eventos">
+                Ver todos los eventos <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="grid-relacionados-emprendimiento">
+            <article class="tarjeta-relacionada-emprendimiento">
+                <img src="~/images/evento-santa-ana.jpg" alt="Feria Creativa Santa Ana" />
+                <div>
+                    <span>5 al 7 de septiembre</span>
+                    <h3>Feria Creativa Santa Ana</h3>
+                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Feria Creativa Santa Ana">
+                        Ver evento <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+            <article class="tarjeta-relacionada-emprendimiento">
+                <img src="~/images/evento-madres.jpg" alt="Feria del Día de las Madres" />
+                <div>
+                    <span>Edición especial</span>
+                    <h3>Feria del Día de las Madres</h3>
+                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Feria del Día de las Madres">
+                        Ver evento <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="cta-detalle-emprendimiento">
+    <div class="container">
+        <div class="contenido-cta-detalle-emprendimiento">
+            <span>Club Creativo MiVo</span>
+            <h2>¿Querés vivir esta experiencia?</h2>
+            <p>Revisá la agenda completa y separá la fecha de tu próximo evento favorito.</p>
+            <a asp-controller="Home" asp-action="Eventos" class="boton-cta-detalle-emprendimiento">
+                Ver agenda de eventos
+            </a>
+        </div>
+    </div>
+</section>

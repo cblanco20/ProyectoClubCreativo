@@ -1,0 +1,167 @@
+﻿@{
+    ViewData["Title"] = "Catálogo de Productos";
+    Layout = "_LayoutExterno";
+}
+
+<section class="hero-emprendimientos">
+    <div class="container hero-emprendimientos-grid">
+        <div class="hero-emprendimientos-texto">
+            <span class="etiqueta-emprendimientos">Tienda creativa</span>
+            <h1>Productos hechos a mano por nuestra comunidad</h1>
+            <p>Explorá piezas únicas de joyería, velas, arte y textiles creadas por emprendimientos de Club Creativo MiVo.</p>
+            <a href="#productos-listado" class="boton-emprendimientos">Ver productos</a>
+        </div>
+        <div class="hero-emprendimientos-imagen">
+            <img src="~/images/catalogo-productos-hero.jpg" alt="Productos artesanales de Club Creativo" />
+            <div class="insignia-flotante-emprendimientos">
+                <i class="bi bi-bag-heart-fill"></i>
+                <div>
+                    <strong>+120 productos</strong>
+                    <span>disponibles en el catálogo</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="categorias-emprendimientos">
+    <div class="container">
+        <div class="lista-categorias-emprendimientos">
+            <span class="categoria-chip categoria-chip-activa">Todos</span>
+            <span class="categoria-chip">Joyería</span>
+            <span class="categoria-chip">Velas y aromas</span>
+            <span class="categoria-chip">Arte e ilustración</span>
+            <span class="categoria-chip">Bolsos y textiles</span>
+        </div>
+    </div>
+</section>
+
+<section class="emprendimientos-listado" id="productos-listado">
+    <div class="container">
+        <div class="grid-emprendimientos">
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-1.jpg" alt="Aretes tejidos artesanales" />
+                    <span class="categoria-tarjeta-emprendimiento">Joyería</span>
+                </div>
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Aretes tejidos</h3>
+                    <p>Elaborados a mano con hilo encerado y semillas naturales.</p>
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span class="precio-tarjeta-producto">₡6.500</span>
+                        <span><i class="bi bi-shop"></i> Orquídea</span>
+                    </div>
+                    <a asp-controller="Home" asp-action="DetalleProducto" asp-route-name="Aretes tejidos" class="enlace-tarjeta-emprendimiento">
+                        Ver producto <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-3.jpg" alt="Velas artesanales aromáticas" />
+                    <span class="categoria-tarjeta-emprendimiento">Velas y aromas</span>
+                </div>
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Vela Luz Natural</h3>
+                    <p>Cera vegetal con aromas inspirados en Costa Rica.</p>
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span class="precio-tarjeta-producto">₡8.900</span>
+                        <span><i class="bi bi-shop"></i> Luz Natural</span>
+                    </div>
+                    <a asp-controller="Home" asp-action="DetalleProducto" asp-route-name="Vela Luz Natural" class="enlace-tarjeta-emprendimiento">
+                        Ver producto <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/taller-joyeria.jpg" alt="Pulsera de arcilla polimérica" />
+                    <span class="categoria-tarjeta-emprendimiento">Joyería</span>
+                    <span class="etiqueta-promocion-producto">-15%</span>
+                </div>
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Pulsera Arcilla Viva</h3>
+                    <p>Piezas pintadas y horneadas a mano en pequeños talleres.</p>
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span class="precio-tarjeta-producto">₡5.200</span>
+                        <span><i class="bi bi-shop"></i> Arcilla Viva</span>
+                    </div>
+                    <a asp-controller="Home" asp-action="DetalleProducto" asp-route-name="Pulsera Arcilla Viva" class="enlace-tarjeta-emprendimiento">
+                        Ver producto <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-4.jpg" alt="Ilustración original costarricense" />
+                    <span class="categoria-tarjeta-emprendimiento">Arte e ilustración</span>
+                </div>
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Lámina Pinta Bonito</h3>
+                    <p>Ilustración impresa que celebra paisajes costarricenses.</p>
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span class="precio-tarjeta-producto">₡9.500</span>
+                        <span><i class="bi bi-shop"></i> Pinta Bonito</span>
+                    </div>
+                    <a asp-controller="Home" asp-action="DetalleProducto" asp-route-name="Lámina Pinta Bonito" class="enlace-tarjeta-emprendimiento">
+                        Ver producto <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/taller-bordado.jpg" alt="Bolso bordado a mano" />
+                    <span class="categoria-tarjeta-emprendimiento">Bolsos y textiles</span>
+                </div>
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Bolso Hilo y Flor</h3>
+                    <p>Bordado creativo personalizado sobre tela de algodón.</p>
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span class="precio-tarjeta-producto">₡12.000</span>
+                        <span><i class="bi bi-shop"></i> Hilo y Flor</span>
+                    </div>
+                    <a asp-controller="Home" asp-action="DetalleProducto" asp-route-name="Bolso Hilo y Flor" class="enlace-tarjeta-emprendimiento">
+                        Ver producto <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="tarjeta-emprendimiento">
+                <div class="imagen-tarjeta-emprendimiento">
+                    <img src="~/images/producto-2.jpg" alt="Bolso textil artesanal" />
+                    <span class="categoria-tarjeta-emprendimiento">Bolsos y textiles</span>
+                </div>
+                <div class="cuerpo-tarjeta-emprendimiento">
+                    <h3>Bolso Moras</h3>
+                    <p>Diseñado y confeccionado artesanalmente en lotes pequeños.</p>
+                    <div class="datos-tarjeta-emprendimiento">
+                        <span class="precio-tarjeta-producto">₡14.500</span>
+                        <span><i class="bi bi-shop"></i> Moras</span>
+                    </div>
+                    <a asp-controller="Home" asp-action="DetalleProducto" asp-route-name="Bolso Moras" class="enlace-tarjeta-emprendimiento">
+                        Ver producto <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+<section class="cta-emprendimientos">
+    <div class="container">
+        <div class="cta-emprendimientos-contenido">
+            <span>Club Creativo MiVo</span>
+            <h2>¿Querés vender tus productos aquí?</h2>
+            <p>Registrá tu emprendimiento y sumá tus productos al catálogo de Club Creativo MiVo.</p>
+            <a asp-controller="Cuenta" asp-action="RegistroEmprendedor" class="boton-emprendimientos boton-emprendimientos-claro">
+                Registrar mi emprendimiento
+            </a>
+        </div>
+    </div>
+</section>
