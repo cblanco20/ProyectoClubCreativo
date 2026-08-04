@@ -1,0 +1,83 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.InscripcionUsuarioViewModel>
+
+@{
+    ViewData["Title"] = "Mis inscripciones";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Actividades</span>
+        <h1 class="titulo-pagina-usuario">Mis inscripciones</h1>
+        <p class="descripcion-pagina-usuario">
+            Consulta tus eventos y talleres próximos, finalizados o cancelados.
+        </p>
+    </div>
+</div>
+
+<div class="filtros-modulo-usuario">
+    <button class="filtro-activo">Todas</button>
+    <button>Eventos</button>
+    <button>Talleres</button>
+    <button>Próximos</button>
+    <button>Finalizados</button>
+    <button>Cancelados</button>
+</div>
+
+<section class="cuadricula-inscripciones">
+    @foreach (var item in Model)
+    {
+        string estadoClase =
+            item.Estado == "Próximo"
+                ? "estado-tabla estado-verde"
+                : item.Estado == "Cancelado"
+                    ? "estado-tabla estado-rojo"
+                    : "estado-tabla estado-gris";
+
+        <article class="tarjeta-inscripcion">
+
+            <img src="@item.Imagen"
+                 alt="@item.Nombre" />
+
+            <div class="contenido-inscripcion">
+
+                <div class="cabecera-inscripcion">
+                    <span class="tipo-inscripcion">
+                        @item.Tipo
+                    </span>
+
+                    <span class="@estadoClase">
+                        @item.Estado
+                    </span>
+                </div>
+
+                <h2>@item.Nombre</h2>
+
+                <p>
+                    <i class="bi bi-calendar3"></i>
+                    @item.Fecha
+                </p>
+
+                <p>
+                    <i class="bi bi-geo-alt"></i>
+                    @item.Ubicacion
+                </p>
+
+                <div class="acciones-inscripcion">
+                    <button type="button">
+                        Ver información
+                    </button>
+
+                    @if (item.Estado == "Próximo")
+                    {
+                        <button type="button"
+                                class="accion-peligro">
+                            Cancelar
+                        </button>
+                    }
+                </div>
+
+            </div>
+        </article>
+    }
+</section>

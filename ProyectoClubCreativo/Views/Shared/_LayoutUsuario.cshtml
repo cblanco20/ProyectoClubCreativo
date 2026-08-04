@@ -1,0 +1,375 @@
+﻿@{
+    string controladorActual =
+        ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+
+    string accionActual =
+        ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    string ClaseUsuario(string accion)
+    {
+        return controladorActual == "Usuario" &&
+               accionActual == accion
+            ? "enlace-usuario activo"
+            : "enlace-usuario";
+    }
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - Club Creativo MiVo</title>
+
+    <link rel="icon"
+          type="image/x-icon"
+          href="~/favicon.ico" />
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <link rel="stylesheet"
+          href="~/css/club-creativo.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/acceso.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/usuario.css"
+          asp-append-version="true" />
+</head>
+
+<body class="pagina-usuario">
+
+    <div id="fondoMenuUsuario"
+         class="fondo-menu-usuario">
+    </div>
+
+    <aside id="menuUsuario"
+           class="menu-usuario">
+
+        <div class="encabezado-menu-usuario">
+
+            <a asp-controller="Usuario"
+               asp-action="Panel"
+               class="marca-menu-usuario">
+
+                <img src="~/images/logo.jpg"
+                     alt="Club Creativo"
+                     class="logo-menu-usuario" />
+
+                <span>
+                    <strong>Club</strong> Creativo
+                </span>
+            </a>
+
+            <button id="cerrarMenuUsuario"
+                    type="button"
+                    class="cerrar-menu-usuario"
+                    aria-label="Cerrar menú">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+        </div>
+
+        <div class="resumen-menu-usuario">
+
+            <div class="avatar-menu-usuario">
+                <i class="bi bi-person-fill"></i>
+            </div>
+
+            <div>
+                <strong>Maria</strong>
+                <span>Usuario creativo</span>
+            </div>
+
+        </div>
+
+        <nav class="navegacion-usuario">
+
+            <span class="titulo-grupo-menu">
+                Mi espacio
+            </span>
+
+            <a asp-controller="Usuario"
+               asp-action="Panel"
+               class="@ClaseUsuario("Panel")">
+                <i class="bi bi-grid-fill"></i>
+                Panel principal
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="Perfil"
+               class="@ClaseUsuario("Perfil")">
+                <i class="bi bi-person-circle"></i>
+                Mi perfil
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="MisCompras"
+               class="@ClaseUsuario("MisCompras")">
+                <i class="bi bi-bag-check-fill"></i>
+                Mis compras
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="MisInscripciones"
+               class="@ClaseUsuario("MisInscripciones")">
+                <i class="bi bi-ticket-perforated-fill"></i>
+                Mis inscripciones
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="PuntosRecompensas"
+               class="@ClaseUsuario("PuntosRecompensas")">
+                <i class="bi bi-star-fill"></i>
+                Puntos y recompensas
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="MiQr"
+               class="@ClaseUsuario("MiQr")">
+
+                <i class="bi bi-qr-code"></i>
+                Mi código QR
+
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="Favoritos"
+               class="@ClaseUsuario("Favoritos")">
+                <i class="bi bi-heart-fill"></i>
+                Mis favoritos
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="Notificaciones"
+               class="@ClaseUsuario("Notificaciones")">
+
+                <i class="bi bi-bell-fill"></i>
+                Notificaciones
+
+                <span class="contador-menu">
+                    4
+                </span>
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="Comentarios"
+               class="@ClaseUsuario("Comentarios")">
+                <i class="bi bi-chat-heart-fill"></i>
+                Comentarios y reseñas
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="Encuestas"
+               class="@ClaseUsuario("Encuestas")">
+                <i class="bi bi-ui-checks-grid"></i>
+                Encuestas
+            </a>
+
+            <a asp-controller="Usuario"
+               asp-action="Preferencias"
+               class="@ClaseUsuario("Preferencias")">
+                <i class="bi bi-sliders"></i>
+                Preferencias
+            </a>
+
+            <span class="titulo-grupo-menu">
+                Explorar
+            </span>
+
+            <a asp-controller="Home"
+               asp-action="CatalogoProductos"
+               class="enlace-usuario">
+                <i class="bi bi-shop"></i>
+                Productos
+            </a>
+
+            <a asp-controller="Home"
+               asp-action="Emprendimientos"
+               class="enlace-usuario">
+                <i class="bi bi-buildings-fill"></i>
+                Emprendimientos
+            </a>
+
+            <a asp-controller="Home"
+               asp-action="Eventos"
+               class="enlace-usuario">
+                <i class="bi bi-calendar-event-fill"></i>
+                Eventos
+            </a>
+
+            <a asp-controller="Home"
+               asp-action="Talleres"
+               class="enlace-usuario">
+                <i class="bi bi-palette-fill"></i>
+                Talleres
+            </a>
+
+        </nav>
+
+        <a asp-controller="Usuario"
+           asp-action="CerrarSesion"
+           class="cerrar-sesion-menu">
+            <i class="bi bi-box-arrow-left"></i>
+            Cerrar sesión
+        </a>
+
+    </aside>
+
+    <div class="estructura-usuario">
+
+        <header class="encabezado-usuario">
+
+            <button id="abrirMenuUsuario"
+                    type="button"
+                    class="boton-menu-usuario"
+                    aria-label="Abrir menú">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <a asp-controller="Usuario"
+               asp-action="Panel"
+               class="marca-encabezado-usuario">
+
+                <img src="~/images/logo.jpg"
+                     alt="Club Creativo"
+                     class="logo-encabezado-usuario" />
+
+                <span>
+                    <strong>Club</strong> Creativo
+                </span>
+            </a>
+
+            <nav class="menu-publico-usuario">
+
+                <a asp-controller="Home"
+                   asp-action="Index">
+                    Inicio
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Emprendimientos">
+                    Emprendimientos
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Eventos">
+                    Eventos
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Talleres">
+                    Talleres
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Reglamento">
+                    Reglamento
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Contacto">
+                    Contacto
+                </a>
+
+            </nav>
+
+            <div class="acciones-usuario">
+
+                <a asp-controller="Usuario"
+                   asp-action="Carrito"
+                   class="accion-icono-usuario"
+                   aria-label="Carrito">
+                    <i class="bi bi-cart3"></i>
+                </a>
+
+                <a asp-controller="Usuario"
+                   asp-action="Notificaciones"
+                   class="accion-icono-usuario"
+                   aria-label="Notificaciones">
+
+                    <i class="bi bi-bell"></i>
+                    <span class="indicador-notificacion"></span>
+                </a>
+
+                <a asp-controller="Usuario"
+                   asp-action="Perfil"
+                   class="perfil-encabezado-usuario">
+
+                    <span class="avatar-encabezado">
+                        <i class="bi bi-person-fill"></i>
+                    </span>
+
+                    <span class="nombre-encabezado">
+                        Maria
+                    </span>
+
+                </a>
+
+            </div>
+
+        </header>
+
+        <main class="contenido-principal-usuario">
+            @RenderBody()
+        </main>
+
+        <footer class="footer-usuario">
+
+            <div>
+                <strong>Club Creativo MiVo</strong>
+
+                <span>
+                    Apoyando el talento y el emprendimiento costarricense.
+                </span>
+            </div>
+
+            <div class="enlaces-footer-usuario">
+
+                <a asp-controller="Home"
+                   asp-action="Reglamento">
+                    Reglamento
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="PreguntasFrecuentes">
+                    Preguntas frecuentes
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Contacto">
+                    Contacto
+                </a>
+
+            </div>
+
+        </footer>
+
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="~/js/usuario.js"
+            asp-append-version="true">
+    </script>
+
+    <script src="~/js/acceso.js"
+            asp-append-version="true">
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

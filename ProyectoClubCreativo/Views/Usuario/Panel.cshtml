@@ -1,0 +1,329 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.PanelUsuarioViewModel
+
+@{
+    ViewData["Title"] = "Mi espacio";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+@if (TempData["MensajePanel"] is not null)
+{
+    <div class="mensaje-exito-perfil">
+
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajePanel"]
+
+    </div>
+}
+
+<section class="banner-bienvenida-usuario">
+
+    <div class="contenido-bienvenida-usuario">
+
+        <span class="etiqueta-pagina-usuario">
+            Mi espacio creativo
+        </span>
+
+        <h1>
+            ¡Hola, @Model.NombreUsuario!
+        </h1>
+
+        <p>
+            Consulta tus próximos eventos, talleres reservados,
+            pedidos, puntos y las novedades que tenemos para ti.
+        </p>
+
+        <a asp-controller="Usuario"
+           asp-action="Perfil"
+           class="boton-bienvenida-usuario">
+
+            <i class="bi bi-person-fill-gear"></i>
+            Administrar mi perfil
+        </a>
+
+    </div>
+
+</section>
+
+<section class="resumen-estadisticas-usuario">
+
+    <article class="tarjeta-estadistica-usuario">
+
+        <span class="icono-estadistica-usuario icono-puntos">
+            <i class="bi bi-star-fill"></i>
+        </span>
+
+        <div>
+            <strong>
+                @Model.PuntosAcumulados.ToString("N0")
+            </strong>
+
+            <span>
+                Puntos acumulados
+            </span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-estadistica-usuario">
+
+        <span class="icono-estadistica-usuario icono-favoritos">
+            <i class="bi bi-heart-fill"></i>
+        </span>
+
+        <div>
+            <strong>
+                @Model.CantidadFavoritos
+            </strong>
+
+            <span>
+                Elementos favoritos
+            </span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-estadistica-usuario">
+
+        <span class="icono-estadistica-usuario icono-notificaciones">
+            <i class="bi bi-bell-fill"></i>
+        </span>
+
+        <div>
+            <strong>
+                @Model.NotificacionesPendientes
+            </strong>
+
+            <span>
+                Notificaciones pendientes
+            </span>
+        </div>
+
+    </article>
+
+</section>
+
+<section class="tarjeta-frecuente-panel">
+
+    <div class="contenido-tarjeta-frecuente">
+
+        <span class="etiqueta-pagina-usuario">
+            Creativo Frecuente
+        </span>
+
+        <h2>
+            Tu creatividad también tiene recompensa
+        </h2>
+
+        <p>
+            Acumula puntos con tus compras y visitas a las ferias.
+            Actualmente tienes <strong>1.280 puntos</strong>.
+        </p>
+
+        <a asp-controller="Usuario"
+           asp-action="PuntosRecompensas"
+           class="boton-bienvenida-usuario">
+            Ver mi tarjeta y recompensas
+        </a>
+
+    </div>
+
+    <img src="~/images/publicidad-creativo.jpg"
+         alt="Tarjeta Creativo Frecuente" />
+
+</section>
+
+<section class="cuadricula-panel-usuario">
+
+    <div>
+
+        <article class="bloque-panel-usuario">
+
+            <div class="encabezado-bloque-usuario">
+
+                <h2>
+                    Próximos eventos
+                </h2>
+
+                <a asp-controller="Home"
+                   asp-action="Eventos"
+                   class="enlace-bloque-usuario">
+                    Explorar eventos →
+                </a>
+
+            </div>
+
+            <div class="lista-eventos-usuario">
+
+                @foreach (var evento in Model.ProximosEventos)
+                {
+                    <article class="evento-panel-usuario">
+
+                        <img src="@evento.Imagen"
+                             alt="@evento.Nombre" />
+
+                        <div class="contenido-evento-panel">
+
+                            <h3>
+                                @evento.Nombre
+                            </h3>
+
+                            <span>
+                                <i class="bi bi-calendar3"></i>
+                                @evento.Fecha
+                            </span>
+
+                            <span>
+                                <i class="bi bi-geo-alt-fill"></i>
+                                @evento.Ubicacion
+                            </span>
+
+                        </div>
+
+                    </article>
+                }
+
+            </div>
+
+        </article>
+
+        <article class="bloque-panel-usuario">
+
+            <div class="encabezado-bloque-usuario">
+
+                <h2>
+                    Pedidos recientes
+                </h2>
+
+                <a href="#"
+                   class="enlace-bloque-usuario">
+                    Ver mis compras →
+                </a>
+
+            </div>
+
+            <div class="lista-simple-usuario">
+
+                @foreach (var pedido in Model.PedidosRecientes)
+                {
+                    string claseEstado =
+                        pedido.Estado == "Entregado"
+                            ? "estado-usuario estado-entregado"
+                            : "estado-usuario estado-preparacion";
+
+                    <div class="elemento-lista-usuario">
+
+                        <div>
+                            <strong>
+                                Pedido @pedido.NumeroOrden
+                            </strong>
+
+                            <span>
+                                @pedido.Fecha ·
+                                ₡@pedido.Total.ToString("N0")
+                            </span>
+                        </div>
+
+                        <span class="@claseEstado">
+                            @pedido.Estado
+                        </span>
+
+                    </div>
+                }
+
+            </div>
+
+        </article>
+
+    </div>
+
+    <div>
+
+        <article class="bloque-panel-usuario">
+
+            <div class="encabezado-bloque-usuario">
+
+                <h2>
+                    Talleres reservados
+                </h2>
+
+                <a asp-controller="Home"
+                   asp-action="Talleres"
+                   class="enlace-bloque-usuario">
+                    Ver talleres →
+                </a>
+
+            </div>
+
+            <div class="lista-simple-usuario">
+
+                @foreach (var taller in Model.TalleresReservados)
+                {
+                    string claseEstado =
+                        taller.Estado == "Confirmado"
+                            ? "estado-usuario estado-confirmado"
+                            : "estado-usuario estado-pendiente";
+
+                    <div class="elemento-lista-usuario">
+
+                        <div>
+                            <strong>
+                                @taller.Nombre
+                            </strong>
+
+                            <span>
+                                @taller.Fecha · @taller.Hora
+                            </span>
+                        </div>
+
+                        <span class="@claseEstado">
+                            @taller.Estado
+                        </span>
+
+                    </div>
+                }
+
+            </div>
+
+        </article>
+
+        <article class="bloque-panel-usuario">
+
+            <div class="encabezado-bloque-usuario">
+
+                <h2>
+                    Notificaciones recientes
+                </h2>
+
+                <a href="#"
+                   class="enlace-bloque-usuario">
+                    Ver todas →
+                </a>
+
+            </div>
+
+            @foreach (var notificacion in Model.Notificaciones)
+            {
+                <div class="notificacion-panel-usuario">
+
+                    <span class="icono-notificacion-panel">
+                        <i class="bi @notificacion.Icono"></i>
+                    </span>
+
+                    <div>
+                        <p>
+                            @notificacion.Mensaje
+                        </p>
+
+                        <span>
+                            @notificacion.Fecha
+                        </span>
+                    </div>
+
+                </div>
+            }
+
+        </article>
+
+    </div>
+
+</section>

@@ -1,0 +1,140 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.PreferenciasNotificacionViewModel
+
+@{
+    ViewData["Title"] = "Preferencias";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Configuración</span>
+        <h1 class="titulo-pagina-usuario">
+            Preferencias de notificación
+        </h1>
+        <p class="descripcion-pagina-usuario">
+            Decide qué avisos deseas recibir y por cuáles canales.
+        </p>
+    </div>
+</div>
+
+@if (TempData["MensajePreferencias"] is not null)
+{
+    <div class="mensaje-exito-perfil">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajePreferencias"]
+    </div>
+}
+
+<section class="tarjeta-formulario-usuario">
+
+    <form asp-action="Preferencias"
+          method="post"
+          novalidate>
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly"
+             class="resumen-validacion"></div>
+
+        <div class="seccion-formulario-perfil">
+            <h3>Tipos de avisos</h3>
+            <p>
+                Activa o desactiva las categorías que te interesan.
+            </p>
+
+            <div class="opciones-notificacion-perfil">
+
+                <label class="opcion-notificacion-perfil">
+                    <input asp-for="Compras" />
+                    <span>
+                        <strong>Compras y pedidos</strong>
+                        <span>Estados, entregas y confirmaciones.</span>
+                    </span>
+                </label>
+
+                <label class="opcion-notificacion-perfil">
+                    <input asp-for="Eventos" />
+                    <span>
+                        <strong>Eventos</strong>
+                        <span>Inscripciones y cambios de horario.</span>
+                    </span>
+                </label>
+
+                <label class="opcion-notificacion-perfil">
+                    <input asp-for="Talleres" />
+                    <span>
+                        <strong>Talleres</strong>
+                        <span>Cupos y recordatorios.</span>
+                    </span>
+                </label>
+
+                <label class="opcion-notificacion-perfil">
+                    <input asp-for="Promociones" />
+                    <span>
+                        <strong>Promociones</strong>
+                        <span>Descuentos y campañas.</span>
+                    </span>
+                </label>
+
+                <label class="opcion-notificacion-perfil">
+                    <input asp-for="Recordatorios" />
+                    <span>
+                        <strong>Recordatorios</strong>
+                        <span>Avisos antes de tus actividades.</span>
+                    </span>
+                </label>
+
+            </div>
+        </div>
+
+        <div class="seccion-formulario-perfil">
+            <h3>Canales</h3>
+
+            <div class="opciones-notificacion-perfil">
+
+                <label class="opcion-notificacion-perfil">
+                    <input asp-for="CanalCorreo" />
+                    <span>
+                        <strong>Correo electrónico</strong>
+                        <span>Recibir avisos por correo.</span>
+                    </span>
+                </label>
+
+                <label class="opcion-notificacion-perfil">
+                    <input asp-for="CanalPlataforma" />
+                    <span>
+                        <strong>Dentro de la plataforma</strong>
+                        <span>Mostrar avisos en tu cuenta.</span>
+                    </span>
+                </label>
+
+            </div>
+        </div>
+
+        <div class="seccion-formulario-perfil">
+            <h3>Frecuencia de correos</h3>
+
+            <select asp-for="FrecuenciaCorreo"
+                    class="control-formulario">
+                <option value="">Seleccione una frecuencia</option>
+                <option>Inmediata</option>
+                <option>Resumen diario</option>
+                <option>Resumen semanal</option>
+            </select>
+
+            <span asp-validation-for="FrecuenciaCorreo"
+                  class="mensaje-validacion"></span>
+        </div>
+
+        <button type="submit"
+                class="boton-guardar-perfil">
+            <i class="bi bi-floppy-fill"></i>
+            Guardar preferencias
+        </button>
+
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

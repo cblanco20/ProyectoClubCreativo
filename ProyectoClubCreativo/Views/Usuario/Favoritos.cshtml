@@ -1,0 +1,55 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.FavoritoUsuarioViewModel>
+
+@{
+    ViewData["Title"] = "Mis favoritos";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Colección</span>
+        <h1 class="titulo-pagina-usuario">Mis favoritos</h1>
+        <p class="descripcion-pagina-usuario">
+            Productos, emprendimientos, eventos y talleres que guardaste.
+        </p>
+    </div>
+</div>
+
+<div class="filtros-modulo-usuario">
+    <button class="filtro-activo">Todos</button>
+    <button>Productos</button>
+    <button>Emprendimientos</button>
+    <button>Eventos</button>
+    <button>Talleres</button>
+</div>
+
+<section class="cuadricula-favoritos">
+
+    @foreach (var favorito in Model)
+    {
+        <article class="tarjeta-favorito">
+
+            <div class="imagen-favorito">
+                <img src="@favorito.Imagen"
+                     alt="@favorito.Nombre" />
+
+                <button type="button"
+                        aria-label="Eliminar favorito">
+                    <i class="bi bi-heart-fill"></i>
+                </button>
+            </div>
+
+            <div class="contenido-favorito">
+                <span>@favorito.Tipo</span>
+                <h2>@favorito.Nombre</h2>
+                <p>@favorito.Descripcion</p>
+
+                <a href="#">
+                    Ver información →
+                </a>
+            </div>
+
+        </article>
+    }
+
+</section>

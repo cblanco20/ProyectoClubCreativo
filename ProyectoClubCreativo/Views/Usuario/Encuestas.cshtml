@@ -1,0 +1,63 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.EncuestaUsuarioViewModel>
+
+@{
+    ViewData["Title"] = "Encuestas";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+@if (TempData["MensajeEncuesta"] is not null)
+{
+    <div class="mensaje-exito-perfil">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeEncuesta"]
+    </div>
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Participación</span>
+        <h1 class="titulo-pagina-usuario">
+            Encuestas
+        </h1>
+        <p class="descripcion-pagina-usuario">
+            Comparte tu experiencia en eventos y talleres.
+        </p>
+    </div>
+</div>
+
+<section class="cuadricula-encuestas">
+
+    @foreach (var encuesta in Model)
+    {
+        <article class="tarjeta-encuesta">
+
+            <span class="icono-encuesta">
+                <i class="bi bi-ui-checks-grid"></i>
+            </span>
+
+            <div>
+                <span>@encuesta.TipoElemento</span>
+                <h2>@encuesta.Nombre</h2>
+                <p>@encuesta.ElementoRelacionado</p>
+                <small>@encuesta.FechaLimite</small>
+            </div>
+
+            @if (encuesta.Estado == "Pendiente")
+            {
+                <a asp-action="ResponderEncuesta"
+                   asp-route-id="@encuesta.Id"
+                   class="boton-accion-usuario">
+                    Responder
+                </a>
+            }
+            else
+            {
+                <span class="estado-tabla estado-verde">
+                    Respondida
+                </span>
+            }
+
+        </article>
+    }
+
+</section>

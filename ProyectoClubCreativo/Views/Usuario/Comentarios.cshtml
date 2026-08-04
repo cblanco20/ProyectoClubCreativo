@@ -1,0 +1,66 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.ComentarioUsuarioViewModel>
+
+@{
+    ViewData["Title"] = "Comentarios y reseñas";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Opiniones</span>
+        <h1 class="titulo-pagina-usuario">
+            Mis comentarios y reseñas
+        </h1>
+        <p class="descripcion-pagina-usuario">
+            Consulta, edita o elimina las opiniones que publicaste.
+        </p>
+    </div>
+</div>
+
+<section class="lista-comentarios-usuario">
+
+    @foreach (var comentario in Model)
+    {
+        <article class="tarjeta-comentario-usuario">
+
+            <div class="encabezado-comentario">
+                <div>
+                    <span>@comentario.TipoElemento</span>
+                    <h2>@comentario.Elemento</h2>
+                </div>
+
+                <div class="estrellas-comentario">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <i class="bi @(i <= comentario.Valoracion
+                                                    ? "bi-star-fill"
+                                                    : "bi-star")"></i>
+                }
+            </div>
+        </div>
+
+        <p>@comentario.Comentario</p>
+
+        <footer>
+            <span>
+                Publicado el @comentario.Fecha.ToString("dd/MM/yyyy")
+            </span>
+
+            <div>
+                <button type="button">
+                    <i class="bi bi-pencil"></i>
+                    Editar
+                </button>
+
+                <button type="button"
+                        class="accion-peligro">
+                    <i class="bi bi-trash3"></i>
+                    Eliminar
+                </button>
+            </div>
+        </footer>
+
+    </article>
+}
+
+</section>

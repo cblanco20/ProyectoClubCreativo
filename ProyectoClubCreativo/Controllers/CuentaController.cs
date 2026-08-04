@@ -55,10 +55,13 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            TempData["MensajeExito"] =
-                "El registro de usuario se validó correctamente.";
+            TempData["MensajePanel"] =
+                $"¡Bienvenida, {modelo.Nombre}! Tu registro se validó correctamente.";
 
-            return RedirectToAction(nameof(IniciarSesion));
+            return RedirectToAction(
+                "Panel",
+                "Usuario"
+            );
         }
 
         [HttpGet]

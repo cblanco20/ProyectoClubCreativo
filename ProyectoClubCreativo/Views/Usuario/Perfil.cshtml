@@ -1,0 +1,481 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.PerfilUsuarioViewModel
+
+@{
+    ViewData["Title"] = "Mi perfil";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+
+    <div>
+
+        <span class="etiqueta-pagina-usuario">
+            Mi cuenta
+        </span>
+
+        <h1 class="titulo-pagina-usuario">
+            Mi perfil
+        </h1>
+
+        <p class="descripcion-pagina-usuario">
+            Consulta y actualiza la información asociada con tu cuenta.
+        </p>
+
+    </div>
+
+</div>
+
+<section class="distribucion-perfil-usuario">
+
+    <aside class="resumen-perfil-usuario">
+
+        <div class="avatar-perfil-usuario">
+
+            <img id="vistaPreviaPerfil"
+                 src="@Model.FotoActual"
+                 alt="Fotografía de perfil"
+                 class="imagen-perfil-usuario" />
+
+        </div>
+
+        <h2>
+            @Model.Nombre @Model.Apellidos
+        </h2>
+
+        <span>
+            @Model.Correo
+        </span>
+
+        <div class="estado-cuenta-usuario">
+
+            <i class="bi bi-check-circle-fill"></i>
+            Cuenta activa
+
+        </div>
+
+        <div class="datos-resumen-perfil">
+
+            <div class="dato-resumen-perfil">
+                <strong>1.280</strong>
+                <span>Puntos</span>
+            </div>
+
+            <div class="dato-resumen-perfil">
+                <strong>12</strong>
+                <span>Favoritos</span>
+            </div>
+
+        </div>
+
+        <a asp-controller="Usuario"
+           asp-action="CerrarSesion"
+           class="boton-cerrar-perfil">
+
+            <i class="bi bi-box-arrow-left"></i>
+            Cerrar sesión
+
+        </a>
+
+    </aside>
+
+    <article class="formulario-perfil-usuario">
+
+        <div class="encabezado-formulario-perfil">
+
+            <span class="etiqueta-formulario-acceso">
+                Información personal
+            </span>
+
+            <h2>
+                Editar perfil
+            </h2>
+
+            <p>
+                Actualiza tus datos personales, fotografía,
+                contraseña y preferencias de notificación.
+            </p>
+
+        </div>
+
+        @if (TempData["MensajePerfil"] is not null)
+        {
+            <div class="mensaje-exito-perfil">
+
+                <i class="bi bi-check-circle-fill"></i>
+                @TempData["MensajePerfil"]
+
+            </div>
+        }
+
+        <form asp-controller="Usuario"
+              asp-action="Perfil"
+              method="post"
+              enctype="multipart/form-data"
+              novalidate>
+
+            @Html.AntiForgeryToken()
+
+            <input asp-for="IdUsuario"
+                   type="hidden" />
+
+            <input asp-for="FotoActual"
+                   type="hidden" />
+
+            <div asp-validation-summary="ModelOnly"
+                 class="resumen-validacion">
+            </div>
+
+            <div class="fila-formulario">
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="Nombre"></label>
+
+                    <input asp-for="Nombre"
+                           class="control-formulario"
+                           placeholder="Tu nombre" />
+
+                    <span asp-validation-for="Nombre"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="Apellidos"></label>
+
+                    <input asp-for="Apellidos"
+                           class="control-formulario"
+                           placeholder="Tus apellidos" />
+
+                    <span asp-validation-for="Apellidos"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="fila-formulario">
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="Correo"></label>
+
+                    <input asp-for="Correo"
+                           class="control-formulario"
+                           placeholder="ejemplo@correo.com" />
+
+                    <span asp-validation-for="Correo"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="Telefono"></label>
+
+                    <input asp-for="Telefono"
+                           class="control-formulario"
+                           placeholder="88888888"
+                           maxlength="8" />
+
+                    <span asp-validation-for="Telefono"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="fila-formulario">
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="Provincia"></label>
+
+                    <select asp-for="Provincia"
+                            class="control-formulario">
+
+                        <option value="">
+                            Seleccione una provincia
+                        </option>
+
+                        <option>San José</option>
+                        <option>Alajuela</option>
+                        <option>Cartago</option>
+                        <option>Heredia</option>
+                        <option>Guanacaste</option>
+                        <option>Puntarenas</option>
+                        <option>Limón</option>
+
+                    </select>
+
+                    <span asp-validation-for="Provincia"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="FechaNacimiento"></label>
+
+                    <input asp-for="FechaNacimiento"
+                           class="control-formulario" />
+
+                    <span asp-validation-for="FechaNacimiento"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="seccion-formulario-perfil">
+
+                <h3>
+                    Fotografía de perfil
+                </h3>
+
+                <p>
+                    Selecciona una imagen JPG, PNG o WEBP de hasta 3 MB.
+                </p>
+
+                <div class="selector-fotografia">
+
+                    <img src="@Model.FotoActual"
+                         alt="Vista previa"
+                         class="vista-previa-fotografia" />
+
+                    <div>
+
+                        <input asp-for="Fotografia"
+                               class="control-formulario"
+                               accept=".jpg,.jpeg,.png,.webp,image/*" />
+
+                        <span asp-validation-for="Fotografia"
+                              class="mensaje-validacion">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="seccion-formulario-perfil">
+
+                <h3>
+                    Cambiar contraseña
+                </h3>
+
+                <p>
+                    Deja estos campos vacíos si no deseas cambiarla.
+                </p>
+
+                <div class="fila-formulario">
+
+                    <div class="grupo-formulario">
+
+                        <label asp-for="NuevaContrasena"></label>
+
+                        <div class="campo-contrasena">
+
+                            <input asp-for="NuevaContrasena"
+                                   id="nuevaContrasenaPerfil"
+                                   class="control-formulario"
+                                   placeholder="Mínimo 8 caracteres" />
+
+                            <button type="button"
+                                    class="boton-ver-contrasena"
+                                    data-toggle-password="nuevaContrasenaPerfil"
+                                    aria-label="Mostrar contraseña">
+                                <i class="bi bi-eye"></i>
+                            </button>
+
+                        </div>
+
+                        <span asp-validation-for="NuevaContrasena"
+                              class="mensaje-validacion">
+                        </span>
+
+                    </div>
+
+                    <div class="grupo-formulario">
+
+                        <label asp-for="ConfirmarContrasena"></label>
+
+                        <div class="campo-contrasena">
+
+                            <input asp-for="ConfirmarContrasena"
+                                   id="confirmarContrasenaPerfil"
+                                   class="control-formulario"
+                                   placeholder="Repite la contraseña" />
+
+                            <button type="button"
+                                    class="boton-ver-contrasena"
+                                    data-toggle-password="confirmarContrasenaPerfil"
+                                    aria-label="Mostrar contraseña">
+                                <i class="bi bi-eye"></i>
+                            </button>
+
+                        </div>
+
+                        <span asp-validation-for="ConfirmarContrasena"
+                              class="mensaje-validacion">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="seccion-formulario-perfil">
+
+                <h3>
+                    Preferencias de notificación
+                </h3>
+
+                <p>
+                    Selecciona los avisos que deseas recibir.
+                </p>
+
+                <div class="opciones-notificacion-perfil">
+
+                    <label class="opcion-notificacion-perfil">
+
+                        <input asp-for="NotificacionesCompras" />
+
+                        <span>
+                            <strong>
+                                Compras y pedidos
+                            </strong>
+
+                            <span>
+                                Cambios en el estado de tus órdenes.
+                            </span>
+                        </span>
+
+                    </label>
+
+                    <label class="opcion-notificacion-perfil">
+
+                        <input asp-for="NotificacionesEventos" />
+
+                        <span>
+                            <strong>
+                                Eventos
+                            </strong>
+
+                            <span>
+                                Inscripciones, fechas y recordatorios.
+                            </span>
+                        </span>
+
+                    </label>
+
+                    <label class="opcion-notificacion-perfil">
+
+                        <input asp-for="NotificacionesTalleres" />
+
+                        <span>
+                            <strong>
+                                Talleres
+                            </strong>
+
+                            <span>
+                                Cupos, horarios y confirmaciones.
+                            </span>
+                        </span>
+
+                    </label>
+
+                    <label class="opcion-notificacion-perfil">
+
+                        <input asp-for="NotificacionesPromociones" />
+
+                        <span>
+                            <strong>
+                                Promociones
+                            </strong>
+
+                            <span>
+                                Descuentos y campañas especiales.
+                            </span>
+                        </span>
+
+                    </label>
+
+                </div>
+
+            </div>
+
+            <div class="seccion-formulario-perfil">
+
+                <h3>
+                    Canales de notificación
+                </h3>
+
+                <p>
+                    Indica dónde deseas recibir los avisos.
+                </p>
+
+                <div class="opciones-notificacion-perfil">
+
+                    <label class="opcion-notificacion-perfil">
+
+                        <input asp-for="CanalCorreo" />
+
+                        <span>
+                            <strong>
+                                Correo electrónico
+                            </strong>
+
+                            <span>
+                                Recibe avisos en tu correo registrado.
+                            </span>
+                        </span>
+
+                    </label>
+
+                    <label class="opcion-notificacion-perfil">
+
+                        <input asp-for="CanalPlataforma" />
+
+                        <span>
+                            <strong>
+                                Dentro de la plataforma
+                            </strong>
+
+                            <span>
+                                Consulta los avisos al iniciar sesión.
+                            </span>
+                        </span>
+
+                    </label>
+
+                </div>
+
+            </div>
+
+            <button type="submit"
+                    class="boton-guardar-perfil">
+
+                <i class="bi bi-floppy-fill"></i>
+                Guardar cambios
+
+            </button>
+
+        </form>
+
+    </article>
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

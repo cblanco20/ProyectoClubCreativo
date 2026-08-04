@@ -1,0 +1,122 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.PuntosRecompensasViewModel
+
+@{
+    ViewData["Title"] = "Puntos y recompensas";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">
+            Creativo Frecuente
+        </span>
+
+        <h1 class="titulo-pagina-usuario">
+            Mis puntos y recompensas
+        </h1>
+
+        <p class="descripcion-pagina-usuario">
+            Consulta tu saldo, movimientos y beneficios disponibles.
+        </p>
+    </div>
+</div>
+
+<section class="banner-creativo-frecuente">
+
+    <div class="contenido-creativo-frecuente">
+        <span>Tarjeta personal</span>
+
+        <h2>
+            Creativo Frecuente
+        </h2>
+
+        <p>
+            Acumula puntos por compras, visitas y participación
+            en actividades de Club Creativo.
+        </p>
+
+        <div class="saldo-creativo">
+            <strong>@Model.SaldoPuntos.ToString("N0")</strong>
+            <span>puntos disponibles</span>
+        </div>
+
+        <code>@Model.CodigoCliente</code>
+
+        <a asp-controller="Usuario"
+           asp-action="MiQr"
+           class="boton-qr-recompensas">
+
+            <i class="bi bi-qr-code"></i>
+            Mostrar mi QR
+
+        </a>
+    </div>
+
+    <img src="~/images/creativo-frecuente.jpg"
+         alt="Tarjeta Creativo Frecuente" />
+
+</section>
+
+<section class="cuadricula-recompensas">
+
+    @foreach (var recompensa in Model.Recompensas)
+    {
+        <article class="tarjeta-recompensa">
+
+            <span class="icono-recompensa">
+                <i class="bi @recompensa.Icono"></i>
+            </span>
+
+            <h2>@recompensa.Nombre</h2>
+
+            <p>@recompensa.Descripcion</p>
+
+            <strong>
+                @recompensa.CostoPuntos.ToString("N0") puntos
+            </strong>
+
+            <button type="button"
+                    disabled="@(!recompensa.Disponible)">
+                @(recompensa.Disponible
+                    ? "Canjear recompensa"
+                    : "Puntos insuficientes")
+            </button>
+
+        </article>
+    }
+
+</section>
+
+<section class="tarjeta-modulo-usuario">
+
+    <div class="encabezado-tarjeta-modulo">
+        <h2>Historial de puntos</h2>
+    </div>
+
+    <div class="lista-movimientos-puntos">
+
+        @foreach (var movimiento in Model.Movimientos)
+        {
+            string clasePuntos =
+                movimiento.Puntos > 0
+                    ? "puntos-positivos"
+                    : "puntos-negativos";
+
+            <div class="movimiento-puntos">
+
+                <div>
+                    <strong>@movimiento.Descripcion</strong>
+                    <span>@movimiento.Fecha.ToString("dd/MM/yyyy")</span>
+                </div>
+
+                <strong class="@clasePuntos">
+                    @(movimiento.Puntos > 0 ? "+" : "")
+                    @movimiento.Puntos
+                </strong>
+
+            </div>
+        }
+
+    </div>
+
+</section>

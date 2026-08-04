@@ -1,0 +1,162 @@
+﻿@{
+    ViewData["Title"] = "Mi código QR";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+
+    <div>
+
+        <span class="etiqueta-pagina-usuario">
+            Creativo Frecuente
+        </span>
+
+        <h1 class="titulo-pagina-usuario">
+            Mi código QR
+        </h1>
+
+        <p class="descripcion-pagina-usuario">
+            Presenta este código para acumular puntos en tus visitas,
+            compras y actividades de Club Creativo.
+        </p>
+
+    </div>
+
+</div>
+
+<section class="contenedor-qr-usuario">
+
+    <article class="tarjeta-qr-usuario">
+
+        <div class="encabezado-qr-usuario">
+
+            <span class="icono-qr-usuario">
+                <i class="bi bi-qr-code"></i>
+            </span>
+
+            <div>
+                <span>
+                    Tarjeta personal
+                </span>
+
+                <h2>
+                    Creativo Frecuente
+                </h2>
+            </div>
+
+        </div>
+
+        <div class="codigo-qr-usuario">
+
+            <img src="~/images/qr-club.jpg"
+                 alt="Código QR personal de Creativo Frecuente" />
+
+        </div>
+
+        <div class="datos-qr-usuario">
+
+            <span>
+                Titular
+            </span>
+
+            <strong>
+                Maria
+            </strong>
+
+            <span>
+                Código de cliente
+            </span>
+
+            <strong>
+                CC-MARIA-1280
+            </strong>
+
+        </div>
+
+    </article>
+
+    <aside class="informacion-qr-usuario">
+
+        <span class="etiqueta-pagina-usuario">
+            ¿Cómo funciona?
+        </span>
+
+        <h2>
+            Escanea tu QR y acumula puntos
+        </h2>
+
+        <p>
+            Muestra este código al realizar compras, visitar ferias
+            o participar en actividades seleccionadas.
+        </p>
+
+        <div class="pasos-qr-usuario">
+
+            <div class="paso-qr-usuario">
+
+                <span>
+                    1
+                </span>
+
+                <div>
+                    <strong>
+                        Presenta tu código
+                    </strong>
+
+                    <p>
+                        Muéstralo desde tu teléfono al personal de Club Creativo.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="paso-qr-usuario">
+
+                <span>
+                    2
+                </span>
+
+                <div>
+                    <strong>
+                        Registra tu actividad
+                    </strong>
+
+                    <p>
+                        El código se utiliza para identificar tu cuenta.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="paso-qr-usuario">
+
+                <span>
+                    3
+                </span>
+
+                <div>
+                    <strong>
+                        Recibe tus puntos
+                    </strong>
+
+                    <p>
+                        Los puntos aparecerán en tu historial de recompensas.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <a asp-controller="Usuario"
+           asp-action="PuntosRecompensas"
+           class="boton-accion-usuario">
+
+            <i class="bi bi-star-fill"></i>
+            Ver puntos y recompensas
+
+        </a>
+
+    </aside>
+
+</section>

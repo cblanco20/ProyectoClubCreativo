@@ -1,0 +1,108 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.DetalleCompraUsuarioViewModel
+
+@{
+    ViewData["Title"] = "Detalle de compra";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+@if (TempData["MensajeCompra"] is not null)
+{
+    <div class="mensaje-exito-perfil">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeCompra"]
+    </div>
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">
+            Orden @Model.NumeroOrden
+        </span>
+
+        <h1 class="titulo-pagina-usuario">
+            Detalle de compra
+        </h1>
+
+        <p class="descripcion-pagina-usuario">
+            Compra realizada el @Model.Fecha.ToString("dd/MM/yyyy").
+        </p>
+    </div>
+
+    <a asp-action="MisCompras"
+       class="boton-secundario-usuario">
+        <i class="bi bi-arrow-left"></i>
+        Regresar
+    </a>
+</div>
+
+<section class="distribucion-detalle-compra">
+
+    <div class="tarjeta-modulo-usuario">
+
+        <div class="encabezado-tarjeta-modulo">
+            <h2>Productos</h2>
+
+            <span class="estado-tabla estado-amarillo">
+                @Model.Estado
+            </span>
+        </div>
+
+        <div class="lista-productos-compra">
+            @foreach (var producto in Model.Productos)
+            {
+                <article class="producto-compra-usuario">
+
+                    <img src="@producto.Imagen"
+                         alt="@producto.Nombre" />
+
+                    <div class="datos-producto-compra">
+                        <h3>@producto.Nombre</h3>
+                        <span>@producto.Emprendimiento</span>
+                        <small>Cantidad: @producto.Cantidad</small>
+                    </div>
+
+                    <strong>
+                        ₡@producto.Subtotal.ToString("N0")
+                    </strong>
+                </article>
+            }
+        </div>
+    </div>
+
+    <aside>
+
+        <div class="tarjeta-modulo-usuario resumen-orden-usuario">
+            <h2>Resumen</h2>
+
+            <div>
+                <span>Subtotal</span>
+                <strong>₡@Model.Subtotal.ToString("N0")</strong>
+            </div>
+
+            <div>
+                <span>Descuento</span>
+                <strong>-₡@Model.Descuento.ToString("N0")</strong>
+            </div>
+
+            <div class="total-resumen-usuario">
+                <span>Total</span>
+                <strong>₡@Model.Total.ToString("N0")</strong>
+            </div>
+        </div>
+
+        <div class="tarjeta-modulo-usuario informacion-entrega">
+            <h2>Entrega</h2>
+
+            <p>
+                <i class="bi bi-box-seam"></i>
+                @Model.MetodoEntrega
+            </p>
+
+            <p>
+                <i class="bi bi-geo-alt"></i>
+                @Model.DireccionEntrega
+            </p>
+        </div>
+
+    </aside>
+</section>

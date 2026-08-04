@@ -1,0 +1,62 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.NotificacionListadoViewModel>
+
+@{
+    ViewData["Title"] = "Notificaciones";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Avisos</span>
+        <h1 class="titulo-pagina-usuario">Notificaciones</h1>
+        <p class="descripcion-pagina-usuario">
+            Compras, eventos, talleres, promociones y recordatorios.
+        </p>
+    </div>
+
+    <a asp-action="Preferencias"
+       class="boton-secundario-usuario">
+        <i class="bi bi-sliders"></i>
+        Preferencias
+    </a>
+</div>
+
+<div class="filtros-modulo-usuario">
+    <button class="filtro-activo">Todas</button>
+    <button>No leídas</button>
+    <button>Compras</button>
+    <button>Eventos</button>
+    <button>Promociones</button>
+</div>
+
+<section class="tarjeta-modulo-usuario lista-notificaciones-completa">
+
+    @foreach (var notificacion in Model)
+    {
+        string clase =
+            notificacion.Leida
+                ? "notificacion-completa"
+                : "notificacion-completa no-leida";
+
+        <article class="@clase">
+
+            <span class="icono-notificacion-completa">
+                <i class="bi @notificacion.Icono"></i>
+            </span>
+
+            <div>
+                <span>@notificacion.Tipo</span>
+                <h2>@notificacion.Titulo</h2>
+                <p>@notificacion.Mensaje</p>
+                <small>@notificacion.Fecha</small>
+            </div>
+
+            <button type="button"
+                    aria-label="Opciones">
+                <i class="bi bi-three-dots"></i>
+            </button>
+
+        </article>
+    }
+
+</section>

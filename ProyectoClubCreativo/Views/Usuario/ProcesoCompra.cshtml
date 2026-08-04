@@ -1,0 +1,155 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.ProcesoCompraViewModel
+
+@{
+    ViewData["Title"] = "Proceso de compra";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Paso 2 de 4</span>
+        <h1 class="titulo-pagina-usuario">Completar compra</h1>
+        <p class="descripcion-pagina-usuario">
+            Confirma tus datos, entrega y método de pago.
+        </p>
+    </div>
+</div>
+
+<div class="pasos-compra-usuario">
+    <span class="paso-completado">1. Carrito</span>
+    <span class="paso-activo">2. Datos y entrega</span>
+    <span>3. Pago</span>
+    <span>4. Confirmación</span>
+</div>
+
+<form asp-action="ProcesoCompra"
+      method="post"
+      novalidate>
+
+    @Html.AntiForgeryToken()
+
+    <section class="distribucion-carrito">
+
+        <div class="tarjeta-modulo-usuario">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="resumen-validacion"></div>
+
+            <div class="encabezado-tarjeta-modulo">
+                <h2>Datos personales</h2>
+            </div>
+
+            <div class="fila-formulario">
+
+                <div class="grupo-formulario">
+                    <label asp-for="Nombre"></label>
+                    <input asp-for="Nombre"
+                           class="control-formulario" />
+                    <span asp-validation-for="Nombre"
+                          class="mensaje-validacion"></span>
+                </div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Correo"></label>
+                    <input asp-for="Correo"
+                           class="control-formulario" />
+                    <span asp-validation-for="Correo"
+                          class="mensaje-validacion"></span>
+                </div>
+
+            </div>
+
+            <div class="grupo-formulario">
+                <label asp-for="Telefono"></label>
+                <input asp-for="Telefono"
+                       class="control-formulario"
+                       maxlength="8" />
+                <span asp-validation-for="Telefono"
+                      class="mensaje-validacion"></span>
+            </div>
+
+            <div class="seccion-formulario-perfil">
+                <h3>Entrega o retiro</h3>
+
+                <div class="opciones-entrega">
+                    <label>
+                        <input asp-for="TipoEntrega"
+                               type="radio"
+                               value="Retiro" />
+                        <span>
+                            <strong>Retiro en feria</strong>
+                            <small>Sin costo adicional.</small>
+                        </span>
+                    </label>
+
+                    <label>
+                        <input asp-for="TipoEntrega"
+                               type="radio"
+                               value="Domicilio" />
+                        <span>
+                            <strong>Envío a domicilio</strong>
+                            <small>Sujeto a cobertura.</small>
+                        </span>
+                    </label>
+                </div>
+
+                <span asp-validation-for="TipoEntrega"
+                      class="mensaje-validacion"></span>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Direccion"></label>
+                    <textarea asp-for="Direccion"
+                              class="control-formulario"
+                              placeholder="Completa este campo si seleccionaste envío a domicilio."></textarea>
+                    <span asp-validation-for="Direccion"
+                          class="mensaje-validacion"></span>
+                </div>
+            </div>
+
+            <div class="seccion-formulario-perfil">
+                <h3>Método de pago</h3>
+
+                <select asp-for="MetodoPago"
+                        class="control-formulario">
+                    <option value="">Seleccione un método</option>
+                    <option>Tarjeta de crédito o débito</option>
+                    <option>SINPE Móvil</option>
+                    <option>Pago al retirar</option>
+                </select>
+
+                <span asp-validation-for="MetodoPago"
+                      class="mensaje-validacion"></span>
+            </div>
+
+        </div>
+
+        <aside class="tarjeta-modulo-usuario resumen-orden-usuario">
+            <h2>Resumen</h2>
+
+            <div>
+                <span>Subtotal</span>
+                <strong>₡@Model.Subtotal.ToString("N0")</strong>
+            </div>
+
+            <div>
+                <span>Descuento</span>
+                <strong>-₡@Model.Descuento.ToString("N0")</strong>
+            </div>
+
+            <div class="total-resumen-usuario">
+                <span>Total</span>
+                <strong>₡@Model.Total.ToString("N0")</strong>
+            </div>
+
+            <button type="submit"
+                    class="boton-accion-usuario boton-ancho-completo">
+                Confirmar información
+            </button>
+        </aside>
+
+    </section>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

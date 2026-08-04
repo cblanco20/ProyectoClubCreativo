@@ -1,0 +1,93 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.CompraUsuarioViewModel>
+
+@{
+    ViewData["Title"] = "Mis compras";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Pedidos</span>
+        <h1 class="titulo-pagina-usuario">Mis compras</h1>
+        <p class="descripcion-pagina-usuario">
+            Consulta el historial y estado de tus órdenes.
+        </p>
+    </div>
+
+    <a asp-controller="Home"
+       asp-action="CatalogoProductos"
+       class="boton-accion-usuario">
+        <i class="bi bi-shop"></i>
+        Seguir comprando
+    </a>
+</div>
+
+<section class="tarjeta-modulo-usuario">
+
+    <div class="filtros-modulo-usuario">
+        <button class="filtro-activo">Todas</button>
+        <button>En proceso</button>
+        <button>Entregadas</button>
+        <button>Canceladas</button>
+    </div>
+
+    <div class="tabla-responsive-usuario">
+        <table class="tabla-usuario">
+            <thead>
+                <tr>
+                    <th>Orden</th>
+                    <th>Fecha</th>
+                    <th>Entrega</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var compra in Model)
+                {
+                    string estadoClase =
+                        compra.Estado == "Entregado"
+                            ? "estado-tabla estado-verde"
+                            : compra.Estado == "Cancelado"
+                                ? "estado-tabla estado-rojo"
+                                : "estado-tabla estado-amarillo";
+
+                    <tr>
+                        <td>
+                            <strong>@compra.NumeroOrden</strong>
+                        </td>
+
+                        <td>
+                            @compra.Fecha.ToString("dd/MM/yyyy")
+                        </td>
+
+                        <td>
+                            @compra.MetodoEntrega
+                        </td>
+
+                        <td>
+                            ₡@compra.Total.ToString("N0")
+                        </td>
+
+                        <td>
+                            <span class="@estadoClase">
+                                @compra.Estado
+                            </span>
+                        </td>
+
+                        <td>
+                            <a asp-controller="Usuario"
+                               asp-action="DetalleCompra"
+                               asp-route-id="@compra.NumeroOrden"
+                               class="enlace-tabla-usuario">
+                                Ver detalle
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
