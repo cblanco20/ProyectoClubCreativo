@@ -1,0 +1,411 @@
+﻿@{
+    ViewData["Title"] = "Estado de la solicitud";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+@if (TempData["MensajeSolicitud"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeSolicitud"]
+    </div>
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Solicitud de emprendimiento
+        </span>
+
+        <h1>Estado de la solicitud</h1>
+
+        <p>
+            Consulta el avance de la solicitud enviada para registrar
+            tu emprendimiento en Club Creativo MiVo.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="Panel"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-arrow-left"></i>
+        Volver al panel
+
+    </a>
+
+</section>
+
+
+<section class="resumen-estado-solicitud">
+
+    <article class="tarjeta-estado-principal">
+
+        <div class="icono-estado-principal estado-pendiente">
+            <i class="bi bi-hourglass-split"></i>
+        </div>
+
+        <div class="contenido-estado-principal">
+
+            <span class="etiqueta-estado-solicitud">
+                Estado actual
+            </span>
+
+            <h2>Pendiente de revisión</h2>
+
+            <p>
+                Tu solicitud fue recibida correctamente. El equipo de
+                Club Creativo MiVo está revisando la información enviada.
+            </p>
+
+            <div class="fecha-estado-solicitud">
+                <i class="bi bi-calendar-check"></i>
+                Solicitud enviada el 4 de agosto de 2026
+            </div>
+
+        </div>
+
+        <span class="insignia-estado-solicitud pendiente">
+            Pendiente
+        </span>
+
+    </article>
+
+</section>
+
+
+<section class="grid-estado-solicitud">
+
+    <div class="columna-estado-principal">
+
+        <article class="bloque-estado-solicitud">
+
+            <div class="encabezado-bloque-estado">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Seguimiento
+                    </span>
+
+                    <h2>Proceso de revisión</h2>
+                </div>
+
+            </div>
+
+            <div class="linea-tiempo-solicitud">
+
+                <div class="paso-solicitud completado">
+
+                    <span class="circulo-paso-solicitud">
+                        <i class="bi bi-check-lg"></i>
+                    </span>
+
+                    <div>
+                        <strong>Solicitud enviada</strong>
+
+                        <p>
+                            La información fue recibida correctamente.
+                        </p>
+
+                        <span>4 de agosto de 2026</span>
+                    </div>
+
+                </div>
+
+                <div class="paso-solicitud activo">
+
+                    <span class="circulo-paso-solicitud">
+                        <i class="bi bi-search"></i>
+                    </span>
+
+                    <div>
+                        <strong>Revisión de información</strong>
+
+                        <p>
+                            El equipo está validando los datos del emprendimiento.
+                        </p>
+
+                        <span>En proceso</span>
+                    </div>
+
+                </div>
+
+                <div class="paso-solicitud">
+
+                    <span class="circulo-paso-solicitud">
+                        <i class="bi bi-file-earmark-check"></i>
+                    </span>
+
+                    <div>
+                        <strong>Resultado de la solicitud</strong>
+
+                        <p>
+                            Recibirás una notificación cuando finalice la revisión.
+                        </p>
+
+                        <span>Pendiente</span>
+                    </div>
+
+                </div>
+
+                <div class="paso-solicitud">
+
+                    <span class="circulo-paso-solicitud">
+                        <i class="bi bi-shop-window"></i>
+                    </span>
+
+                    <div>
+                        <strong>Publicación del emprendimiento</strong>
+
+                        <p>
+                            El perfil será publicado después de su aprobación.
+                        </p>
+
+                        <span>Pendiente</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <article class="bloque-estado-solicitud">
+
+            <div class="encabezado-bloque-estado">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Información enviada
+                    </span>
+
+                    <h2>Resumen de la solicitud</h2>
+                </div>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="SolicitudEmprendimiento"
+                   class="enlace-editar-solicitud">
+
+                    <i class="bi bi-pencil-square"></i>
+                    Corregir información
+
+                </a>
+
+            </div>
+
+            <div class="grid-datos-solicitud">
+
+                <div class="dato-solicitud">
+                    <span>Nombre comercial</span>
+                    <strong>Artesanías MiVo</strong>
+                </div>
+
+                <div class="dato-solicitud">
+                    <span>Categoría</span>
+                    <strong>Arte e ilustración</strong>
+                </div>
+
+                <div class="dato-solicitud">
+                    <span>Correo</span>
+                    <strong>valentin@gmail.com</strong>
+                </div>
+
+                <div class="dato-solicitud">
+                    <span>Teléfono</span>
+                    <strong>8888-7777</strong>
+                </div>
+
+                <div class="dato-solicitud dato-solicitud-amplio">
+                    <span>Sitio web o red social</span>
+
+                    <strong>
+                        instagram.com/artesaniasmivo
+                    </strong>
+                </div>
+
+                <div class="dato-solicitud dato-solicitud-amplio">
+                    <span>Descripción</span>
+
+                    <strong>
+                        Elaboramos productos artesanales hechos a mano
+                        para decoración y regalos personalizados.
+                    </strong>
+                </div>
+
+            </div>
+
+        </article>
+
+    </div>
+
+
+    <aside class="columna-estado-secundaria">
+
+        <article class="bloque-estado-solicitud ayuda-estado-solicitud">
+
+            <div class="icono-ayuda-solicitud">
+                <i class="bi bi-info-circle-fill"></i>
+            </div>
+
+            <h2>¿Qué sucede ahora?</h2>
+
+            <p>
+                La revisión puede tardar algunos días. Recibirás una
+                notificación cuando exista un cambio en el estado.
+            </p>
+
+            <ul>
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Verificación de datos personales.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Revisión de la información comercial.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Validación de la categoría seleccionada.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Revisión de términos aceptados.
+                </li>
+            </ul>
+
+        </article>
+
+
+        <article class="bloque-estado-solicitud estados-posibles">
+
+            <div class="encabezado-bloque-estado">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Estados
+                    </span>
+
+                    <h2>Posibles resultados</h2>
+                </div>
+
+            </div>
+
+            <div class="estado-posible-item">
+
+                <span class="icono-estado-posible pendiente">
+                    <i class="bi bi-hourglass-split"></i>
+                </span>
+
+                <div>
+                    <strong>Pendiente</strong>
+
+                    <p>
+                        La solicitud todavía se encuentra en revisión.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="estado-posible-item">
+
+                <span class="icono-estado-posible aprobado">
+                    <i class="bi bi-check-circle-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Aprobada</strong>
+
+                    <p>
+                        El emprendimiento puede publicarse y administrarse.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="estado-posible-item">
+
+                <span class="icono-estado-posible rechazado">
+                    <i class="bi bi-x-circle-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Rechazada</strong>
+
+                    <p>
+                        Se mostrará el motivo y podrás corregir la información.
+                    </p>
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <article class="bloque-estado-solicitud contacto-estado-solicitud">
+
+            <div class="icono-contacto-solicitud">
+                <i class="bi bi-headset"></i>
+            </div>
+
+            <div>
+                <h2>¿Necesitas ayuda?</h2>
+
+                <p>
+                    Comunícate con nuestro equipo si tienes dudas
+                    sobre el proceso de revisión.
+                </p>
+
+                <a asp-controller="Home"
+                   asp-action="Contacto">
+
+                    Ir a contacto
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+            </div>
+
+        </article>
+
+    </aside>
+
+</section>
+
+
+<section class="acciones-estado-solicitud">
+
+    <div>
+        <h2>Mantén actualizada tu información</h2>
+
+        <p>
+            Puedes revisar o corregir los datos mientras la solicitud
+            todavía se encuentre pendiente.
+        </p>
+    </div>
+
+    <div class="botones-estado-solicitud">
+
+        <a asp-controller="Emprendedor"
+           asp-action="SolicitudEmprendimiento"
+           class="boton-secundario-estado">
+
+            <i class="bi bi-pencil-square"></i>
+            Corregir solicitud
+
+        </a>
+
+        <a asp-controller="Emprendedor"
+           asp-action="Panel"
+           class="boton-principal-estado">
+
+            <i class="bi bi-grid-fill"></i>
+            Volver al panel
+
+        </a>
+
+    </div>
+
+</section>

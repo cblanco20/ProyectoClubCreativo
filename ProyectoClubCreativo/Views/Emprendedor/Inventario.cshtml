@@ -1,0 +1,976 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.AjustarInventarioViewModel
+
+@{
+    ViewData["Title"] = "Inventario";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+
+    bool abrirModal =
+        ViewBag.AbrirModalInventario is bool valor &&
+        valor;
+}
+
+@if (TempData["MensajeInventario"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeInventario"]
+    </div>
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Productos y ventas
+        </span>
+
+        <h1>Inventario</h1>
+
+        <p>
+            Consulta las existencias de tus productos, identifica
+            cantidades bajas y realiza ajustes de inventario.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="CrearProducto"
+       class="boton-editar-perfil-emprendedor">
+
+        <i class="bi bi-plus-lg"></i>
+        Crear producto
+
+    </a>
+
+</section>
+
+
+<!-- RESUMEN -->
+<section class="resumen-inventario-emprendedor">
+
+    <article class="tarjeta-resumen-inventario">
+
+        <span class="icono-resumen-inventario productos">
+            <i class="bi bi-boxes"></i>
+        </span>
+
+        <div>
+            <strong>54</strong>
+            <span>Unidades disponibles</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-inventario">
+
+        <span class="icono-resumen-inventario disponibles">
+            <i class="bi bi-check-circle-fill"></i>
+        </span>
+
+        <div>
+            <strong>4</strong>
+            <span>Productos disponibles</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-inventario">
+
+        <span class="icono-resumen-inventario bajos">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </span>
+
+        <div>
+            <strong>3</strong>
+            <span>Con inventario bajo</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-inventario">
+
+        <span class="icono-resumen-inventario agotados">
+            <i class="bi bi-x-circle-fill"></i>
+        </span>
+
+        <div>
+            <strong>1</strong>
+            <span>Producto agotado</span>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- ALERTA -->
+<section class="alerta-general-inventario">
+
+    <span class="icono-alerta-general-inventario">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+    </span>
+
+    <div>
+        <strong>Hay productos que requieren atención</strong>
+
+        <p>
+            Tres productos tienen menos de cinco unidades y uno
+            se encuentra agotado.
+        </p>
+    </div>
+
+    <button type="button"
+            id="mostrarInventarioBajo"
+            class="boton-ver-inventario-bajo">
+
+        Mostrar inventario bajo
+        <i class="bi bi-arrow-right"></i>
+
+    </button>
+
+</section>
+
+
+<!-- LISTADO -->
+<section class="bloque-listado-inventario">
+
+    <div class="barra-inventario-emprendedor">
+
+        <div class="buscador-inventario-emprendedor">
+
+            <i class="bi bi-search"></i>
+
+            <input type="search"
+                   id="buscarInventario"
+                   placeholder="Buscar producto..."
+                   aria-label="Buscar producto en inventario" />
+
+        </div>
+
+        <div class="filtros-inventario-emprendedor">
+
+            <select id="filtroEstadoInventario"
+                    aria-label="Filtrar inventario por estado">
+
+                <option value="todos">
+                    Todos los estados
+                </option>
+
+                <option value="disponible">
+                    Disponible
+                </option>
+
+                <option value="bajo">
+                    Inventario bajo
+                </option>
+
+                <option value="agotado">
+                    Agotado
+                </option>
+
+            </select>
+
+            <select id="filtroCategoriaInventario"
+                    aria-label="Filtrar inventario por categoría">
+
+                <option value="todos">
+                    Todas las categorías
+                </option>
+
+                <option value="accesorios">
+                    Accesorios y joyería
+                </option>
+
+                <option value="textiles">
+                    Moda y textiles
+                </option>
+
+                <option value="decoracion">
+                    Decoración
+                </option>
+
+            </select>
+
+            <button type="button"
+                    id="limpiarFiltrosInventario"
+                    class="boton-limpiar-inventario">
+
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Limpiar
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="contenedor-tabla-inventario">
+
+        <div class="tabla-inventario-emprendedor">
+
+            <div class="fila-inventario-emprendedor encabezado-inventario">
+                <span>Producto</span>
+                <span>Categoría</span>
+                <span>Existencias</span>
+                <span>Nivel</span>
+                <span>Estado</span>
+                <span>Acción</span>
+            </div>
+
+
+            <!-- PRODUCTO 1 -->
+            <article class="fila-inventario-emprendedor producto-inventario-filtrable"
+                     data-nombre="Aretes artesanales"
+                     data-categoria="accesorios"
+                     data-estado="bajo">
+
+                <div class="informacion-producto-inventario">
+
+                    <img src="~/images/producto-1.jpg"
+                         alt="Aretes artesanales" />
+
+                    <div>
+                        <strong>Aretes artesanales</strong>
+                        <span>PROD-001</span>
+                    </div>
+
+                </div>
+
+                <span>Accesorios y joyería</span>
+
+                <strong class="cantidad-inventario bajo">
+                    2 unidades
+                </strong>
+
+                <div class="barra-nivel-inventario">
+
+                    <div class="barra-nivel-inventario-fondo">
+                        <span class="nivel-bajo"
+                              style="width: 20%;">
+                        </span>
+                    </div>
+
+                    <small>20 %</small>
+
+                </div>
+
+                <span class="estado-inventario-tabla bajo">
+                    Bajo
+                </span>
+
+                <button type="button"
+                        class="boton-ajustar-inventario"
+                        data-id="1"
+                        data-producto="Aretes artesanales"
+                        data-cantidad="2">
+
+                    <i class="bi bi-pencil-square"></i>
+                    Ajustar
+
+                </button>
+
+            </article>
+
+
+            <!-- PRODUCTO 2 -->
+            <article class="fila-inventario-emprendedor producto-inventario-filtrable"
+                     data-nombre="Bolso tejido artesanal"
+                     data-categoria="textiles"
+                     data-estado="bajo">
+
+                <div class="informacion-producto-inventario">
+
+                    <img src="~/images/producto-2.jpg"
+                         alt="Bolso tejido artesanal" />
+
+                    <div>
+                        <strong>Bolso tejido artesanal</strong>
+                        <span>PROD-002</span>
+                    </div>
+
+                </div>
+
+                <span>Moda y textiles</span>
+
+                <strong class="cantidad-inventario bajo">
+                    1 unidad
+                </strong>
+
+                <div class="barra-nivel-inventario">
+
+                    <div class="barra-nivel-inventario-fondo">
+                        <span class="nivel-bajo"
+                              style="width: 10%;">
+                        </span>
+                    </div>
+
+                    <small>10 %</small>
+
+                </div>
+
+                <span class="estado-inventario-tabla bajo">
+                    Bajo
+                </span>
+
+                <button type="button"
+                        class="boton-ajustar-inventario"
+                        data-id="2"
+                        data-producto="Bolso tejido artesanal"
+                        data-cantidad="1">
+
+                    <i class="bi bi-pencil-square"></i>
+                    Ajustar
+
+                </button>
+
+            </article>
+
+
+            <!-- PRODUCTO 3 -->
+            <article class="fila-inventario-emprendedor producto-inventario-filtrable"
+                     data-nombre="Set decorativo artesanal"
+                     data-categoria="decoracion"
+                     data-estado="agotado">
+
+                <div class="informacion-producto-inventario">
+
+                    <img src="~/images/producto-3.jpg"
+                         alt="Set decorativo artesanal" />
+
+                    <div>
+                        <strong>Set decorativo artesanal</strong>
+                        <span>PROD-003</span>
+                    </div>
+
+                </div>
+
+                <span>Decoración</span>
+
+                <strong class="cantidad-inventario agotado">
+                    0 unidades
+                </strong>
+
+                <div class="barra-nivel-inventario">
+
+                    <div class="barra-nivel-inventario-fondo">
+                        <span class="nivel-agotado"
+                              style="width: 0%;">
+                        </span>
+                    </div>
+
+                    <small>0 %</small>
+
+                </div>
+
+                <span class="estado-inventario-tabla agotado">
+                    Agotado
+                </span>
+
+                <button type="button"
+                        class="boton-ajustar-inventario"
+                        data-id="3"
+                        data-producto="Set decorativo artesanal"
+                        data-cantidad="0">
+
+                    <i class="bi bi-pencil-square"></i>
+                    Ajustar
+
+                </button>
+
+            </article>
+
+
+            <!-- PRODUCTO 4 -->
+            <article class="fila-inventario-emprendedor producto-inventario-filtrable"
+                     data-nombre="Cuadro personalizado"
+                     data-categoria="decoracion"
+                     data-estado="disponible">
+
+                <div class="informacion-producto-inventario">
+
+                    <img src="~/images/noticia-concurso.jpg"
+                         alt="Cuadro personalizado" />
+
+                    <div>
+                        <strong>Cuadro personalizado</strong>
+                        <span>PROD-004</span>
+                    </div>
+
+                </div>
+
+                <span>Decoración</span>
+
+                <strong class="cantidad-inventario disponible">
+                    12 unidades
+                </strong>
+
+                <div class="barra-nivel-inventario">
+
+                    <div class="barra-nivel-inventario-fondo">
+                        <span class="nivel-disponible"
+                              style="width: 75%;">
+                        </span>
+                    </div>
+
+                    <small>75 %</small>
+
+                </div>
+
+                <span class="estado-inventario-tabla disponible">
+                    Disponible
+                </span>
+
+                <button type="button"
+                        class="boton-ajustar-inventario"
+                        data-id="4"
+                        data-producto="Cuadro personalizado"
+                        data-cantidad="12">
+
+                    <i class="bi bi-pencil-square"></i>
+                    Ajustar
+
+                </button>
+
+            </article>
+
+
+            <!-- PRODUCTO 5 -->
+            <article class="fila-inventario-emprendedor producto-inventario-filtrable"
+                     data-nombre="Llaveros personalizados"
+                     data-categoria="accesorios"
+                     data-estado="disponible">
+
+                <div class="informacion-producto-inventario">
+
+                    <img src="~/images/noticia-emprendimiento.jpg"
+                         alt="Llaveros personalizados" />
+
+                    <div>
+                        <strong>Llaveros personalizados</strong>
+                        <span>PROD-005</span>
+                    </div>
+
+                </div>
+
+                <span>Accesorios y joyería</span>
+
+                <strong class="cantidad-inventario disponible">
+                    36 unidades
+                </strong>
+
+                <div class="barra-nivel-inventario">
+
+                    <div class="barra-nivel-inventario-fondo">
+                        <span class="nivel-disponible"
+                              style="width: 95%;">
+                        </span>
+                    </div>
+
+                    <small>95 %</small>
+
+                </div>
+
+                <span class="estado-inventario-tabla disponible">
+                    Disponible
+                </span>
+
+                <button type="button"
+                        class="boton-ajustar-inventario"
+                        data-id="5"
+                        data-producto="Llaveros personalizados"
+                        data-cantidad="36">
+
+                    <i class="bi bi-pencil-square"></i>
+                    Ajustar
+
+                </button>
+
+            </article>
+
+        </div>
+
+
+        <div id="mensajeSinInventario"
+             class="mensaje-sin-inventario">
+
+            <i class="bi bi-box-seam"></i>
+
+            <h2>No se encontraron productos</h2>
+
+            <p>
+                Cambia los filtros o utiliza otro término de búsqueda.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="pie-inventario-emprendedor">
+
+        <span>
+            Mostrando 5 productos con control de inventario
+        </span>
+
+        <a asp-controller="Emprendedor"
+           asp-action="MisProductos">
+
+            Administrar productos
+            <i class="bi bi-arrow-right"></i>
+
+        </a>
+
+    </div>
+
+</section>
+
+
+<!-- RECOMENDACIONES -->
+<section class="grid-recomendaciones-inventario">
+
+    <article class="recomendacion-inventario">
+
+        <span>
+            <i class="bi bi-bell-fill"></i>
+        </span>
+
+        <div>
+            <h2>Alertas de inventario</h2>
+
+            <p>
+                Los productos con menos de cinco unidades se marcarán
+                automáticamente como inventario bajo.
+            </p>
+        </div>
+
+    </article>
+
+    <article class="recomendacion-inventario">
+
+        <span>
+            <i class="bi bi-arrow-repeat"></i>
+        </span>
+
+        <div>
+            <h2>Actualización constante</h2>
+
+            <p>
+                Revisa las existencias después de cada venta o reposición
+                de productos.
+            </p>
+        </div>
+
+    </article>
+
+    <article class="recomendacion-inventario">
+
+        <span>
+            <i class="bi bi-x-octagon-fill"></i>
+        </span>
+
+        <div>
+            <h2>Productos agotados</h2>
+
+            <p>
+                Un producto sin existencias puede mostrarse como agotado
+                hasta que agregues nuevas unidades.
+            </p>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- MODAL AJUSTAR INVENTARIO -->
+<div id="modalAjustarInventario"
+     class="modal-ajustar-inventario @(abrirModal ? "visible" : "")"
+     aria-hidden="@(abrirModal ? "false" : "true")">
+
+    <div id="fondoModalInventario"
+         class="fondo-modal-inventario">
+    </div>
+
+    <div class="contenido-modal-inventario"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloModalInventario">
+
+        <button type="button"
+                id="cerrarModalInventario"
+                class="cerrar-modal-inventario"
+                aria-label="Cerrar">
+
+            <i class="bi bi-x-lg"></i>
+
+        </button>
+
+        <span class="icono-modal-inventario">
+            <i class="bi bi-boxes"></i>
+        </span>
+
+        <h2 id="tituloModalInventario">
+            Ajustar inventario
+        </h2>
+
+        <p>
+            Modifica la cantidad disponible del producto seleccionado.
+        </p>
+
+        <form asp-controller="Emprendedor"
+              asp-action="AjustarInventario"
+              method="post"
+              novalidate>
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="All"
+                 class="resumen-validacion-emprendedor">
+            </div>
+
+            <input asp-for="IdProducto"
+                   type="hidden"
+                   id="idProductoInventario" />
+
+            <input asp-for="NombreProducto"
+                   type="hidden"
+                   id="nombreProductoInventario" />
+
+
+            <div class="producto-seleccionado-inventario">
+
+                <span>
+                    <i class="bi bi-box-seam-fill"></i>
+                </span>
+
+                <div>
+                    <small>Producto seleccionado</small>
+
+                    <strong id="textoProductoInventario">
+                        @Model.NombreProducto
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="NuevaCantidad"></label>
+
+                <input asp-for="NuevaCantidad"
+                       id="nuevaCantidadInventario"
+                       class="control-emprendedor"
+                       step="1"
+                       inputmode="numeric"
+                       placeholder="Ingrese la cantidad" />
+
+                <span asp-validation-for="NuevaCantidad"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="Observacion"></label>
+
+                <textarea asp-for="Observacion"
+                          class="control-emprendedor textarea-emprendedor"
+                          rows="4"
+                          maxlength="250"
+                          placeholder="Ejemplo: Ingreso de nueva mercadería...">
+                </textarea>
+
+                <div class="ayuda-campo-emprendedor">
+                    Campo opcional. Máximo 250 caracteres.
+                </div>
+
+                <span asp-validation-for="Observacion"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+
+            <label class="confirmacion-ajuste-inventario">
+
+                <input asp-for="ConfirmaAjuste" />
+
+                <span>
+                    Confirmo que deseo actualizar la cantidad
+                    disponible de este producto.
+                </span>
+
+            </label>
+
+            <span asp-validation-for="ConfirmaAjuste"
+                  class="mensaje-validacion-emprendedor">
+            </span>
+
+
+            <div class="acciones-modal-inventario">
+
+                <button type="button"
+                        id="cancelarAjusteInventario"
+                        class="boton-cancelar-ajuste">
+
+                    Cancelar
+
+                </button>
+
+                <button type="submit"
+                        class="boton-confirmar-ajuste">
+
+                    <i class="bi bi-check-circle-fill"></i>
+                    Guardar ajuste
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const buscador =
+                document.getElementById("buscarInventario");
+
+            const filtroEstado =
+                document.getElementById("filtroEstadoInventario");
+
+            const filtroCategoria =
+                document.getElementById("filtroCategoriaInventario");
+
+            const botonLimpiar =
+                document.getElementById("limpiarFiltrosInventario");
+
+            const botonMostrarBajo =
+                document.getElementById("mostrarInventarioBajo");
+
+            const productos =
+                document.querySelectorAll(
+                    ".producto-inventario-filtrable"
+                );
+
+            const mensajeSinInventario =
+                document.getElementById("mensajeSinInventario");
+
+
+            const filtrarInventario = () => {
+
+                const texto =
+                    buscador.value.trim().toLowerCase();
+
+                const estado =
+                    filtroEstado.value;
+
+                const categoria =
+                    filtroCategoria.value;
+
+                let visibles = 0;
+
+                productos.forEach((producto) => {
+
+                    const nombre =
+                        producto.dataset.nombre.toLowerCase();
+
+                    const estadoProducto =
+                        producto.dataset.estado;
+
+                    const categoriaProducto =
+                        producto.dataset.categoria;
+
+                    const coincideTexto =
+                        nombre.includes(texto);
+
+                    const coincideEstado =
+                        estado === "todos" ||
+                        estadoProducto === estado;
+
+                    const coincideCategoria =
+                        categoria === "todos" ||
+                        categoriaProducto === categoria;
+
+                    const mostrar =
+                        coincideTexto &&
+                        coincideEstado &&
+                        coincideCategoria;
+
+                    producto.style.display =
+                        mostrar ? "" : "none";
+
+                    if (mostrar) {
+                        visibles++;
+                    }
+                });
+
+                mensajeSinInventario.style.display =
+                    visibles === 0
+                        ? "flex"
+                        : "none";
+            };
+
+
+            buscador?.addEventListener(
+                "input",
+                filtrarInventario
+            );
+
+            filtroEstado?.addEventListener(
+                "change",
+                filtrarInventario
+            );
+
+            filtroCategoria?.addEventListener(
+                "change",
+                filtrarInventario
+            );
+
+            botonLimpiar?.addEventListener("click", () => {
+
+                buscador.value = "";
+                filtroEstado.value = "todos";
+                filtroCategoria.value = "todos";
+
+                filtrarInventario();
+            });
+
+            botonMostrarBajo?.addEventListener("click", () => {
+
+                buscador.value = "";
+                filtroCategoria.value = "todos";
+                filtroEstado.value = "bajo";
+
+                filtrarInventario();
+            });
+
+
+            const modal =
+                document.getElementById("modalAjustarInventario");
+
+            const fondo =
+                document.getElementById("fondoModalInventario");
+
+            const botonCerrar =
+                document.getElementById("cerrarModalInventario");
+
+            const botonCancelar =
+                document.getElementById("cancelarAjusteInventario");
+
+            const botonesAjustar =
+                document.querySelectorAll(
+                    ".boton-ajustar-inventario"
+                );
+
+            const campoId =
+                document.getElementById("idProductoInventario");
+
+            const campoNombre =
+                document.getElementById("nombreProductoInventario");
+
+            const textoProducto =
+                document.getElementById("textoProductoInventario");
+
+            const campoCantidad =
+                document.getElementById("nuevaCantidadInventario");
+
+
+            const abrirModal = (boton) => {
+
+                const id =
+                    boton.dataset.id;
+
+                const producto =
+                    boton.dataset.producto;
+
+                const cantidad =
+                    boton.dataset.cantidad;
+
+                campoId.value = id;
+                campoNombre.value = producto;
+                textoProducto.textContent = producto;
+                campoCantidad.value = cantidad;
+
+                modal.classList.add("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                document.body.classList.add(
+                    "modal-inventario-abierto"
+                );
+            };
+
+
+            const cerrarModal = () => {
+
+                modal.classList.remove("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                document.body.classList.remove(
+                    "modal-inventario-abierto"
+                );
+            };
+
+
+            botonesAjustar.forEach((boton) => {
+
+                boton.addEventListener(
+                    "click",
+                    () => abrirModal(boton)
+                );
+            });
+
+            botonCerrar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            botonCancelar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            fondo?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            document.addEventListener("keydown", (evento) => {
+
+                if (evento.key === "Escape") {
+                    cerrarModal();
+                }
+            });
+
+
+            const modalAbiertoInicialmente =
+                modal?.classList.contains("visible");
+
+            if (modalAbiertoInicialmente) {
+
+                document.body.classList.add(
+                    "modal-inventario-abierto"
+                );
+            }
+        });
+    </script>
+}

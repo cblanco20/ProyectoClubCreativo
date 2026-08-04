@@ -1,0 +1,1306 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.SolicitudEventoViewModel
+
+@{
+    ViewData["Title"] = "Participación en eventos";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+
+    bool abrirModal =
+        ViewBag.AbrirModalEvento is bool valor &&
+        valor;
+}
+
+@if (TempData["MensajeEvento"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeEvento"]
+    </div>
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Crecimiento
+        </span>
+
+        <h1>Participación en eventos</h1>
+
+        <p>
+            Consulta los eventos disponibles, solicita un espacio
+            y revisa el estado de tus participaciones.
+        </p>
+    </div>
+
+    <a asp-controller="Home"
+       asp-action="Eventos"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-calendar-event-fill"></i>
+        Ver eventos públicos
+
+    </a>
+
+</section>
+
+
+<!-- RESUMEN -->
+<section class="resumen-eventos-emprendedor">
+
+    <article class="tarjeta-resumen-eventos">
+
+        <span class="icono-resumen-eventos disponibles">
+            <i class="bi bi-calendar2-event-fill"></i>
+        </span>
+
+        <div>
+            <strong>5</strong>
+            <span>Eventos disponibles</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-eventos">
+
+        <span class="icono-resumen-eventos solicitados">
+            <i class="bi bi-hourglass-split"></i>
+        </span>
+
+        <div>
+            <strong>2</strong>
+            <span>Solicitudes pendientes</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-eventos">
+
+        <span class="icono-resumen-eventos aprobados">
+            <i class="bi bi-check-circle-fill"></i>
+        </span>
+
+        <div>
+            <strong>3</strong>
+            <span>Participaciones aprobadas</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-eventos">
+
+        <span class="icono-resumen-eventos historial">
+            <i class="bi bi-clock-history"></i>
+        </span>
+
+        <div>
+            <strong>7</strong>
+            <span>Eventos en el historial</span>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- PRÓXIMA PARTICIPACIÓN -->
+<section class="proximo-evento-aprobado">
+
+    <div class="imagen-proximo-evento">
+
+        <img src="~/images/evento-san-pedro.jpg"
+             alt="Feria Creativa San Pedro" />
+
+    </div>
+
+    <div class="contenido-proximo-evento">
+
+        <span class="estado-proximo-evento">
+            <i class="bi bi-check-circle-fill"></i>
+            Participación aprobada
+        </span>
+
+        <h2>Feria Creativa San Pedro</h2>
+
+        <p>
+            Tu emprendimiento tiene un espacio confirmado para
+            participar en esta feria creativa.
+        </p>
+
+        <div class="datos-proximo-evento">
+
+            <span>
+                <i class="bi bi-calendar3"></i>
+                18 de agosto de 2026
+            </span>
+
+            <span>
+                <i class="bi bi-clock-fill"></i>
+                9:00 a. m. – 5:00 p. m.
+            </span>
+
+            <span>
+                <i class="bi bi-geo-alt-fill"></i>
+                San Pedro, San José
+            </span>
+
+        </div>
+
+    </div>
+
+    <div class="codigo-participacion-evento">
+
+        <span>
+            Código de participación
+        </span>
+
+        <strong>EV-2026-184</strong>
+
+        <small>
+            Preséntalo el día del evento.
+        </small>
+
+    </div>
+
+</section>
+
+
+<!-- PESTAÑAS -->
+<section class="contenedor-eventos-emprendedor">
+
+    <div class="pestanas-eventos-emprendedor">
+
+        <button type="button"
+                class="pestana-evento activa"
+                data-seccion="disponibles">
+
+            <i class="bi bi-calendar-plus-fill"></i>
+            Eventos disponibles
+
+        </button>
+
+        <button type="button"
+                class="pestana-evento"
+                data-seccion="solicitudes">
+
+            <i class="bi bi-file-earmark-text-fill"></i>
+            Mis solicitudes
+
+            <span>2</span>
+
+        </button>
+
+        <button type="button"
+                class="pestana-evento"
+                data-seccion="historial">
+
+            <i class="bi bi-clock-history"></i>
+            Historial
+
+        </button>
+
+    </div>
+
+
+    <!-- DISPONIBLES -->
+    <div id="seccionEventosDisponibles"
+         class="seccion-eventos activa">
+
+        <div class="barra-filtros-eventos">
+
+            <div class="buscador-eventos-emprendedor">
+
+                <i class="bi bi-search"></i>
+
+                <input type="search"
+                       id="buscarEventoEmprendedor"
+                       placeholder="Buscar evento o ubicación..."
+                       aria-label="Buscar evento" />
+
+            </div>
+
+            <div class="filtros-eventos-emprendedor">
+
+                <select id="filtroTipoEvento"
+                        aria-label="Filtrar por tipo">
+
+                    <option value="todos">
+                        Todos los tipos
+                    </option>
+
+                    <option value="feria">
+                        Feria
+                    </option>
+
+                    <option value="encuentro">
+                        Encuentro
+                    </option>
+
+                    <option value="exposicion">
+                        Exposición
+                    </option>
+
+                </select>
+
+                <select id="filtroUbicacionEvento"
+                        aria-label="Filtrar por ubicación">
+
+                    <option value="todos">
+                        Todas las ubicaciones
+                    </option>
+
+                    <option value="san-jose">
+                        San José
+                    </option>
+
+                    <option value="heredia">
+                        Heredia
+                    </option>
+
+                    <option value="alajuela">
+                        Alajuela
+                    </option>
+
+                </select>
+
+                <button type="button"
+                        id="limpiarFiltrosEventos"
+                        class="boton-limpiar-eventos">
+
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Limpiar
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="grid-eventos-disponibles">
+
+            <!-- EVENTO 1 -->
+            <article class="tarjeta-evento-disponible evento-filtrable"
+                     data-nombre="Mercado Creativo de Heredia"
+                     data-tipo="feria"
+                     data-ubicacion="heredia">
+
+                <div class="imagen-evento-disponible">
+
+                    <img src="~/images/evento-santa-ana.jpg"
+                         alt="Mercado Creativo de Heredia" />
+
+                    <span class="etiqueta-tipo-evento">
+                        Feria
+                    </span>
+
+                    <span class="cupos-evento disponibles">
+                        12 espacios disponibles
+                    </span>
+
+                </div>
+
+                <div class="contenido-evento-disponible">
+
+                    <span class="fecha-destacada-evento">
+                        25 de agosto de 2026
+                    </span>
+
+                    <h2>Mercado Creativo de Heredia</h2>
+
+                    <p>
+                        Espacio para emprendimientos de productos
+                        artesanales, decoración, moda y alimentos.
+                    </p>
+
+                    <div class="datos-evento-disponible">
+
+                        <span>
+                            <i class="bi bi-clock-fill"></i>
+                            10:00 a. m. – 6:00 p. m.
+                        </span>
+
+                        <span>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Heredia centro
+                        </span>
+
+                        <span>
+                            <i class="bi bi-cash-coin"></i>
+                            Participación: ₡10.000
+                        </span>
+
+                    </div>
+
+                    <div class="acciones-evento-disponible">
+
+                        <span>
+                            Solicitudes hasta el 15 de agosto
+                        </span>
+
+                        <button type="button"
+                                class="boton-solicitar-evento"
+                                data-id="1"
+                                data-evento="Mercado Creativo de Heredia">
+
+                            Solicitar participación
+                            <i class="bi bi-arrow-right"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- EVENTO 2 -->
+            <article class="tarjeta-evento-disponible evento-filtrable"
+                     data-nombre="Encuentro de Emprendimientos"
+                     data-tipo="encuentro"
+                     data-ubicacion="san-jose">
+
+                <div class="imagen-evento-disponible">
+
+                    <img src="~/images/noticia-feria.jpg"
+                         alt="Encuentro de Emprendimientos" />
+
+                    <span class="etiqueta-tipo-evento">
+                        Encuentro
+                    </span>
+
+                    <span class="cupos-evento pocos">
+                        Últimos 4 espacios
+                    </span>
+
+                </div>
+
+                <div class="contenido-evento-disponible">
+
+                    <span class="fecha-destacada-evento">
+                        31 de agosto de 2026
+                    </span>
+
+                    <h2>Encuentro de Emprendimientos</h2>
+
+                    <p>
+                        Jornada para presentar productos, establecer
+                        contactos y compartir experiencias de negocio.
+                    </p>
+
+                    <div class="datos-evento-disponible">
+
+                        <span>
+                            <i class="bi bi-clock-fill"></i>
+                            9:00 a. m. – 4:00 p. m.
+                        </span>
+
+                        <span>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Santa Ana, San José
+                        </span>
+
+                        <span>
+                            <i class="bi bi-cash-coin"></i>
+                            Participación gratuita
+                        </span>
+
+                    </div>
+
+                    <div class="acciones-evento-disponible">
+
+                        <span>
+                            Solicitudes hasta el 20 de agosto
+                        </span>
+
+                        <button type="button"
+                                class="boton-solicitar-evento"
+                                data-id="2"
+                                data-evento="Encuentro de Emprendimientos">
+
+                            Solicitar participación
+                            <i class="bi bi-arrow-right"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- EVENTO 3 -->
+            <article class="tarjeta-evento-disponible evento-filtrable"
+                     data-nombre="Exposición Hecho en Costa Rica"
+                     data-tipo="exposicion"
+                     data-ubicacion="san-jose">
+
+                <div class="imagen-evento-disponible">
+
+                    <img src="~/images/noticia-emprendimiento.jpg"
+                         alt="Exposición Hecho en Costa Rica" />
+
+                    <span class="etiqueta-tipo-evento">
+                        Exposición
+                    </span>
+
+                    <span class="cupos-evento premium">
+                        Requiere Plan Premium
+                    </span>
+
+                </div>
+
+                <div class="contenido-evento-disponible">
+
+                    <span class="fecha-destacada-evento">
+                        12 de septiembre de 2026
+                    </span>
+
+                    <h2>Exposición Hecho en Costa Rica</h2>
+
+                    <p>
+                        Exposición enfocada en productos diseñados
+                        y elaborados por emprendimientos costarricenses.
+                    </p>
+
+                    <div class="datos-evento-disponible">
+
+                        <span>
+                            <i class="bi bi-clock-fill"></i>
+                            8:00 a. m. – 7:00 p. m.
+                        </span>
+
+                        <span>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            San José centro
+                        </span>
+
+                        <span>
+                            <i class="bi bi-gem"></i>
+                            Beneficio del Plan Premium
+                        </span>
+
+                    </div>
+
+                    <div class="acciones-evento-disponible">
+
+                        <span>
+                            Solicitudes hasta el 25 de agosto
+                        </span>
+
+                        <a asp-controller="Emprendedor"
+                           asp-action="PlanesSuscripcion"
+                           class="boton-mejorar-plan-evento">
+
+                            Mejorar plan
+                            <i class="bi bi-arrow-right"></i>
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- EVENTO 4 -->
+            <article class="tarjeta-evento-disponible evento-filtrable"
+                     data-nombre="Feria Artesanal de Alajuela"
+                     data-tipo="feria"
+                     data-ubicacion="alajuela">
+
+                <div class="imagen-evento-disponible">
+
+                    <img src="~/images/detalle-noticia-feria.jpg"
+                         alt="Feria Artesanal de Alajuela" />
+
+                    <span class="etiqueta-tipo-evento">
+                        Feria
+                    </span>
+
+                    <span class="cupos-evento disponibles">
+                        18 espacios disponibles
+                    </span>
+
+                </div>
+
+                <div class="contenido-evento-disponible">
+
+                    <span class="fecha-destacada-evento">
+                        20 de septiembre de 2026
+                    </span>
+
+                    <h2>Feria Artesanal de Alajuela</h2>
+
+                    <p>
+                        Feria familiar para promover productos hechos
+                        a mano y emprendimientos de la comunidad.
+                    </p>
+
+                    <div class="datos-evento-disponible">
+
+                        <span>
+                            <i class="bi bi-clock-fill"></i>
+                            10:00 a. m. – 5:00 p. m.
+                        </span>
+
+                        <span>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Alajuela centro
+                        </span>
+
+                        <span>
+                            <i class="bi bi-cash-coin"></i>
+                            Participación: ₡8.000
+                        </span>
+
+                    </div>
+
+                    <div class="acciones-evento-disponible">
+
+                        <span>
+                            Solicitudes hasta el 5 de septiembre
+                        </span>
+
+                        <button type="button"
+                                class="boton-solicitar-evento"
+                                data-id="4"
+                                data-evento="Feria Artesanal de Alajuela">
+
+                            Solicitar participación
+                            <i class="bi bi-arrow-right"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+
+
+        <div id="mensajeSinEventos"
+             class="mensaje-sin-eventos">
+
+            <i class="bi bi-calendar-x"></i>
+
+            <h2>No se encontraron eventos</h2>
+
+            <p>
+                Prueba con otra búsqueda o modifica los filtros.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- SOLICITUDES -->
+    <div id="seccionSolicitudesEventos"
+         class="seccion-eventos">
+
+        <div class="encabezado-seccion-eventos">
+
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Seguimiento
+                </span>
+
+                <h2>Mis solicitudes de participación</h2>
+
+                <p>
+                    Consulta el estado de las solicitudes enviadas.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="tabla-solicitudes-eventos">
+
+            <div class="fila-solicitud-evento encabezado-solicitudes">
+                <span>Evento</span>
+                <span>Fecha</span>
+                <span>Solicitud</span>
+                <span>Espacio</span>
+                <span>Estado</span>
+            </div>
+
+            <article class="fila-solicitud-evento">
+
+                <div class="evento-solicitud-tabla">
+
+                    <img src="~/images/evento-san-pedro.jpg"
+                         alt="Feria Creativa San Pedro" />
+
+                    <div>
+                        <strong>Feria Creativa San Pedro</strong>
+                        <span>San Pedro, San José</span>
+                    </div>
+
+                </div>
+
+                <span>18/08/2026</span>
+
+                <span>01/08/2026</span>
+
+                <span>Mesa estándar</span>
+
+                <span class="estado-solicitud-evento aprobada">
+                    Aprobada
+                </span>
+
+            </article>
+
+            <article class="fila-solicitud-evento">
+
+                <div class="evento-solicitud-tabla">
+
+                    <img src="~/images/noticia-feria.jpg"
+                         alt="Festival de Diseño Local" />
+
+                    <div>
+                        <strong>Festival de Diseño Local</strong>
+                        <span>San José centro</span>
+                    </div>
+
+                </div>
+
+                <span>28/08/2026</span>
+
+                <span>02/08/2026</span>
+
+                <span>Espacio pequeño</span>
+
+                <span class="estado-solicitud-evento pendiente">
+                    Pendiente
+                </span>
+
+            </article>
+
+            <article class="fila-solicitud-evento">
+
+                <div class="evento-solicitud-tabla">
+
+                    <img src="~/images/evento-santa-ana.jpg"
+                         alt="Mercado de Emprendedores" />
+
+                    <div>
+                        <strong>Mercado de Emprendedores</strong>
+                        <span>Escazú, San José</span>
+                    </div>
+
+                </div>
+
+                <span>06/09/2026</span>
+
+                <span>03/08/2026</span>
+
+                <span>Mesa estándar</span>
+
+                <span class="estado-solicitud-evento pendiente">
+                    Pendiente
+                </span>
+
+            </article>
+
+        </div>
+
+    </div>
+
+
+    <!-- HISTORIAL -->
+    <div id="seccionHistorialEventos"
+         class="seccion-eventos">
+
+        <div class="encabezado-seccion-eventos">
+
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Actividad anterior
+                </span>
+
+                <h2>Historial de participaciones</h2>
+
+                <p>
+                    Consulta los eventos anteriores en los que participó
+                    tu emprendimiento.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="grid-historial-eventos">
+
+            <article class="tarjeta-historial-evento">
+
+                <img src="~/images/noticia-feria.jpg"
+                     alt="Feria de emprendimientos locales" />
+
+                <div>
+
+                    <span class="fecha-historial-evento">
+                        15 de junio de 2026
+                    </span>
+
+                    <h3>Feria de Emprendimientos Locales</h3>
+
+                    <p>
+                        Participación completada en San José centro.
+                    </p>
+
+                    <span class="resultado-historial-evento">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Participación completada
+                    </span>
+
+                </div>
+
+            </article>
+
+            <article class="tarjeta-historial-evento">
+
+                <img src="~/images/noticia-evento.jpg"
+                     alt="Festival Creativo MiVo" />
+
+                <div>
+
+                    <span class="fecha-historial-evento">
+                        22 de mayo de 2026
+                    </span>
+
+                    <h3>Festival Creativo MiVo</h3>
+
+                    <p>
+                        Participación completada en Santa Ana.
+                    </p>
+
+                    <span class="resultado-historial-evento">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Participación completada
+                    </span>
+
+                </div>
+
+            </article>
+
+            <article class="tarjeta-historial-evento">
+
+                <img src="~/images/noticia-comunidad.jpg"
+                     alt="Encuentro Comunidad Creativa" />
+
+                <div>
+
+                    <span class="fecha-historial-evento">
+                        10 de abril de 2026
+                    </span>
+
+                    <h3>Encuentro Comunidad Creativa</h3>
+
+                    <p>
+                        Participación completada en Heredia.
+                    </p>
+
+                    <span class="resultado-historial-evento">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Participación completada
+                    </span>
+
+                </div>
+
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- MODAL SOLICITAR PARTICIPACIÓN -->
+<div id="modalSolicitudEvento"
+     class="modal-solicitud-evento @(abrirModal ? "visible" : "")"
+     aria-hidden="@(abrirModal ? "false" : "true")">
+
+    <div id="fondoModalSolicitudEvento"
+         class="fondo-modal-solicitud-evento">
+    </div>
+
+    <div class="contenido-modal-solicitud-evento"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloModalSolicitudEvento">
+
+        <button type="button"
+                id="cerrarModalSolicitudEvento"
+                class="cerrar-modal-solicitud-evento"
+                aria-label="Cerrar">
+
+            <i class="bi bi-x-lg"></i>
+
+        </button>
+
+        <span class="icono-modal-solicitud-evento">
+            <i class="bi bi-calendar-check-fill"></i>
+        </span>
+
+        <h2 id="tituloModalSolicitudEvento">
+            Solicitar participación
+        </h2>
+
+        <p>
+            Completa la información necesaria para solicitar un espacio.
+        </p>
+
+        <form asp-controller="Emprendedor"
+              asp-action="SolicitarParticipacionEvento"
+              method="post"
+              novalidate>
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="All"
+                 class="resumen-validacion-emprendedor">
+            </div>
+
+            <input asp-for="IdEvento"
+                   type="hidden"
+                   id="idEventoSolicitud" />
+
+            <input asp-for="NombreEvento"
+                   type="hidden"
+                   id="nombreEventoSolicitud" />
+
+
+            <div class="evento-seleccionado-solicitud">
+
+                <span>
+                    <i class="bi bi-calendar-event-fill"></i>
+                </span>
+
+                <div>
+                    <small>Evento seleccionado</small>
+
+                    <strong id="textoEventoSolicitud">
+                        @Model.NombreEvento
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="TipoEspacio"></label>
+
+                <select asp-for="TipoEspacio"
+                        class="control-emprendedor">
+
+                    <option value="">
+                        Seleccione el tipo de espacio
+                    </option>
+
+                    <option value="Espacio pequeño">
+                        Espacio pequeño
+                    </option>
+
+                    <option value="Mesa estándar">
+                        Mesa estándar
+                    </option>
+
+                    <option value="Espacio amplio">
+                        Espacio amplio
+                    </option>
+
+                </select>
+
+                <span asp-validation-for="TipoEspacio"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="ProductosPresentados"></label>
+
+                <textarea asp-for="ProductosPresentados"
+                          class="control-emprendedor textarea-emprendedor"
+                          rows="5"
+                          maxlength="500"
+                          placeholder="Describe los productos o servicios que presentarás...">
+                </textarea>
+
+                <div class="ayuda-campo-emprendedor">
+                    Mínimo 20 y máximo 500 caracteres.
+                </div>
+
+                <span asp-validation-for="ProductosPresentados"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+
+            <div class="opciones-necesidades-evento">
+
+                <label>
+
+                    <input asp-for="RequiereElectricidad" />
+
+                    <span>
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Requiero conexión eléctrica
+                    </span>
+
+                </label>
+
+                <label>
+
+                    <input asp-for="RequiereMesa" />
+
+                    <span>
+                        <i class="bi bi-table"></i>
+                        Requiero mesa
+                    </span>
+
+                </label>
+
+            </div>
+
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="NecesidadesEspeciales"></label>
+
+                <textarea asp-for="NecesidadesEspeciales"
+                          class="control-emprendedor textarea-emprendedor"
+                          rows="4"
+                          maxlength="400"
+                          placeholder="Indica cualquier necesidad adicional...">
+                </textarea>
+
+                <div class="ayuda-campo-emprendedor">
+                    Campo opcional. Máximo 400 caracteres.
+                </div>
+
+                <span asp-validation-for="NecesidadesEspeciales"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+
+            <label class="confirmacion-solicitud-evento">
+
+                <input asp-for="ConfirmaSolicitud" />
+
+                <span>
+                    Confirmo que deseo enviar esta solicitud
+                    de participación.
+                </span>
+
+            </label>
+
+            <span asp-validation-for="ConfirmaSolicitud"
+                  class="mensaje-validacion-emprendedor">
+            </span>
+
+
+            <div class="acciones-modal-evento">
+
+                <button type="button"
+                        id="cancelarSolicitudEvento"
+                        class="boton-cancelar-solicitud-evento">
+
+                    Cancelar
+
+                </button>
+
+                <button type="submit"
+                        class="boton-enviar-solicitud-evento">
+
+                    <i class="bi bi-send-check-fill"></i>
+                    Enviar solicitud
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const botonesPestana =
+                document.querySelectorAll(".pestana-evento");
+
+            const secciones = {
+                disponibles:
+                    document.getElementById(
+                        "seccionEventosDisponibles"
+                    ),
+
+                solicitudes:
+                    document.getElementById(
+                        "seccionSolicitudesEventos"
+                    ),
+
+                historial:
+                    document.getElementById(
+                        "seccionHistorialEventos"
+                    )
+            };
+
+            botonesPestana.forEach((boton) => {
+
+                boton.addEventListener("click", () => {
+
+                    const seccion =
+                        boton.dataset.seccion;
+
+                    botonesPestana.forEach((item) =>
+                        item.classList.remove("activa")
+                    );
+
+                    Object.values(secciones).forEach((item) =>
+                        item?.classList.remove("activa")
+                    );
+
+                    boton.classList.add("activa");
+
+                    secciones[seccion]?.classList.add("activa");
+                });
+            });
+
+
+            const buscador =
+                document.getElementById("buscarEventoEmprendedor");
+
+            const filtroTipo =
+                document.getElementById("filtroTipoEvento");
+
+            const filtroUbicacion =
+                document.getElementById("filtroUbicacionEvento");
+
+            const botonLimpiar =
+                document.getElementById("limpiarFiltrosEventos");
+
+            const eventos =
+                document.querySelectorAll(".evento-filtrable");
+
+            const mensajeSinEventos =
+                document.getElementById("mensajeSinEventos");
+
+
+            const filtrarEventos = () => {
+
+                const texto =
+                    buscador.value.trim().toLowerCase();
+
+                const tipo =
+                    filtroTipo.value;
+
+                const ubicacion =
+                    filtroUbicacion.value;
+
+                let visibles = 0;
+
+                eventos.forEach((evento) => {
+
+                    const nombre =
+                        evento.dataset.nombre.toLowerCase();
+
+                    const tipoEvento =
+                        evento.dataset.tipo;
+
+                    const ubicacionEvento =
+                        evento.dataset.ubicacion;
+
+                    const coincideTexto =
+                        nombre.includes(texto);
+
+                    const coincideTipo =
+                        tipo === "todos" ||
+                        tipoEvento === tipo;
+
+                    const coincideUbicacion =
+                        ubicacion === "todos" ||
+                        ubicacionEvento === ubicacion;
+
+                    const mostrar =
+                        coincideTexto &&
+                        coincideTipo &&
+                        coincideUbicacion;
+
+                    evento.style.display =
+                        mostrar ? "" : "none";
+
+                    if (mostrar) {
+                        visibles++;
+                    }
+                });
+
+                mensajeSinEventos.style.display =
+                    visibles === 0
+                        ? "flex"
+                        : "none";
+            };
+
+
+            buscador?.addEventListener(
+                "input",
+                filtrarEventos
+            );
+
+            filtroTipo?.addEventListener(
+                "change",
+                filtrarEventos
+            );
+
+            filtroUbicacion?.addEventListener(
+                "change",
+                filtrarEventos
+            );
+
+            botonLimpiar?.addEventListener("click", () => {
+
+                buscador.value = "";
+                filtroTipo.value = "todos";
+                filtroUbicacion.value = "todos";
+
+                filtrarEventos();
+            });
+
+
+            const modal =
+                document.getElementById("modalSolicitudEvento");
+
+            const fondo =
+                document.getElementById(
+                    "fondoModalSolicitudEvento"
+                );
+
+            const botonCerrar =
+                document.getElementById(
+                    "cerrarModalSolicitudEvento"
+                );
+
+            const botonCancelar =
+                document.getElementById(
+                    "cancelarSolicitudEvento"
+                );
+
+            const botonesSolicitar =
+                document.querySelectorAll(
+                    ".boton-solicitar-evento"
+                );
+
+            const campoId =
+                document.getElementById("idEventoSolicitud");
+
+            const campoNombre =
+                document.getElementById("nombreEventoSolicitud");
+
+            const textoEvento =
+                document.getElementById("textoEventoSolicitud");
+
+
+            const abrirModal = (boton) => {
+
+                campoId.value =
+                    boton.dataset.id;
+
+                campoNombre.value =
+                    boton.dataset.evento;
+
+                textoEvento.textContent =
+                    boton.dataset.evento;
+
+                modal.classList.add("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                document.body.classList.add(
+                    "modal-evento-abierto"
+                );
+            };
+
+
+            const cerrarModal = () => {
+
+                modal.classList.remove("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                document.body.classList.remove(
+                    "modal-evento-abierto"
+                );
+            };
+
+
+            botonesSolicitar.forEach((boton) => {
+
+                boton.addEventListener(
+                    "click",
+                    () => abrirModal(boton)
+                );
+            });
+
+            botonCerrar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            botonCancelar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            fondo?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            document.addEventListener("keydown", (evento) => {
+
+                if (evento.key === "Escape") {
+                    cerrarModal();
+                }
+            });
+
+
+            if (modal?.classList.contains("visible")) {
+
+                document.body.classList.add(
+                    "modal-evento-abierto"
+                );
+
+                textoEvento.textContent =
+                    campoNombre?.value ||
+                    "Evento seleccionado";
+            }
+        });
+    </script>
+}

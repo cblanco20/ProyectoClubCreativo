@@ -1,0 +1,528 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.SeleccionPlanViewModel
+
+@{
+    ViewData["Title"] = "Planes de suscripción";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Suscripción
+        </span>
+
+        <h1>Planes para hacer crecer tu emprendimiento</h1>
+
+        <p>
+            Selecciona el plan que mejor se adapte a las necesidades
+            de tu negocio y a la cantidad de productos que deseas publicar.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="MiSuscripcion"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-credit-card"></i>
+        Mi suscripción
+
+    </a>
+
+</section>
+
+
+<section class="resumen-planes-emprendedor">
+
+    <div class="contenido-resumen-planes">
+
+        <span class="icono-resumen-planes">
+            <i class="bi bi-gem"></i>
+        </span>
+
+        <div>
+            <strong>Encuentra el plan ideal para tu negocio</strong>
+
+            <p>
+                Todos los planes te permiten administrar tu perfil,
+                productos e información comercial desde el panel.
+            </p>
+        </div>
+
+    </div>
+
+    <div class="garantia-planes-emprendedor">
+
+        <i class="bi bi-shield-check"></i>
+
+        <span>
+            Puedes cambiar o cancelar tu plan cuando lo necesites.
+        </span>
+
+    </div>
+
+</section>
+
+
+<form asp-controller="Emprendedor"
+      asp-action="PlanesSuscripcion"
+      method="post"
+      class="formulario-planes-emprendedor"
+      novalidate>
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="All"
+         class="resumen-validacion-emprendedor">
+    </div>
+
+
+    <section class="grid-planes-suscripcion">
+
+        <!-- PLAN BÁSICO -->
+        <label class="tarjeta-plan-emprendedor">
+
+            <input asp-for="PlanSeleccionado"
+                   type="radio"
+                   value="Básico"
+                   class="selector-plan-oculto" />
+
+            <span class="indicador-seleccion-plan">
+                <i class="bi bi-check-lg"></i>
+            </span>
+
+            <div class="cabecera-plan-emprendedor">
+
+                <span class="icono-plan-suscripcion basico">
+                    <i class="bi bi-box"></i>
+                </span>
+
+                <span class="etiqueta-plan-suscripcion">
+                    Para comenzar
+                </span>
+
+            </div>
+
+            <div class="nombre-plan-emprendedor">
+                <h2>Plan Básico</h2>
+
+                <p>
+                    Ideal para emprendimientos que están comenzando
+                    a publicar sus primeros productos.
+                </p>
+            </div>
+
+            <div class="precio-plan-emprendedor">
+
+                <strong>Gratis</strong>
+
+                <span>Sin costo mensual</span>
+
+            </div>
+
+            <ul class="beneficios-plan-emprendedor">
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Perfil público del emprendimiento.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Hasta 5 productos publicados.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Administración básica de inventario.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Consulta de ventas.
+                </li>
+
+                <li class="beneficio-no-incluido">
+                    <i class="bi bi-x-circle"></i>
+                    Participación prioritaria en eventos.
+                </li>
+
+                <li class="beneficio-no-incluido">
+                    <i class="bi bi-x-circle"></i>
+                    Acceso a Hecho en CR.
+                </li>
+
+            </ul>
+
+            <span class="boton-seleccionar-plan">
+                Seleccionar plan
+            </span>
+
+        </label>
+
+
+        <!-- PLAN EMPRENDEDOR -->
+        <label class="tarjeta-plan-emprendedor plan-recomendado">
+
+            <input asp-for="PlanSeleccionado"
+                   type="radio"
+                   value="Emprendedor"
+                   class="selector-plan-oculto" />
+
+            <span class="indicador-seleccion-plan">
+                <i class="bi bi-check-lg"></i>
+            </span>
+
+            <span class="insignia-plan-recomendado">
+                Más popular
+            </span>
+
+            <div class="cabecera-plan-emprendedor">
+
+                <span class="icono-plan-suscripcion emprendedor">
+                    <i class="bi bi-rocket-takeoff-fill"></i>
+                </span>
+
+                <span class="etiqueta-plan-suscripcion">
+                    Para crecer
+                </span>
+
+            </div>
+
+            <div class="nombre-plan-emprendedor">
+                <h2>Plan Emprendedor</h2>
+
+                <p>
+                    Diseñado para negocios que desean ampliar su catálogo
+                    y participar en actividades del Club.
+                </p>
+            </div>
+
+            <div class="precio-plan-emprendedor">
+
+                <strong>₡7.500</strong>
+
+                <span>por mes</span>
+
+            </div>
+
+            <ul class="beneficios-plan-emprendedor">
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Todos los beneficios del plan Básico.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Hasta 25 productos publicados.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Promociones para productos.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Participación en eventos seleccionados.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Estadísticas del emprendimiento.
+                </li>
+
+                <li class="beneficio-no-incluido">
+                    <i class="bi bi-x-circle"></i>
+                    Acceso completo a Hecho en CR.
+                </li>
+
+            </ul>
+
+            <span class="boton-seleccionar-plan">
+                Seleccionar plan
+            </span>
+
+        </label>
+
+
+        <!-- PLAN PREMIUM -->
+        <label class="tarjeta-plan-emprendedor">
+
+            <input asp-for="PlanSeleccionado"
+                   type="radio"
+                   value="Premium"
+                   class="selector-plan-oculto" />
+
+            <span class="indicador-seleccion-plan">
+                <i class="bi bi-check-lg"></i>
+            </span>
+
+            <div class="cabecera-plan-emprendedor">
+
+                <span class="icono-plan-suscripcion premium">
+                    <i class="bi bi-gem"></i>
+                </span>
+
+                <span class="etiqueta-plan-suscripcion">
+                    Para destacar
+                </span>
+
+            </div>
+
+            <div class="nombre-plan-emprendedor">
+                <h2>Plan Premium</h2>
+
+                <p>
+                    Para marcas consolidadas que necesitan mayor visibilidad,
+                    publicaciones y acceso a beneficios exclusivos.
+                </p>
+            </div>
+
+            <div class="precio-plan-emprendedor">
+
+                <strong>₡15.000</strong>
+
+                <span>por mes</span>
+
+            </div>
+
+            <ul class="beneficios-plan-emprendedor">
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Todos los beneficios del plan Emprendedor.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Productos publicados sin límite.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Participación prioritaria en eventos.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Acceso completo a Hecho en CR.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Mayor visibilidad en el catálogo.
+                </li>
+
+                <li>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Estadísticas y reportes avanzados.
+                </li>
+
+            </ul>
+
+            <span class="boton-seleccionar-plan">
+                Seleccionar plan
+            </span>
+
+        </label>
+
+    </section>
+
+    <span asp-validation-for="PlanSeleccionado"
+          class="mensaje-validacion-emprendedor validacion-plan-emprendedor">
+    </span>
+
+
+    <!-- COMPARACIÓN -->
+    <section class="comparacion-planes-emprendedor">
+
+        <div class="encabezado-comparacion-planes">
+
+            <span class="subtitulo-emprendedor">
+                Comparación
+            </span>
+
+            <h2>Compara los beneficios</h2>
+
+            <p>
+                Revisa rápidamente las características incluidas
+                en cada opción.
+            </p>
+
+        </div>
+
+        <div class="tabla-comparacion-planes">
+
+            <div class="fila-comparacion encabezado-comparacion">
+                <span>Característica</span>
+                <span>Básico</span>
+                <span>Emprendedor</span>
+                <span>Premium</span>
+            </div>
+
+            <div class="fila-comparacion">
+                <span>Productos publicados</span>
+                <span>5</span>
+                <span>25</span>
+                <span>Sin límite</span>
+            </div>
+
+            <div class="fila-comparacion">
+                <span>Perfil público</span>
+                <span><i class="bi bi-check-circle-fill"></i></span>
+                <span><i class="bi bi-check-circle-fill"></i></span>
+                <span><i class="bi bi-check-circle-fill"></i></span>
+            </div>
+
+            <div class="fila-comparacion">
+                <span>Promociones</span>
+                <span><i class="bi bi-dash-circle"></i></span>
+                <span><i class="bi bi-check-circle-fill"></i></span>
+                <span><i class="bi bi-check-circle-fill"></i></span>
+            </div>
+
+            <div class="fila-comparacion">
+                <span>Participación en eventos</span>
+                <span>Limitada</span>
+                <span>Incluida</span>
+                <span>Prioritaria</span>
+            </div>
+
+            <div class="fila-comparacion">
+                <span>Hecho en CR</span>
+                <span><i class="bi bi-dash-circle"></i></span>
+                <span>Limitado</span>
+                <span><i class="bi bi-check-circle-fill"></i></span>
+            </div>
+
+            <div class="fila-comparacion">
+                <span>Estadísticas</span>
+                <span>Básicas</span>
+                <span>Completas</span>
+                <span>Avanzadas</span>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CONFIRMACIÓN -->
+    <section class="confirmacion-plan-emprendedor">
+
+        <div class="informacion-confirmacion-plan">
+
+            <span class="icono-confirmacion-plan">
+                <i class="bi bi-shield-check"></i>
+            </span>
+
+            <div>
+                <h2>Confirma tu elección</h2>
+
+                <p>
+                    Selecciona uno de los planes y confirma que deseas
+                    continuar con la suscripción.
+                </p>
+            </div>
+
+        </div>
+
+        <label class="casilla-confirmacion-plan">
+
+            <input asp-for="ConfirmaSeleccion" />
+
+            <span>
+                Confirmo que deseo seleccionar el plan indicado
+                y conozco sus beneficios.
+            </span>
+
+        </label>
+
+        <span asp-validation-for="ConfirmaSeleccion"
+              class="mensaje-validacion-emprendedor">
+        </span>
+
+    </section>
+
+
+    <div class="acciones-formulario-emprendedor">
+
+        <a asp-controller="Emprendedor"
+           asp-action="Panel"
+           class="boton-cancelar-formulario-emprendedor">
+
+            Cancelar
+
+        </a>
+
+        <button type="submit"
+                class="boton-guardar-formulario-emprendedor">
+
+            <i class="bi bi-credit-card-fill"></i>
+            Continuar con el plan
+
+        </button>
+
+    </div>
+
+</form>
+
+
+<section class="preguntas-planes-emprendedor">
+
+    <div class="encabezado-preguntas-planes">
+
+        <span class="subtitulo-emprendedor">
+            Información
+        </span>
+
+        <h2>Preguntas frecuentes</h2>
+
+    </div>
+
+    <div class="grid-preguntas-planes">
+
+        <article>
+            <i class="bi bi-arrow-repeat"></i>
+
+            <div>
+                <h3>¿Puedo cambiar de plan?</h3>
+
+                <p>
+                    Sí. Puedes seleccionar otro plan desde la sección
+                    Mi suscripción.
+                </p>
+            </div>
+        </article>
+
+        <article>
+            <i class="bi bi-calendar-x"></i>
+
+            <div>
+                <h3>¿Puedo cancelar?</h3>
+
+                <p>
+                    Puedes solicitar la cancelación antes de la siguiente
+                    fecha de renovación.
+                </p>
+            </div>
+        </article>
+
+        <article>
+            <i class="bi bi-box-seam"></i>
+
+            <div>
+                <h3>¿Qué pasa con mis productos?</h3>
+
+                <p>
+                    Si cambias a un plan inferior, algunos productos
+                    podrían quedar temporalmente ocultos.
+                </p>
+            </div>
+        </article>
+
+    </div>
+
+</section>

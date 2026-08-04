@@ -1,0 +1,673 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.ProductoEmprendedorViewModel
+
+@{
+    ViewData["Title"] = "Editar producto";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+
+    int idProducto =
+        ViewBag.IdProducto is int id
+            ? id
+            : 1;
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Catálogo
+        </span>
+
+        <h1>Editar producto o servicio</h1>
+
+        <p>
+            Actualiza la información, el precio, el inventario,
+            las imágenes y el estado de la publicación.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="MisProductos"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-arrow-left"></i>
+        Volver a productos
+
+    </a>
+
+</section>
+
+
+<div class="aviso-edicion-producto">
+
+    <span>
+        <i class="bi bi-info-circle-fill"></i>
+    </span>
+
+    <div>
+        <strong>Editando: @Model.Nombre</strong>
+
+        <p>
+            Los cambios se mostrarán en el catálogo después
+            de guardar correctamente el formulario.
+        </p>
+    </div>
+
+</div>
+
+
+<form asp-controller="Emprendedor"
+      asp-action="EditarProducto"
+      asp-route-id="@idProducto"
+      method="post"
+      enctype="multipart/form-data"
+      class="formulario-producto-emprendedor"
+      novalidate>
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="All"
+         class="resumen-validacion-emprendedor">
+    </div>
+
+    <div class="grid-formulario-producto">
+
+        <div class="columna-principal-formulario-producto">
+
+            <!-- INFORMACIÓN GENERAL -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-box-seam-fill"></i>
+                    </span>
+
+                    <div>
+                        <h2>Información general</h2>
+
+                        <p>
+                            Modifica los datos principales de la publicación.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="Nombre"></label>
+
+                    <input asp-for="Nombre"
+                           class="control-emprendedor"
+                           placeholder="Nombre del producto o servicio" />
+
+                    <span asp-validation-for="Nombre"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+
+                <div class="fila-campos-emprendedor">
+
+                    <div class="grupo-campo-emprendedor">
+
+                        <label asp-for="TipoPublicacion"></label>
+
+                        <select asp-for="TipoPublicacion"
+                                id="tipoPublicacionEditar"
+                                class="control-emprendedor">
+
+                            <option value="">
+                                Seleccione un tipo
+                            </option>
+
+                            <option value="Producto">
+                                Producto
+                            </option>
+
+                            <option value="Servicio">
+                                Servicio
+                            </option>
+
+                        </select>
+
+                        <span asp-validation-for="TipoPublicacion"
+                              class="mensaje-validacion-emprendedor">
+                        </span>
+
+                    </div>
+
+
+                    <div class="grupo-campo-emprendedor">
+
+                        <label asp-for="Categoria"></label>
+
+                        <select asp-for="Categoria"
+                                class="control-emprendedor">
+
+                            <option value="">
+                                Seleccione una categoría
+                            </option>
+
+                            <option>Arte e ilustración</option>
+                            <option>Accesorios y joyería</option>
+                            <option>Moda y textiles</option>
+                            <option>Alimentos y bebidas</option>
+                            <option>Cuidado personal</option>
+                            <option>Decoración</option>
+                            <option>Servicios creativos</option>
+                            <option>Otro</option>
+
+                        </select>
+
+                        <span asp-validation-for="Categoria"
+                              class="mensaje-validacion-emprendedor">
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="Descripcion"></label>
+
+                    <textarea asp-for="Descripcion"
+                              class="control-emprendedor textarea-emprendedor"
+                              rows="7"
+                              maxlength="1000"
+                              placeholder="Describe el producto o servicio...">
+                    </textarea>
+
+                    <div class="ayuda-campo-emprendedor">
+                        Mínimo 30 y máximo 1000 caracteres.
+                    </div>
+
+                    <span asp-validation-for="Descripcion"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="Etiquetas"></label>
+
+                    <input asp-for="Etiquetas"
+                           class="control-emprendedor"
+                           placeholder="artesanal, regalo, accesorios" />
+
+                    <div class="ayuda-campo-emprendedor">
+                        Separa las etiquetas utilizando comas.
+                    </div>
+
+                    <span asp-validation-for="Etiquetas"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+            </section>
+
+
+            <!-- PRECIO E INVENTARIO -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-cash-coin"></i>
+                    </span>
+
+                    <div>
+                        <h2>Precio e inventario</h2>
+
+                        <p>
+                            Actualiza el precio, las existencias
+                            y el estado de la publicación.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="fila-campos-emprendedor">
+
+                    <div class="grupo-campo-emprendedor">
+
+                        <label asp-for="Precio"></label>
+
+                        <div class="campo-precio-producto">
+
+                            <span>₡</span>
+
+                            <input asp-for="Precio"
+                                   class="control-emprendedor"
+                                   min="0.01"
+                                   step="0.01"
+                                   placeholder="8500" />
+
+                        </div>
+
+                        <span asp-validation-for="Precio"
+                              class="mensaje-validacion-emprendedor">
+                        </span>
+
+                    </div>
+
+
+                    <div id="contenedorInventarioEditar"
+                         class="grupo-campo-emprendedor">
+
+                        <label asp-for="Inventario"></label>
+
+                        <input asp-for="Inventario"
+                               class="control-emprendedor"
+                               min="0"
+                               step="1"
+                               inputmode="numeric"
+                               placeholder="10" />
+
+                        <span asp-validation-for="Inventario"
+                              class="mensaje-validacion-emprendedor">
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="Estado"></label>
+
+                    <select asp-for="Estado"
+                            class="control-emprendedor">
+
+                        <option value="">
+                            Seleccione un estado
+                        </option>
+
+                        <option>Activo</option>
+                        <option>Inactivo</option>
+                        <option>Agotado</option>
+                        <option>Borrador</option>
+
+                    </select>
+
+                    <span asp-validation-for="Estado"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+
+                <div class="alerta-inventario-editar">
+
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+
+                    <div>
+                        <strong>Inventario bajo</strong>
+
+                        <p>
+                            Actualmente este producto tiene solamente
+                            dos unidades disponibles.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- PROMOCIÓN -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-megaphone-fill"></i>
+                    </span>
+
+                    <div>
+                        <h2>Promoción y visibilidad</h2>
+
+                        <p>
+                            Modifica la promoción asociada y la visibilidad.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="PromocionAsociada"></label>
+
+                    <select asp-for="PromocionAsociada"
+                            class="control-emprendedor">
+
+                        <option value="">
+                            Sin promoción
+                        </option>
+
+                        <option value="Descuento 10%">
+                            Descuento del 10 %
+                        </option>
+
+                        <option value="Descuento 15%">
+                            Descuento del 15 %
+                        </option>
+
+                        <option value="Envío gratis">
+                            Envío gratis
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <label class="opcion-destacar-producto">
+
+                    <input asp-for="EsDestacado" />
+
+                    <span class="icono-opcion-destacar">
+                        <i class="bi bi-star-fill"></i>
+                    </span>
+
+                    <span>
+                        <strong>Destacar producto</strong>
+
+                        <small>
+                            Mostrar esta publicación entre los productos
+                            principales del emprendimiento.
+                        </small>
+                    </span>
+
+                </label>
+
+            </section>
+
+        </div>
+
+
+        <!-- COLUMNA DERECHA -->
+        <aside class="columna-lateral-formulario-producto">
+
+            <!-- IMÁGENES ACTUALES -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-images"></i>
+                    </span>
+
+                    <div>
+                        <h2>Imágenes del producto</h2>
+
+                        <p>
+                            Conserva las actuales o selecciona otras imágenes.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="imagenes-actuales-producto">
+
+                    <span>Imágenes actuales</span>
+
+                    <div class="grid-imagenes-actuales-producto">
+
+                        <div>
+                            <img src="~/images/producto-1.jpg"
+                                 alt="Imagen actual del producto" />
+
+                            <span>Principal</span>
+                        </div>
+
+                        <div>
+                            <img src="~/images/noticia-emprendimiento.jpg"
+                                 alt="Imagen secundaria del producto" />
+                        </div>
+
+                        <div>
+                            <img src="~/images/registro-emprendedor.jpg"
+                                 alt="Imagen secundaria del producto" />
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <label class="selector-imagenes-producto"
+                       for="imagenesEditarProducto">
+
+                    <i class="bi bi-cloud-arrow-up-fill"></i>
+
+                    <strong>Seleccionar imágenes nuevas</strong>
+
+                    <span>
+                        Si no seleccionas archivos, se conservarán
+                        las imágenes actuales.
+                    </span>
+
+                </label>
+
+                <input asp-for="Imagenes"
+                       id="imagenesEditarProducto"
+                       class="input-archivo-oculto"
+                       accept=".jpg,.jpeg,.png,.webp"
+                       multiple />
+
+                <span id="cantidadImagenesEditar"
+                      class="nombre-archivo-emprendedor">
+                    Se conservarán las imágenes actuales.
+                </span>
+
+                <span asp-validation-for="Imagenes"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+                <div id="vistaPreviaImagenesEditar"
+                     class="vista-previa-imagenes-producto">
+                </div>
+
+            </section>
+
+
+            <!-- ESTADO ACTUAL -->
+            <section class="estado-actual-producto-edicion">
+
+                <span class="icono-estado-actual-producto">
+                    <i class="bi bi-check-circle-fill"></i>
+                </span>
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Publicación actual
+                    </span>
+
+                    <h2>Producto activo</h2>
+
+                    <p>
+                        Este producto se encuentra visible actualmente
+                        dentro del catálogo.
+                    </p>
+                </div>
+
+            </section>
+
+
+            <!-- RECOMENDACIONES -->
+            <section class="recomendaciones-producto-emprendedor">
+
+                <span class="icono-recomendaciones-producto">
+                    <i class="bi bi-lightbulb-fill"></i>
+                </span>
+
+                <div>
+                    <h2>Antes de guardar</h2>
+
+                    <ul>
+                        <li>Verifica que el precio sea correcto.</li>
+                        <li>Actualiza la cantidad disponible.</li>
+                        <li>Revisa el estado de publicación.</li>
+                        <li>Utiliza imágenes claras.</li>
+                        <li>Confirma que la descripción esté completa.</li>
+                    </ul>
+                </div>
+
+            </section>
+
+
+            <!-- CONFIRMACIÓN -->
+            <section class="bloque-confirmacion-solicitud">
+
+                <div class="aviso-confirmacion-solicitud">
+
+                    <i class="bi bi-shield-check"></i>
+
+                    <p>
+                        Los cambios sustituirán la información
+                        mostrada actualmente en el catálogo.
+                    </p>
+
+                </div>
+
+                <label class="confirmacion-informacion-emprendedor">
+
+                    <input asp-for="ConfirmaInformacion" />
+
+                    <span>
+                        Confirmo que la información ingresada es correcta
+                        y deseo guardar los cambios.
+                    </span>
+
+                </label>
+
+                <span asp-validation-for="ConfirmaInformacion"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </section>
+
+        </aside>
+
+    </div>
+
+
+    <div class="acciones-formulario-emprendedor">
+
+        <a asp-controller="Emprendedor"
+           asp-action="MisProductos"
+           class="boton-cancelar-formulario-emprendedor">
+
+            Cancelar
+
+        </a>
+
+        <button type="submit"
+                class="boton-guardar-formulario-emprendedor">
+
+            <i class="bi bi-check-circle-fill"></i>
+            Guardar cambios
+
+        </button>
+
+    </div>
+
+</form>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const tipoPublicacion =
+                document.getElementById("tipoPublicacionEditar");
+
+            const contenedorInventario =
+                document.getElementById("contenedorInventarioEditar");
+
+            const campoInventario =
+                document.getElementById("Inventario");
+
+            const actualizarInventario = () => {
+
+                const esServicio =
+                    tipoPublicacion?.value === "Servicio";
+
+                if (contenedorInventario) {
+                    contenedorInventario.style.display =
+                        esServicio ? "none" : "flex";
+                }
+
+                if (esServicio && campoInventario) {
+                    campoInventario.value = "";
+                }
+            };
+
+            tipoPublicacion?.addEventListener(
+                "change",
+                actualizarInventario
+            );
+
+            actualizarInventario();
+
+
+            const inputImagenes =
+                document.getElementById("imagenesEditarProducto");
+
+            const cantidadImagenes =
+                document.getElementById("cantidadImagenesEditar");
+
+            const vistaPrevia =
+                document.getElementById("vistaPreviaImagenesEditar");
+
+            inputImagenes?.addEventListener("change", () => {
+
+                vistaPrevia.innerHTML = "";
+
+                const archivos =
+                    Array.from(inputImagenes.files);
+
+                cantidadImagenes.textContent =
+                    archivos.length === 0
+                        ? "Se conservarán las imágenes actuales."
+                        : `${archivos.length} imagen(es) nueva(s) seleccionada(s).`;
+
+                archivos.slice(0, 5).forEach((archivo) => {
+
+                    if (!archivo.type.startsWith("image/")) {
+                        return;
+                    }
+
+                    const lector = new FileReader();
+
+                    lector.addEventListener("load", () => {
+
+                        const imagen =
+                            document.createElement("img");
+
+                        imagen.src = lector.result;
+                        imagen.alt = "Vista previa de nueva imagen";
+
+                        vistaPrevia.appendChild(imagen);
+                    });
+
+                    lector.readAsDataURL(archivo);
+                });
+            });
+        });
+    </script>
+}

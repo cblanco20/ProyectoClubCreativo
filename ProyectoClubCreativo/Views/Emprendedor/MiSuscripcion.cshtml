@@ -1,0 +1,838 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.MiSuscripcionViewModel
+
+@{
+    ViewData["Title"] = "Mi suscripción";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+@if (TempData["MensajeSuscripcion"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeSuscripcion"]
+    </div>
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Suscripción
+        </span>
+
+        <h1>Mi suscripción</h1>
+
+        <p>
+            Consulta el plan actual de tu emprendimiento,
+            sus beneficios, fechas y opciones de administración.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="PlanesSuscripcion"
+       class="boton-editar-perfil-emprendedor">
+
+        <i class="bi bi-arrow-repeat"></i>
+        Cambiar plan
+
+    </a>
+
+</section>
+
+
+<!-- PLAN ACTUAL -->
+<section class="tarjeta-plan-actual-emprendedor">
+
+    <div class="decoracion-plan-actual decoracion-uno"></div>
+    <div class="decoracion-plan-actual decoracion-dos"></div>
+
+    <div class="contenido-plan-actual">
+
+        <div class="cabecera-plan-actual">
+
+            <span class="icono-plan-actual">
+                <i class="bi bi-rocket-takeoff-fill"></i>
+            </span>
+
+            <div>
+                <span class="etiqueta-plan-actual">
+                    Plan actual
+                </span>
+
+                <h2>Plan Emprendedor</h2>
+
+                <p>
+                    Amplía tu catálogo y participa en actividades
+                    seleccionadas de Club Creativo.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="precio-plan-actual">
+
+            <strong>₡7.500</strong>
+            <span>por mes</span>
+
+        </div>
+
+    </div>
+
+    <div class="estado-plan-actual">
+
+        <span class="insignia-suscripcion-activa">
+            <i class="bi bi-check-circle-fill"></i>
+            Activa
+        </span>
+
+        <a asp-controller="Emprendedor"
+           asp-action="PlanesSuscripcion">
+
+            Ver otros planes
+            <i class="bi bi-arrow-right"></i>
+
+        </a>
+
+    </div>
+
+</section>
+
+
+<!-- RESUMEN -->
+<section class="resumen-mi-suscripcion">
+
+    <article class="tarjeta-dato-suscripcion">
+
+        <span class="icono-dato-suscripcion inicio">
+            <i class="bi bi-calendar-check-fill"></i>
+        </span>
+
+        <div>
+            <span>Fecha de inicio</span>
+            <strong>4 de agosto de 2026</strong>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-dato-suscripcion renovacion">
+
+        <span class="icono-dato-suscripcion renovacion">
+            <i class="bi bi-arrow-clockwise"></i>
+        </span>
+
+        <div>
+            <span>Próxima renovación</span>
+            <strong>4 de septiembre de 2026</strong>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-dato-suscripcion">
+
+        <span class="icono-dato-suscripcion metodo">
+            <i class="bi bi-credit-card-fill"></i>
+        </span>
+
+        <div>
+            <span>Método de pago</span>
+            <strong>Tarjeta terminada en 4821</strong>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-dato-suscripcion">
+
+        <span class="icono-dato-suscripcion estado">
+            <i class="bi bi-shield-check"></i>
+        </span>
+
+        <div>
+            <span>Estado</span>
+            <strong>Suscripción activa</strong>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- CONTENIDO -->
+<section class="grid-mi-suscripcion">
+
+    <div class="columna-principal-suscripcion">
+
+        <!-- USO DEL PLAN -->
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Uso del plan
+                    </span>
+
+                    <h2>Resumen de utilización</h2>
+
+                    <p>
+                        Consulta cuánto has utilizado de los beneficios
+                        disponibles en tu suscripción.
+                    </p>
+                </div>
+
+                <span class="periodo-suscripcion">
+                    Agosto de 2026
+                </span>
+
+            </div>
+
+            <div class="lista-uso-suscripcion">
+
+                <div class="item-uso-suscripcion">
+
+                    <div class="encabezado-uso-suscripcion">
+
+                        <div>
+                            <span class="icono-uso-suscripcion productos">
+                                <i class="bi bi-box-seam-fill"></i>
+                            </span>
+
+                            <span>
+                                <strong>Productos publicados</strong>
+                                8 de 25 publicaciones utilizadas
+                            </span>
+                        </div>
+
+                        <strong>32%</strong>
+
+                    </div>
+
+                    <div class="barra-uso-suscripcion">
+                        <span style="width: 32%;"></span>
+                    </div>
+
+                </div>
+
+
+                <div class="item-uso-suscripcion">
+
+                    <div class="encabezado-uso-suscripcion">
+
+                        <div>
+                            <span class="icono-uso-suscripcion eventos">
+                                <i class="bi bi-calendar-event-fill"></i>
+                            </span>
+
+                            <span>
+                                <strong>Participación en eventos</strong>
+                                2 de 5 solicitudes disponibles
+                            </span>
+                        </div>
+
+                        <strong>40%</strong>
+
+                    </div>
+
+                    <div class="barra-uso-suscripcion eventos">
+                        <span style="width: 40%;"></span>
+                    </div>
+
+                </div>
+
+
+                <div class="item-uso-suscripcion">
+
+                    <div class="encabezado-uso-suscripcion">
+
+                        <div>
+                            <span class="icono-uso-suscripcion promociones">
+                                <i class="bi bi-megaphone-fill"></i>
+                            </span>
+
+                            <span>
+                                <strong>Promociones activas</strong>
+                                1 de 3 promociones utilizadas
+                            </span>
+                        </div>
+
+                        <strong>33%</strong>
+
+                    </div>
+
+                    <div class="barra-uso-suscripcion promociones">
+                        <span style="width: 33%;"></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- BENEFICIOS -->
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Beneficios
+                    </span>
+
+                    <h2>Incluido en tu plan</h2>
+
+                    <p>
+                        Estos son los beneficios disponibles actualmente
+                        para tu emprendimiento.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="grid-beneficios-suscripcion">
+
+                <article class="beneficio-suscripcion">
+
+                    <span>
+                        <i class="bi bi-shop-window"></i>
+                    </span>
+
+                    <div>
+                        <h3>Perfil público</h3>
+
+                        <p>
+                            Publica la información, galería y medios
+                            de contacto de tu emprendimiento.
+                        </p>
+                    </div>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                </article>
+
+
+                <article class="beneficio-suscripcion">
+
+                    <span>
+                        <i class="bi bi-box-seam-fill"></i>
+                    </span>
+
+                    <div>
+                        <h3>25 productos</h3>
+
+                        <p>
+                            Publica hasta veinticinco productos
+                            o servicios dentro del catálogo.
+                        </p>
+                    </div>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                </article>
+
+
+                <article class="beneficio-suscripcion">
+
+                    <span>
+                        <i class="bi bi-calendar-event-fill"></i>
+                    </span>
+
+                    <div>
+                        <h3>Participación en eventos</h3>
+
+                        <p>
+                            Solicita espacios en eventos seleccionados
+                            de Club Creativo.
+                        </p>
+                    </div>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                </article>
+
+
+                <article class="beneficio-suscripcion">
+
+                    <span>
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </span>
+
+                    <div>
+                        <h3>Estadísticas</h3>
+
+                        <p>
+                            Consulta ventas, visitas, favoritos
+                            y productos destacados.
+                        </p>
+                    </div>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                </article>
+
+
+                <article class="beneficio-suscripcion">
+
+                    <span>
+                        <i class="bi bi-tags-fill"></i>
+                    </span>
+
+                    <div>
+                        <h3>Promociones</h3>
+
+                        <p>
+                            Asocia promociones a productos seleccionados
+                            de tu emprendimiento.
+                        </p>
+                    </div>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                </article>
+
+
+                <article class="beneficio-suscripcion no-disponible">
+
+                    <span>
+                        <i class="bi bi-geo-alt-fill"></i>
+                    </span>
+
+                    <div>
+                        <h3>Acceso completo a Hecho en CR</h3>
+
+                        <p>
+                            Disponible únicamente con el plan Premium.
+                        </p>
+                    </div>
+
+                    <i class="bi bi-lock-fill"></i>
+
+                </article>
+
+            </div>
+
+        </article>
+
+
+        <!-- HISTORIAL -->
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Historial
+                    </span>
+
+                    <h2>Movimientos de la suscripción</h2>
+                </div>
+
+            </div>
+
+            <div class="tabla-historial-suscripcion">
+
+                <div class="fila-historial-suscripcion encabezado-historial">
+                    <span>Fecha</span>
+                    <span>Descripción</span>
+                    <span>Monto</span>
+                    <span>Estado</span>
+                </div>
+
+                <div class="fila-historial-suscripcion">
+                    <span>04/08/2026</span>
+                    <span>Activación del Plan Emprendedor</span>
+                    <span>₡7.500</span>
+
+                    <span class="estado-pago-suscripcion pagado">
+                        Pagado
+                    </span>
+                </div>
+
+                <div class="fila-historial-suscripcion">
+                    <span>04/07/2026</span>
+                    <span>Plan Básico</span>
+                    <span>₡0</span>
+
+                    <span class="estado-pago-suscripcion completado">
+                        Completado
+                    </span>
+                </div>
+
+            </div>
+
+        </article>
+
+    </div>
+
+
+    <!-- COLUMNA LATERAL -->
+    <aside class="columna-lateral-suscripcion">
+
+        <!-- RENOVACIÓN -->
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Renovación
+                    </span>
+
+                    <h2>Renovación automática</h2>
+                </div>
+
+            </div>
+
+            <div class="estado-renovacion-suscripcion">
+
+                <span class="icono-renovacion-activa">
+                    <i class="bi bi-arrow-repeat"></i>
+                </span>
+
+                <div>
+                    <strong>Renovación activada</strong>
+
+                    <p>
+                        El plan se renovará automáticamente
+                        el 4 de septiembre de 2026.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="detalle-renovacion-suscripcion">
+
+                <div>
+                    <span>Próximo cobro</span>
+                    <strong>₡7.500</strong>
+                </div>
+
+                <div>
+                    <span>Fecha</span>
+                    <strong>04/09/2026</strong>
+                </div>
+
+            </div>
+
+            <form asp-controller="Emprendedor"
+                  asp-action="RenovarSuscripcion"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <button type="submit"
+                        class="boton-renovacion-suscripcion">
+
+                    <i class="bi bi-check-circle"></i>
+                    Mantener renovación activa
+
+                </button>
+
+            </form>
+
+        </article>
+
+
+        <!-- CAMBIAR PLAN -->
+        <article class="cambiar-plan-suscripcion">
+
+            <span class="icono-cambiar-plan">
+                <i class="bi bi-gem"></i>
+            </span>
+
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Más beneficios
+                </span>
+
+                <h2>Mejora tu suscripción</h2>
+
+                <p>
+                    Obtén publicaciones ilimitadas, acceso a Hecho en CR
+                    y participación prioritaria en eventos.
+                </p>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="PlanesSuscripcion">
+
+                    Comparar planes
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+            </div>
+
+        </article>
+
+
+        <!-- CANCELACIÓN -->
+        <article class="bloque-suscripcion-emprendedor bloque-cancelacion-suscripcion">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Administración
+                    </span>
+
+                    <h2>Cancelar suscripción</h2>
+
+                    <p>
+                        El plan continuará activo hasta finalizar
+                        el período actual.
+                    </p>
+                </div>
+
+            </div>
+
+            <button type="button"
+                    id="abrirCancelacionSuscripcion"
+                    class="boton-abrir-cancelacion">
+
+                <i class="bi bi-x-circle"></i>
+                Solicitar cancelación
+
+            </button>
+
+        </article>
+
+
+        <!-- SOPORTE -->
+        <article class="soporte-suscripcion-emprendedor">
+
+            <span>
+                <i class="bi bi-headset"></i>
+            </span>
+
+            <div>
+                <h2>¿Necesitas ayuda?</h2>
+
+                <p>
+                    Comunícate con nuestro equipo para resolver
+                    dudas relacionadas con tu plan.
+                </p>
+
+                <a asp-controller="Home"
+                   asp-action="Contacto">
+
+                    Contactar soporte
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+            </div>
+
+        </article>
+
+    </aside>
+
+</section>
+
+
+<!-- MODAL DE CANCELACIÓN -->
+<div id="modalCancelacionSuscripcion"
+     class="modal-cancelacion-suscripcion"
+     aria-hidden="true">
+
+    <div class="fondo-modal-cancelacion"
+         id="fondoCancelacionSuscripcion">
+    </div>
+
+    <div class="contenido-modal-cancelacion"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloCancelacionSuscripcion">
+
+        <button type="button"
+                id="cerrarCancelacionSuscripcion"
+                class="cerrar-modal-cancelacion"
+                aria-label="Cerrar">
+
+            <i class="bi bi-x-lg"></i>
+
+        </button>
+
+        <span class="icono-modal-cancelacion">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </span>
+
+        <h2 id="tituloCancelacionSuscripcion">
+            Cancelar suscripción
+        </h2>
+
+        <p>
+            Al cancelar, conservarás los beneficios hasta finalizar
+            el período actual. Después pasarás al Plan Básico.
+        </p>
+
+        <form asp-controller="Emprendedor"
+              asp-action="CancelarSuscripcion"
+              method="post"
+              novalidate>
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="All"
+                 class="resumen-validacion-emprendedor">
+            </div>
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="MotivoCancelacion"></label>
+
+                <textarea asp-for="MotivoCancelacion"
+                          class="control-emprendedor textarea-emprendedor"
+                          rows="4"
+                          maxlength="400"
+                          placeholder="Puedes contarnos el motivo de la cancelación...">
+                </textarea>
+
+                <span asp-validation-for="MotivoCancelacion"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+            <label class="confirmacion-cancelacion-suscripcion">
+
+                <input asp-for="ConfirmaCancelacion" />
+
+                <span>
+                    Confirmo que deseo cancelar la suscripción
+                    al finalizar el período actual.
+                </span>
+
+            </label>
+
+            <span asp-validation-for="ConfirmaCancelacion"
+                  class="mensaje-validacion-emprendedor">
+            </span>
+
+            <div class="acciones-modal-cancelacion">
+
+                <button type="button"
+                        id="cancelarModalSuscripcion"
+                        class="boton-mantener-suscripcion">
+
+                    Mantener suscripción
+
+                </button>
+
+                <button type="submit"
+                        class="boton-confirmar-cancelacion">
+
+                    Confirmar cancelación
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const botonAbrir =
+                document.getElementById(
+                    "abrirCancelacionSuscripcion"
+                );
+
+            const botonCerrar =
+                document.getElementById(
+                    "cerrarCancelacionSuscripcion"
+                );
+
+            const botonCancelar =
+                document.getElementById(
+                    "cancelarModalSuscripcion"
+                );
+
+            const fondo =
+                document.getElementById(
+                    "fondoCancelacionSuscripcion"
+                );
+
+            const modal =
+                document.getElementById(
+                    "modalCancelacionSuscripcion"
+                );
+
+            const abrirModal = () => {
+
+                modal?.classList.add("visible");
+
+                modal?.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                document.body.classList.add(
+                    "modal-suscripcion-abierto"
+                );
+            };
+
+            const cerrarModal = () => {
+
+                modal?.classList.remove("visible");
+
+                modal?.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                document.body.classList.remove(
+                    "modal-suscripcion-abierto"
+                );
+            };
+
+            botonAbrir?.addEventListener(
+                "click",
+                abrirModal
+            );
+
+            botonCerrar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            botonCancelar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            fondo?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            document.addEventListener(
+                "keydown",
+                (evento) => {
+
+                    if (evento.key === "Escape") {
+                        cerrarModal();
+                    }
+                }
+            );
+
+            const hayErrores =
+                document.querySelector(
+                    ".contenido-modal-cancelacion .validation-summary-errors"
+                ) !== null ||
+                document.querySelector(
+                    ".contenido-modal-cancelacion .field-validation-error"
+                ) !== null;
+
+            if (hayErrores) {
+                abrirModal();
+            }
+        });
+    </script>
+}

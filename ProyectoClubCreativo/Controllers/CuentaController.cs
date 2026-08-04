@@ -73,8 +73,8 @@ namespace ProyectoClubCreativo.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult RegistroEmprendedor(
-            RegistroEmprendedorViewModel modelo
-        )
+    RegistroEmprendedorViewModel modelo
+)
         {
             if (!modelo.AceptaTerminos)
             {
@@ -89,10 +89,13 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            TempData["MensajeExito"] =
-                "La solicitud de emprendimiento se validó correctamente.";
+            TempData["MensajeEmprendedor"] =
+                $"¡Bienvenido, {modelo.Nombre}! Tu registro como emprendedor se validó correctamente.";
 
-            return RedirectToAction(nameof(IniciarSesion));
+            return RedirectToAction(
+                "Panel",
+                "Emprendedor"
+            );
         }
 
         [HttpGet]

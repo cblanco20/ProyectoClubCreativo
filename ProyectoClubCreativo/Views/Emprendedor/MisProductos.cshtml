@@ -1,0 +1,832 @@
+﻿@{
+    ViewData["Title"] = "Mis productos y servicios";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+@if (TempData["MensajeProducto"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeProducto"]
+    </div>
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Catálogo
+        </span>
+
+        <h1>Mis productos y servicios</h1>
+
+        <p>
+            Administra los productos y servicios publicados por tu
+            emprendimiento, consulta su estado y controla el inventario.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="CrearProducto"
+       class="boton-editar-perfil-emprendedor">
+
+        <i class="bi bi-plus-lg"></i>
+        Crear producto o servicio
+
+    </a>
+
+</section>
+
+
+<!-- RESUMEN -->
+<section class="resumen-productos-emprendedor">
+
+    <article class="tarjeta-resumen-productos">
+
+        <span class="icono-resumen-productos publicados">
+            <i class="bi bi-box-seam-fill"></i>
+        </span>
+
+        <div>
+            <strong>8</strong>
+            <span>Productos publicados</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-productos">
+
+        <span class="icono-resumen-productos activos">
+            <i class="bi bi-check-circle-fill"></i>
+        </span>
+
+        <div>
+            <strong>6</strong>
+            <span>Productos activos</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-productos">
+
+        <span class="icono-resumen-productos inventario">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </span>
+
+        <div>
+            <strong>3</strong>
+            <span>Con inventario bajo</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-productos">
+
+        <span class="icono-resumen-productos agotados">
+            <i class="bi bi-x-circle-fill"></i>
+        </span>
+
+        <div>
+            <strong>1</strong>
+            <span>Producto agotado</span>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- AVISO DE INVENTARIO -->
+<section class="aviso-inventario-productos">
+
+    <span class="icono-aviso-inventario">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+    </span>
+
+    <div>
+        <strong>Revisa tu inventario</strong>
+
+        <p>
+            Tres productos tienen pocas existencias disponibles.
+            Actualiza las cantidades para evitar ventas sin inventario.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="Inventario">
+
+        Ver inventario
+        <i class="bi bi-arrow-right"></i>
+
+    </a>
+
+</section>
+
+
+<!-- CONTENEDOR PRINCIPAL -->
+<section class="bloque-listado-productos">
+
+    <!-- FILTROS -->
+    <div class="barra-productos-emprendedor">
+
+        <div class="buscador-productos-emprendedor">
+
+            <i class="bi bi-search"></i>
+
+            <input type="search"
+                   id="buscarProductoEmprendedor"
+                   placeholder="Buscar por nombre o categoría..."
+                   aria-label="Buscar producto" />
+
+        </div>
+
+        <div class="filtros-productos-emprendedor">
+
+            <select id="filtroCategoriaProducto"
+                    aria-label="Filtrar por categoría">
+
+                <option value="todos">Todas las categorías</option>
+                <option value="accesorios">Accesorios</option>
+                <option value="textiles">Moda y textiles</option>
+                <option value="decoracion">Decoración</option>
+                <option value="servicios">Servicios creativos</option>
+
+            </select>
+
+            <select id="filtroEstadoProducto"
+                    aria-label="Filtrar por estado">
+
+                <option value="todos">Todos los estados</option>
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+                <option value="agotado">Agotado</option>
+
+            </select>
+
+            <button type="button"
+                    id="limpiarFiltrosProductos"
+                    class="boton-limpiar-filtros-productos">
+
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Limpiar
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- TABLA -->
+    <div class="contenedor-tabla-productos">
+
+        <div class="tabla-productos-emprendedor">
+
+            <div class="fila-producto-emprendedor encabezado-productos">
+                <span>Producto</span>
+                <span>Categoría</span>
+                <span>Precio</span>
+                <span>Stock</span>
+                <span>Estado</span>
+                <span>Acciones</span>
+            </div>
+
+
+            <!-- PRODUCTO 1 -->
+            <article class="fila-producto-emprendedor producto-filtrable"
+                     data-nombre="Aretes artesanales"
+                     data-categoria="accesorios"
+                     data-estado="activo">
+
+                <div class="informacion-producto-listado">
+
+                    <img src="~/images/producto-1.jpg"
+                         alt="Aretes artesanales" />
+
+                    <div>
+                        <strong>Aretes artesanales</strong>
+
+                        <span>
+                            Código: PROD-001
+                        </span>
+                    </div>
+
+                </div>
+
+                <span class="categoria-tabla-producto">
+                    Accesorios
+                </span>
+
+                <strong class="precio-tabla-producto">
+                    ₡8.500
+                </strong>
+
+                <span class="stock-producto bajo">
+                    2 unidades
+                </span>
+
+                <span class="estado-tabla-producto activo">
+                    Activo
+                </span>
+
+                <div class="acciones-producto-tabla">
+
+                    <a asp-controller="Emprendedor"
+                       asp-action="EditarProducto"
+                       asp-route-id="1"
+                       class="boton-accion-producto editar"
+                       aria-label="Editar aretes artesanales">
+
+                        <i class="bi bi-pencil-square"></i>
+
+                    </a>
+
+                    <button type="button"
+                            class="boton-accion-producto eliminar boton-eliminar-producto"
+                            data-producto="Aretes artesanales"
+                            aria-label="Eliminar aretes artesanales">
+
+                        <i class="bi bi-trash3-fill"></i>
+
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- PRODUCTO 2 -->
+            <article class="fila-producto-emprendedor producto-filtrable"
+                     data-nombre="Bolso tejido artesanal"
+                     data-categoria="textiles"
+                     data-estado="activo">
+
+                <div class="informacion-producto-listado">
+
+                    <img src="~/images/producto-2.jpg"
+                         alt="Bolso tejido artesanal" />
+
+                    <div>
+                        <strong>Bolso tejido artesanal</strong>
+
+                        <span>
+                            Código: PROD-002
+                        </span>
+                    </div>
+
+                </div>
+
+                <span class="categoria-tabla-producto">
+                    Moda y textiles
+                </span>
+
+                <strong class="precio-tabla-producto">
+                    ₡18.000
+                </strong>
+
+                <span class="stock-producto bajo">
+                    1 unidad
+                </span>
+
+                <span class="estado-tabla-producto activo">
+                    Activo
+                </span>
+
+                <div class="acciones-producto-tabla">
+
+                    <a asp-controller="Emprendedor"
+                       asp-action="EditarProducto"
+                       asp-route-id="2"
+                       class="boton-accion-producto editar"
+                       aria-label="Editar bolso tejido">
+
+                        <i class="bi bi-pencil-square"></i>
+
+                    </a>
+
+                    <button type="button"
+                            class="boton-accion-producto eliminar boton-eliminar-producto"
+                            data-producto="Bolso tejido artesanal"
+                            aria-label="Eliminar bolso tejido">
+
+                        <i class="bi bi-trash3-fill"></i>
+
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- PRODUCTO 3 -->
+            <article class="fila-producto-emprendedor producto-filtrable"
+                     data-nombre="Set decorativo artesanal"
+                     data-categoria="decoracion"
+                     data-estado="agotado">
+
+                <div class="informacion-producto-listado">
+
+                    <img src="~/images/producto-3.jpg"
+                         alt="Set decorativo artesanal" />
+
+                    <div>
+                        <strong>Set decorativo artesanal</strong>
+
+                        <span>
+                            Código: PROD-003
+                        </span>
+                    </div>
+
+                </div>
+
+                <span class="categoria-tabla-producto">
+                    Decoración
+                </span>
+
+                <strong class="precio-tabla-producto">
+                    ₡12.500
+                </strong>
+
+                <span class="stock-producto agotado">
+                    Sin existencias
+                </span>
+
+                <span class="estado-tabla-producto agotado">
+                    Agotado
+                </span>
+
+                <div class="acciones-producto-tabla">
+
+                    <a asp-controller="Emprendedor"
+                       asp-action="EditarProducto"
+                       asp-route-id="3"
+                       class="boton-accion-producto editar"
+                       aria-label="Editar set decorativo">
+
+                        <i class="bi bi-pencil-square"></i>
+
+                    </a>
+
+                    <button type="button"
+                            class="boton-accion-producto eliminar boton-eliminar-producto"
+                            data-producto="Set decorativo artesanal"
+                            aria-label="Eliminar set decorativo">
+
+                        <i class="bi bi-trash3-fill"></i>
+
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- PRODUCTO 4 -->
+            <article class="fila-producto-emprendedor producto-filtrable"
+                     data-nombre="Cuadro personalizado"
+                     data-categoria="decoracion"
+                     data-estado="activo">
+
+                <div class="informacion-producto-listado">
+
+                    <img src="~/images/noticia-concurso.jpg"
+                         alt="Cuadro personalizado" />
+
+                    <div>
+                        <strong>Cuadro personalizado</strong>
+
+                        <span>
+                            Código: PROD-004
+                        </span>
+                    </div>
+
+                </div>
+
+                <span class="categoria-tabla-producto">
+                    Decoración
+                </span>
+
+                <strong class="precio-tabla-producto">
+                    ₡22.000
+                </strong>
+
+                <span class="stock-producto disponible">
+                    12 unidades
+                </span>
+
+                <span class="estado-tabla-producto activo">
+                    Activo
+                </span>
+
+                <div class="acciones-producto-tabla">
+
+                    <a asp-controller="Emprendedor"
+                       asp-action="EditarProducto"
+                       asp-route-id="4"
+                       class="boton-accion-producto editar"
+                       aria-label="Editar cuadro personalizado">
+
+                        <i class="bi bi-pencil-square"></i>
+
+                    </a>
+
+                    <button type="button"
+                            class="boton-accion-producto eliminar boton-eliminar-producto"
+                            data-producto="Cuadro personalizado"
+                            aria-label="Eliminar cuadro personalizado">
+
+                        <i class="bi bi-trash3-fill"></i>
+
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- PRODUCTO 5 -->
+            <article class="fila-producto-emprendedor producto-filtrable"
+                     data-nombre="Diseño de invitación digital"
+                     data-categoria="servicios"
+                     data-estado="inactivo">
+
+                <div class="informacion-producto-listado">
+
+                    <img src="~/images/noticia-taller.jpg"
+                         alt="Diseño de invitación digital" />
+
+                    <div>
+                        <strong>Diseño de invitación digital</strong>
+
+                        <span>
+                            Código: SERV-001
+                        </span>
+                    </div>
+
+                </div>
+
+                <span class="categoria-tabla-producto">
+                    Servicios creativos
+                </span>
+
+                <strong class="precio-tabla-producto">
+                    ₡15.000
+                </strong>
+
+                <span class="stock-producto servicio">
+                    No aplica
+                </span>
+
+                <span class="estado-tabla-producto inactivo">
+                    Inactivo
+                </span>
+
+                <div class="acciones-producto-tabla">
+
+                    <a asp-controller="Emprendedor"
+                       asp-action="EditarProducto"
+                       asp-route-id="5"
+                       class="boton-accion-producto editar"
+                       aria-label="Editar diseño digital">
+
+                        <i class="bi bi-pencil-square"></i>
+
+                    </a>
+
+                    <button type="button"
+                            class="boton-accion-producto eliminar boton-eliminar-producto"
+                            data-producto="Diseño de invitación digital"
+                            aria-label="Eliminar diseño digital">
+
+                        <i class="bi bi-trash3-fill"></i>
+
+                    </button>
+
+                </div>
+
+            </article>
+
+        </div>
+
+        <div id="mensajeSinProductos"
+             class="mensaje-sin-productos">
+
+            <i class="bi bi-search"></i>
+
+            <h2>No se encontraron productos</h2>
+
+            <p>
+                Intenta cambiar los filtros o utilizar otro término
+                de búsqueda.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- PIE DEL LISTADO -->
+    <div class="pie-listado-productos">
+
+        <span>
+            Mostrando 5 de 8 productos
+        </span>
+
+        <div class="paginacion-productos">
+
+            <button type="button"
+                    disabled
+                    aria-label="Página anterior">
+
+                <i class="bi bi-chevron-left"></i>
+
+            </button>
+
+            <button type="button"
+                    class="pagina-activa">
+                1
+            </button>
+
+            <button type="button">
+                2
+            </button>
+
+            <button type="button"
+                    aria-label="Página siguiente">
+
+                <i class="bi bi-chevron-right"></i>
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- MODAL ELIMINAR -->
+<div id="modalEliminarProducto"
+     class="modal-eliminar-producto"
+     aria-hidden="true">
+
+    <div id="fondoModalEliminarProducto"
+         class="fondo-modal-eliminar-producto">
+    </div>
+
+    <div class="contenido-modal-eliminar-producto"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloModalEliminarProducto">
+
+        <button type="button"
+                id="cerrarModalEliminarProducto"
+                class="cerrar-modal-eliminar-producto"
+                aria-label="Cerrar">
+
+            <i class="bi bi-x-lg"></i>
+
+        </button>
+
+        <span class="icono-modal-eliminar-producto">
+            <i class="bi bi-trash3-fill"></i>
+        </span>
+
+        <h2 id="tituloModalEliminarProducto">
+            Eliminar producto
+        </h2>
+
+        <p>
+            ¿Seguro que deseas eliminar
+            <strong id="nombreProductoEliminar"></strong>?
+            Esta acción no se puede deshacer.
+        </p>
+
+        <div class="acciones-modal-eliminar-producto">
+
+            <button type="button"
+                    id="cancelarEliminarProducto"
+                    class="boton-cancelar-eliminacion">
+
+                Cancelar
+
+            </button>
+
+            <button type="button"
+                    id="confirmarEliminarProducto"
+                    class="boton-confirmar-eliminacion">
+
+                Sí, eliminar
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const buscador =
+                document.getElementById("buscarProductoEmprendedor");
+
+            const filtroCategoria =
+                document.getElementById("filtroCategoriaProducto");
+
+            const filtroEstado =
+                document.getElementById("filtroEstadoProducto");
+
+            const botonLimpiar =
+                document.getElementById("limpiarFiltrosProductos");
+
+            const productos =
+                document.querySelectorAll(".producto-filtrable");
+
+            const mensajeSinProductos =
+                document.getElementById("mensajeSinProductos");
+
+
+            const filtrarProductos = () => {
+
+                const texto =
+                    buscador.value.trim().toLowerCase();
+
+                const categoria =
+                    filtroCategoria.value;
+
+                const estado =
+                    filtroEstado.value;
+
+                let visibles = 0;
+
+                productos.forEach((producto) => {
+
+                    const nombre =
+                        producto.dataset.nombre.toLowerCase();
+
+                    const categoriaProducto =
+                        producto.dataset.categoria;
+
+                    const estadoProducto =
+                        producto.dataset.estado;
+
+                    const coincideTexto =
+                        nombre.includes(texto);
+
+                    const coincideCategoria =
+                        categoria === "todos" ||
+                        categoriaProducto === categoria;
+
+                    const coincideEstado =
+                        estado === "todos" ||
+                        estadoProducto === estado;
+
+                    const mostrar =
+                        coincideTexto &&
+                        coincideCategoria &&
+                        coincideEstado;
+
+                    producto.style.display =
+                        mostrar ? "" : "none";
+
+                    if (mostrar) {
+                        visibles++;
+                    }
+                });
+
+                mensajeSinProductos.style.display =
+                    visibles === 0 ? "flex" : "none";
+            };
+
+
+            buscador?.addEventListener(
+                "input",
+                filtrarProductos
+            );
+
+            filtroCategoria?.addEventListener(
+                "change",
+                filtrarProductos
+            );
+
+            filtroEstado?.addEventListener(
+                "change",
+                filtrarProductos
+            );
+
+            botonLimpiar?.addEventListener("click", () => {
+
+                buscador.value = "";
+                filtroCategoria.value = "todos";
+                filtroEstado.value = "todos";
+
+                filtrarProductos();
+            });
+
+
+            const modal =
+                document.getElementById("modalEliminarProducto");
+
+            const fondoModal =
+                document.getElementById("fondoModalEliminarProducto");
+
+            const botonCerrar =
+                document.getElementById("cerrarModalEliminarProducto");
+
+            const botonCancelar =
+                document.getElementById("cancelarEliminarProducto");
+
+            const botonConfirmar =
+                document.getElementById("confirmarEliminarProducto");
+
+            const nombreProducto =
+                document.getElementById("nombreProductoEliminar");
+
+            const botonesEliminar =
+                document.querySelectorAll(".boton-eliminar-producto");
+
+            let filaSeleccionada = null;
+
+
+            const abrirModal = (boton) => {
+
+                filaSeleccionada =
+                    boton.closest(".producto-filtrable");
+
+                nombreProducto.textContent =
+                    boton.dataset.producto;
+
+                modal.classList.add("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                document.body.classList.add(
+                    "modal-producto-abierto"
+                );
+            };
+
+
+            const cerrarModal = () => {
+
+                modal.classList.remove("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                document.body.classList.remove(
+                    "modal-producto-abierto"
+                );
+
+                filaSeleccionada = null;
+            };
+
+
+            botonesEliminar.forEach((boton) => {
+
+                boton.addEventListener(
+                    "click",
+                    () => abrirModal(boton)
+                );
+            });
+
+            botonCerrar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            botonCancelar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            fondoModal?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            botonConfirmar?.addEventListener("click", () => {
+
+                filaSeleccionada?.remove();
+                cerrarModal();
+                filtrarProductos();
+            });
+
+            document.addEventListener("keydown", (evento) => {
+
+                if (evento.key === "Escape") {
+                    cerrarModal();
+                }
+            });
+        });
+    </script>
+}

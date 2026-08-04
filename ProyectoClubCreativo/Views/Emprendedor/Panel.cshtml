@@ -1,0 +1,345 @@
+﻿@{
+    ViewData["Title"] = "Panel del emprendedor";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+@if (TempData["MensajeEmprendedor"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeEmprendedor"]
+    </div>
+}
+
+<section class="banner-emprendedor">
+
+    <div class="contenido-banner-emprendedor">
+
+        <span class="etiqueta-emprendedor">
+            Panel de administración
+        </span>
+
+        <h1>
+            Bienvenido a tu espacio de emprendimiento
+        </h1>
+
+        <p>
+            Administra tus productos, inventario, ventas,
+            suscripción y participación en eventos desde un solo lugar.
+        </p>
+
+        <a asp-controller="Emprendedor"
+           asp-action="PerfilEmprendimiento"
+           class="boton-principal-emprendedor">
+            <i class="bi bi-shop"></i>
+            Ver mi emprendimiento
+        </a>
+
+    </div>
+
+    <div class="imagen-banner-emprendedor">
+        <img src="~/images/registro-emprendedor.jpg"
+             alt="Emprendimiento creativo" />
+    </div>
+
+</section>
+
+<section class="resumen-emprendedor">
+
+    <article class="tarjeta-resumen-emprendedor">
+        <span class="icono-resumen-emprendedor icono-estado-emprendedor">
+            <i class="bi bi-patch-check-fill"></i>
+        </span>
+
+        <div>
+            <strong>Pendiente</strong>
+            <span>Estado del emprendimiento</span>
+        </div>
+    </article>
+
+    <article class="tarjeta-resumen-emprendedor">
+        <span class="icono-resumen-emprendedor icono-plan-emprendedor">
+            <i class="bi bi-gem"></i>
+        </span>
+
+        <div>
+            <strong>Plan básico</strong>
+            <span>Suscripción actual</span>
+        </div>
+    </article>
+
+    <article class="tarjeta-resumen-emprendedor">
+        <span class="icono-resumen-emprendedor icono-productos-emprendedor">
+            <i class="bi bi-box-seam-fill"></i>
+        </span>
+
+        <div>
+            <strong>8</strong>
+            <span>Productos publicados</span>
+        </div>
+    </article>
+
+    <article class="tarjeta-resumen-emprendedor">
+        <span class="icono-resumen-emprendedor icono-ventas-emprendedor">
+            <i class="bi bi-cash-coin"></i>
+        </span>
+
+        <div>
+            <strong>₡145.000</strong>
+            <span>Ventas del período</span>
+        </div>
+    </article>
+
+</section>
+
+<section class="grid-panel-emprendedor">
+
+    <div class="columna-principal-emprendedor">
+
+        <article class="bloque-panel-emprendedor">
+
+            <div class="encabezado-bloque-emprendedor">
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Inventario
+                    </span>
+
+                    <h2>Productos con bajo inventario</h2>
+                </div>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="Inventario">
+                    Ver inventario →
+                </a>
+            </div>
+
+            <div class="lista-inventario-panel">
+
+                <div class="producto-inventario-panel">
+                    <img src="~/images/producto-1.jpg"
+                         alt="Producto artesanal" />
+
+                    <div>
+                        <strong>Aretes artesanales</strong>
+                        <span>Solo quedan 2 unidades</span>
+                    </div>
+
+                    <span class="estado-inventario-bajo">
+                        Bajo
+                    </span>
+                </div>
+
+                <div class="producto-inventario-panel">
+                    <img src="~/images/producto-2.jpg"
+                         alt="Producto artesanal" />
+
+                    <div>
+                        <strong>Bolso tejido</strong>
+                        <span>Solo queda 1 unidad</span>
+                    </div>
+
+                    <span class="estado-inventario-bajo">
+                        Bajo
+                    </span>
+                </div>
+
+                <div class="producto-inventario-panel">
+                    <img src="~/images/producto-3.jpg"
+                         alt="Producto artesanal" />
+
+                    <div>
+                        <strong>Set decorativo</strong>
+                        <span>Quedan 3 unidades</span>
+                    </div>
+
+                    <span class="estado-inventario-medio">
+                        Revisar
+                    </span>
+                </div>
+
+            </div>
+
+        </article>
+
+        <article class="bloque-panel-emprendedor">
+
+            <div class="encabezado-bloque-emprendedor">
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Ventas
+                    </span>
+
+                    <h2>Ventas recientes</h2>
+                </div>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="Ventas">
+                    Ver todas →
+                </a>
+            </div>
+
+            <div class="tabla-panel-emprendedor">
+
+                <div class="fila-tabla-emprendedor encabezado-tabla-emprendedor">
+                    <span>Orden</span>
+                    <span>Cliente</span>
+                    <span>Total</span>
+                    <span>Estado</span>
+                </div>
+
+                <div class="fila-tabla-emprendedor">
+                    <span>#CC-1048</span>
+                    <span>María Gómez</span>
+                    <span>₡18.500</span>
+                    <span class="estado-venta entregada">
+                        Entregada
+                    </span>
+                </div>
+
+                <div class="fila-tabla-emprendedor">
+                    <span>#CC-1047</span>
+                    <span>Daniel Rojas</span>
+                    <span>₡12.000</span>
+                    <span class="estado-venta pendiente">
+                        Pendiente
+                    </span>
+                </div>
+
+                <div class="fila-tabla-emprendedor">
+                    <span>#CC-1046</span>
+                    <span>Ana Solano</span>
+                    <span>₡24.500</span>
+                    <span class="estado-venta preparacion">
+                        Preparación
+                    </span>
+                </div>
+
+            </div>
+
+        </article>
+
+    </div>
+
+    <aside class="columna-secundaria-emprendedor">
+
+        <article class="bloque-panel-emprendedor">
+
+            <div class="encabezado-bloque-emprendedor">
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Eventos
+                    </span>
+
+                    <h2>Próximos eventos</h2>
+                </div>
+            </div>
+
+            <div class="lista-eventos-emprendedor">
+
+                <article class="evento-panel-emprendedor">
+                    <img src="~/images/evento-san-pedro.jpg"
+                         alt="Feria creativa" />
+
+                    <div>
+                        <strong>Feria Creativa San Pedro</strong>
+
+                        <span>
+                            <i class="bi bi-calendar3"></i>
+                            18 de agosto
+                        </span>
+
+                        <span>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            San Pedro
+                        </span>
+                    </div>
+                </article>
+
+                <article class="evento-panel-emprendedor">
+                    <img src="~/images/evento-santa-ana.jpg"
+                         alt="Feria de emprendimientos" />
+
+                    <div>
+                        <strong>Encuentro de Emprendimientos</strong>
+
+                        <span>
+                            <i class="bi bi-calendar3"></i>
+                            25 de agosto
+                        </span>
+
+                        <span>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Santa Ana
+                        </span>
+                    </div>
+                </article>
+
+            </div>
+
+            <a asp-controller="Emprendedor"
+               asp-action="ParticipacionEventos"
+               class="boton-secundario-emprendedor">
+                Ver eventos disponibles
+            </a>
+
+        </article>
+
+        <article class="bloque-panel-emprendedor">
+
+            <div class="encabezado-bloque-emprendedor">
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Notificaciones
+                    </span>
+
+                    <h2>Actividad reciente</h2>
+                </div>
+            </div>
+
+            <div class="notificacion-emprendedor">
+                <span class="icono-notificacion-emprendedor">
+                    <i class="bi bi-bag-check-fill"></i>
+                </span>
+
+                <div>
+                    <p>
+                        Recibiste una nueva orden de compra.
+                    </p>
+
+                    <span>Hace 20 minutos</span>
+                </div>
+            </div>
+
+            <div class="notificacion-emprendedor">
+                <span class="icono-notificacion-emprendedor">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </span>
+
+                <div>
+                    <p>
+                        Dos productos tienen inventario bajo.
+                    </p>
+
+                    <span>Hace 2 horas</span>
+                </div>
+            </div>
+
+            <div class="notificacion-emprendedor">
+                <span class="icono-notificacion-emprendedor">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </span>
+
+                <div>
+                    <p>
+                        Tu participación en la feria está pendiente.
+                    </p>
+
+                    <span>Ayer</span>
+                </div>
+            </div>
+
+        </article>
+
+    </aside>
+
+</section>

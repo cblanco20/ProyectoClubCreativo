@@ -1,0 +1,649 @@
+﻿@{
+    ViewData["Title"] = "Perfil del emprendimiento";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+@if (TempData["MensajePerfil"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajePerfil"]
+    </div>
+}
+
+<!-- CABECERA -->
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Mi emprendimiento
+        </span>
+
+        <h1>Perfil del emprendimiento</h1>
+
+        <p>
+            Revisa la información comercial que se mostrará públicamente
+            cuando tu emprendimiento sea aprobado.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="EditarEmprendimiento"
+       class="boton-editar-perfil-emprendedor">
+
+        <i class="bi bi-pencil-square"></i>
+        Editar emprendimiento
+
+    </a>
+
+</section>
+
+
+<!-- PORTADA DEL PERFIL -->
+<section class="portada-perfil-emprendimiento">
+
+    <div class="fondo-portada-emprendimiento">
+
+        <img src="~/images/registro-emprendedor.jpg"
+             alt="Productos del emprendimiento" />
+
+        <div class="capa-portada-emprendimiento"></div>
+
+    </div>
+
+    <div class="informacion-portada-emprendimiento">
+
+        <div class="logo-perfil-emprendimiento">
+
+            <img src="~/images/logo.jpg"
+                 alt="Logo de Artesanías MiVo" />
+
+        </div>
+
+        <div class="datos-portada-emprendimiento">
+
+            <div class="titulo-portada-emprendimiento">
+
+                <div>
+                    <span class="categoria-perfil-emprendimiento">
+                        Arte e ilustración
+                    </span>
+
+                    <h2>Artesanías MiVo</h2>
+                </div>
+
+                <span class="estado-perfil-emprendimiento pendiente">
+                    <i class="bi bi-hourglass-split"></i>
+                    Pendiente de aprobación
+                </span>
+
+            </div>
+
+            <p>
+                Elaboramos productos artesanales hechos a mano para
+                decoración, regalos y pedidos personalizados.
+            </p>
+
+            <div class="ubicacion-perfil-emprendimiento">
+
+                <span>
+                    <i class="bi bi-geo-alt-fill"></i>
+                    San José, Costa Rica
+                </span>
+
+                <span>
+                    <i class="bi bi-calendar-check"></i>
+                    Miembro desde agosto de 2026
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- RESUMEN -->
+<section class="resumen-perfil-emprendimiento">
+
+    <article class="dato-resumen-perfil">
+        <span class="icono-dato-perfil productos">
+            <i class="bi bi-box-seam-fill"></i>
+        </span>
+
+        <div>
+            <strong>8</strong>
+            <span>Productos publicados</span>
+        </div>
+    </article>
+
+    <article class="dato-resumen-perfil">
+        <span class="icono-dato-perfil ventas">
+            <i class="bi bi-bag-check-fill"></i>
+        </span>
+
+        <div>
+            <strong>24</strong>
+            <span>Ventas realizadas</span>
+        </div>
+    </article>
+
+    <article class="dato-resumen-perfil">
+        <span class="icono-dato-perfil favoritos">
+            <i class="bi bi-heart-fill"></i>
+        </span>
+
+        <div>
+            <strong>36</strong>
+            <span>Favoritos</span>
+        </div>
+    </article>
+
+    <article class="dato-resumen-perfil">
+        <span class="icono-dato-perfil valoracion">
+            <i class="bi bi-star-fill"></i>
+        </span>
+
+        <div>
+            <strong>4.8</strong>
+            <span>Valoración promedio</span>
+        </div>
+    </article>
+
+</section>
+
+
+<!-- CONTENIDO PRINCIPAL -->
+<section class="grid-perfil-emprendimiento">
+
+    <div class="columna-principal-perfil">
+
+        <!-- ACERCA DEL EMPRENDIMIENTO -->
+        <article class="bloque-perfil-emprendimiento">
+
+            <div class="encabezado-bloque-perfil">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Nuestra historia
+                    </span>
+
+                    <h2>Acerca del emprendimiento</h2>
+                </div>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="EditarEmprendimiento">
+
+                    <i class="bi bi-pencil"></i>
+                    Editar
+
+                </a>
+
+            </div>
+
+            <div class="descripcion-perfil-emprendimiento">
+
+                <p>
+                    Artesanías MiVo nació con el propósito de transformar
+                    ideas creativas en productos únicos, elaborados
+                    cuidadosamente a mano.
+                </p>
+
+                <p>
+                    Creamos artículos para decoración, regalos personalizados
+                    y ocasiones especiales. Cada producto busca transmitir
+                    creatividad, dedicación y el valor del trabajo artesanal
+                    costarricense.
+                </p>
+
+            </div>
+
+            <div class="caracteristicas-emprendimiento">
+
+                <div>
+                    <i class="bi bi-brush-fill"></i>
+
+                    <span>
+                        <strong>Productos artesanales</strong>
+                        Elaborados cuidadosamente a mano.
+                    </span>
+                </div>
+
+                <div>
+                    <i class="bi bi-gift-fill"></i>
+
+                    <span>
+                        <strong>Pedidos personalizados</strong>
+                        Diseños adaptados para ocasiones especiales.
+                    </span>
+                </div>
+
+                <div>
+                    <i class="bi bi-geo-alt-fill"></i>
+
+                    <span>
+                        <strong>Talento costarricense</strong>
+                        Producción y creatividad local.
+                    </span>
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- GALERÍA -->
+        <article class="bloque-perfil-emprendimiento">
+
+            <div class="encabezado-bloque-perfil">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Imágenes
+                    </span>
+
+                    <h2>Galería del emprendimiento</h2>
+                </div>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="EditarEmprendimiento">
+
+                    <i class="bi bi-images"></i>
+                    Administrar
+
+                </a>
+
+            </div>
+
+            <div class="galeria-perfil-emprendimiento">
+
+                <div class="imagen-galeria-principal">
+                    <img src="~/images/noticia-emprendimiento.jpg"
+                         alt="Productos artesanales del emprendimiento" />
+                </div>
+
+                <div>
+                    <img src="~/images/producto-1.jpg"
+                         alt="Producto artesanal" />
+                </div>
+
+                <div>
+                    <img src="~/images/producto-2.jpg"
+                         alt="Producto artesanal" />
+                </div>
+
+                <div>
+                    <img src="~/images/producto-3.jpg"
+                         alt="Producto artesanal" />
+                </div>
+
+                <div class="ultima-imagen-galeria">
+
+                    <img src="~/images/registro-emprendedor.jpg"
+                         alt="Emprendimiento creativo" />
+
+                    <span>
+                        <i class="bi bi-plus-lg"></i>
+                        4 fotografías más
+                    </span>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- PRODUCTOS -->
+        <article class="bloque-perfil-emprendimiento">
+
+            <div class="encabezado-bloque-perfil">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Catálogo
+                    </span>
+
+                    <h2>Productos destacados</h2>
+                </div>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="MisProductos">
+
+                    Ver todos
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+            <div class="grid-productos-perfil">
+
+                <article class="producto-perfil-emprendimiento">
+
+                    <div class="imagen-producto-perfil">
+                        <img src="~/images/producto-1.jpg"
+                             alt="Aretes artesanales" />
+
+                        <span class="estado-producto-perfil activo">
+                            Activo
+                        </span>
+                    </div>
+
+                    <div class="contenido-producto-perfil">
+
+                        <span>Accesorios</span>
+
+                        <h3>Aretes artesanales</h3>
+
+                        <strong>₡8.500</strong>
+
+                    </div>
+
+                </article>
+
+
+                <article class="producto-perfil-emprendimiento">
+
+                    <div class="imagen-producto-perfil">
+                        <img src="~/images/producto-2.jpg"
+                             alt="Bolso tejido" />
+
+                        <span class="estado-producto-perfil activo">
+                            Activo
+                        </span>
+                    </div>
+
+                    <div class="contenido-producto-perfil">
+
+                        <span>Moda y textiles</span>
+
+                        <h3>Bolso tejido artesanal</h3>
+
+                        <strong>₡18.000</strong>
+
+                    </div>
+
+                </article>
+
+
+                <article class="producto-perfil-emprendimiento">
+
+                    <div class="imagen-producto-perfil">
+                        <img src="~/images/producto-3.jpg"
+                             alt="Set decorativo" />
+
+                        <span class="estado-producto-perfil agotado">
+                            Agotado
+                        </span>
+                    </div>
+
+                    <div class="contenido-producto-perfil">
+
+                        <span>Decoración</span>
+
+                        <h3>Set decorativo artesanal</h3>
+
+                        <strong>₡12.500</strong>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </article>
+
+    </div>
+
+
+    <!-- COLUMNA LATERAL -->
+    <aside class="columna-lateral-perfil">
+
+        <!-- INFORMACIÓN COMERCIAL -->
+        <article class="bloque-perfil-emprendimiento">
+
+            <div class="encabezado-bloque-perfil">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Información
+                    </span>
+
+                    <h2>Datos comerciales</h2>
+                </div>
+
+            </div>
+
+            <div class="lista-datos-comerciales">
+
+                <div class="dato-comercial-perfil">
+
+                    <span class="icono-dato-comercial">
+                        <i class="bi bi-shop"></i>
+                    </span>
+
+                    <div>
+                        <span>Nombre comercial</span>
+                        <strong>Artesanías MiVo</strong>
+                    </div>
+
+                </div>
+
+                <div class="dato-comercial-perfil">
+
+                    <span class="icono-dato-comercial">
+                        <i class="bi bi-grid-fill"></i>
+                    </span>
+
+                    <div>
+                        <span>Categoría</span>
+                        <strong>Arte e ilustración</strong>
+                    </div>
+
+                </div>
+
+                <div class="dato-comercial-perfil">
+
+                    <span class="icono-dato-comercial">
+                        <i class="bi bi-person-vcard-fill"></i>
+                    </span>
+
+                    <div>
+                        <span>Cédula</span>
+                        <strong>1-1234-5678</strong>
+                    </div>
+
+                </div>
+
+                <div class="dato-comercial-perfil">
+
+                    <span class="icono-dato-comercial">
+                        <i class="bi bi-telephone-fill"></i>
+                    </span>
+
+                    <div>
+                        <span>Teléfono</span>
+                        <strong>8888-7777</strong>
+                    </div>
+
+                </div>
+
+                <div class="dato-comercial-perfil">
+
+                    <span class="icono-dato-comercial">
+                        <i class="bi bi-envelope-fill"></i>
+                    </span>
+
+                    <div>
+                        <span>Correo</span>
+                        <strong>valentin@gmail.com</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- REDES -->
+        <article class="bloque-perfil-emprendimiento">
+
+            <div class="encabezado-bloque-perfil">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Contacto
+                    </span>
+
+                    <h2>Redes sociales</h2>
+                </div>
+
+            </div>
+
+            <div class="redes-perfil-emprendimiento">
+
+                <a href="https://www.instagram.com/"
+                   target="_blank"
+                   rel="noopener noreferrer">
+
+                    <span class="icono-red-perfil instagram">
+                        <i class="bi bi-instagram"></i>
+                    </span>
+
+                    <span>
+                        <strong>Instagram</strong>
+                        @@artesaniasmivo
+                    </span>
+
+                    <i class="bi bi-box-arrow-up-right"></i>
+
+                </a>
+
+                <a href="https://www.facebook.com/"
+                   target="_blank"
+                   rel="noopener noreferrer">
+
+                    <span class="icono-red-perfil facebook">
+                        <i class="bi bi-facebook"></i>
+                    </span>
+
+                    <span>
+                        <strong>Facebook</strong>
+                        Artesanías MiVo
+                    </span>
+
+                    <i class="bi bi-box-arrow-up-right"></i>
+
+                </a>
+
+                <a href="https://www.artesaniasmivo.com"
+                   target="_blank"
+                   rel="noopener noreferrer">
+
+                    <span class="icono-red-perfil web">
+                        <i class="bi bi-globe2"></i>
+                    </span>
+
+                    <span>
+                        <strong>Sitio web</strong>
+                        artesaniasmivo.com
+                    </span>
+
+                    <i class="bi bi-box-arrow-up-right"></i>
+
+                </a>
+
+            </div>
+
+        </article>
+
+
+        <!-- PARTICIPACIÓN -->
+        <article class="bloque-perfil-emprendimiento">
+
+            <div class="encabezado-bloque-perfil">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Comunidad
+                    </span>
+
+                    <h2>Programas de participación</h2>
+                </div>
+
+            </div>
+
+            <div class="programa-perfil-emprendimiento seleccionado">
+
+                <span>
+                    <i class="bi bi-stars"></i>
+                </span>
+
+                <div>
+                    <strong>Club Creativo</strong>
+
+                    <p>
+                        Participación solicitada en ferias,
+                        talleres y actividades.
+                    </p>
+                </div>
+
+                <i class="bi bi-check-circle-fill"></i>
+
+            </div>
+
+            <div class="programa-perfil-emprendimiento">
+
+                <span>
+                    <i class="bi bi-geo-alt-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Hecho en CR</strong>
+
+                    <p>
+                        Aún no has solicitado participación
+                        en este programa.
+                    </p>
+                </div>
+
+                <i class="bi bi-dash-circle"></i>
+
+            </div>
+
+        </article>
+
+
+        <!-- VISTA PÚBLICA -->
+        <article class="vista-publica-perfil">
+
+            <div class="icono-vista-publica">
+                <i class="bi bi-eye-fill"></i>
+            </div>
+
+            <div>
+                <h2>Vista pública</h2>
+
+                <p>
+                    El perfil estará visible para los visitantes cuando
+                    la solicitud sea aprobada.
+                </p>
+
+                <a asp-controller="Home"
+                   asp-action="Index">
+
+                    Vista previa
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+            </div>
+
+        </article>
+
+    </aside>
+
+</section>

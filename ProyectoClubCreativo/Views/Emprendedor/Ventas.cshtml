@@ -1,0 +1,1117 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.ActualizarVentaViewModel
+
+@{
+    ViewData["Title"] = "Ventas del emprendimiento";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+
+    bool abrirModal =
+        ViewBag.AbrirModalVenta is bool valor &&
+        valor;
+}
+
+@if (TempData["MensajeVenta"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajeVenta"]
+    </div>
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Productos y ventas
+        </span>
+
+        <h1>Ventas del emprendimiento</h1>
+
+        <p>
+            Consulta las órdenes recibidas, revisa sus detalles
+            y actualiza el estado de cada venta.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="Estadisticas"
+       class="boton-editar-perfil-emprendedor">
+
+        <i class="bi bi-bar-chart-line-fill"></i>
+        Ver estadísticas
+
+    </a>
+
+</section>
+
+
+<!-- RESUMEN -->
+<section class="resumen-ventas-emprendedor">
+
+    <article class="tarjeta-resumen-ventas">
+
+        <span class="icono-resumen-ventas ingresos">
+            <i class="bi bi-cash-coin"></i>
+        </span>
+
+        <div>
+            <strong>₡145.000</strong>
+            <span>Ventas del período</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-ventas">
+
+        <span class="icono-resumen-ventas ordenes">
+            <i class="bi bi-receipt-cutoff"></i>
+        </span>
+
+        <div>
+            <strong>12</strong>
+            <span>Órdenes recibidas</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-ventas">
+
+        <span class="icono-resumen-ventas pendientes">
+            <i class="bi bi-hourglass-split"></i>
+        </span>
+
+        <div>
+            <strong>3</strong>
+            <span>Ventas pendientes</span>
+        </div>
+
+    </article>
+
+    <article class="tarjeta-resumen-ventas">
+
+        <span class="icono-resumen-ventas entregadas">
+            <i class="bi bi-bag-check-fill"></i>
+        </span>
+
+        <div>
+            <strong>8</strong>
+            <span>Órdenes entregadas</span>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- AVISO -->
+<section class="aviso-ventas-pendientes">
+
+    <span class="icono-aviso-ventas">
+        <i class="bi bi-bell-fill"></i>
+    </span>
+
+    <div>
+        <strong>Tienes órdenes pendientes</strong>
+
+        <p>
+            Revisa las ventas que todavía necesitan preparación
+            o confirmación de entrega.
+        </p>
+    </div>
+
+    <button type="button"
+            id="mostrarVentasPendientes"
+            class="boton-mostrar-ventas-pendientes">
+
+        Ver pendientes
+        <i class="bi bi-arrow-right"></i>
+
+    </button>
+
+</section>
+
+
+<!-- LISTADO -->
+<section class="bloque-listado-ventas">
+
+    <div class="barra-ventas-emprendedor">
+
+        <div class="buscador-ventas-emprendedor">
+
+            <i class="bi bi-search"></i>
+
+            <input type="search"
+                   id="buscarVentaEmprendedor"
+                   placeholder="Buscar por orden o cliente..."
+                   aria-label="Buscar venta" />
+
+        </div>
+
+        <div class="filtros-ventas-emprendedor">
+
+            <select id="filtroEstadoVenta"
+                    aria-label="Filtrar ventas por estado">
+
+                <option value="todos">
+                    Todos los estados
+                </option>
+
+                <option value="pendiente">
+                    Pendiente
+                </option>
+
+                <option value="preparacion">
+                    En preparación
+                </option>
+
+                <option value="enviada">
+                    Enviada
+                </option>
+
+                <option value="entregada">
+                    Entregada
+                </option>
+
+                <option value="cancelada">
+                    Cancelada
+                </option>
+
+            </select>
+
+            <select id="filtroFechaVenta"
+                    aria-label="Filtrar ventas por período">
+
+                <option value="todos">
+                    Todas las fechas
+                </option>
+
+                <option value="hoy">
+                    Hoy
+                </option>
+
+                <option value="semana">
+                    Esta semana
+                </option>
+
+                <option value="mes">
+                    Este mes
+                </option>
+
+            </select>
+
+            <button type="button"
+                    id="limpiarFiltrosVentas"
+                    class="boton-limpiar-ventas">
+
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Limpiar
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="contenedor-tabla-ventas">
+
+        <div class="tabla-ventas-emprendedor">
+
+            <div class="fila-venta-emprendedor encabezado-ventas">
+                <span>Orden</span>
+                <span>Cliente</span>
+                <span>Fecha</span>
+                <span>Productos</span>
+                <span>Total</span>
+                <span>Estado</span>
+                <span>Detalle</span>
+            </div>
+
+
+            <!-- VENTA 1 -->
+            <article class="fila-venta-emprendedor venta-filtrable"
+                     data-orden="#CC-1048"
+                     data-cliente="María Gómez"
+                     data-estado="entregada"
+                     data-fecha="mes">
+
+                <div class="numero-orden-venta">
+                    <strong>#CC-1048</strong>
+                    <span>Pago confirmado</span>
+                </div>
+
+                <div class="cliente-venta-emprendedor">
+
+                    <span class="avatar-cliente-venta">
+                        MG
+                    </span>
+
+                    <div>
+                        <strong>María Gómez</strong>
+                        <span>maria@gmail.com</span>
+                    </div>
+
+                </div>
+
+                <span>04/08/2026</span>
+
+                <span>2 productos</span>
+
+                <strong class="total-venta-emprendedor">
+                    ₡18.500
+                </strong>
+
+                <span class="estado-venta-tabla entregada">
+                    Entregada
+                </span>
+
+                <button type="button"
+                        class="boton-ver-detalle-venta"
+                        data-id="1"
+                        data-orden="#CC-1048"
+                        data-cliente="María Gómez"
+                        data-correo="maria@gmail.com"
+                        data-fecha="4 de agosto de 2026"
+                        data-total="₡18.500"
+                        data-estado="Entregada"
+                        data-productos="Aretes artesanales y llavero personalizado">
+
+                    <i class="bi bi-eye-fill"></i>
+                    Ver detalle
+
+                </button>
+
+            </article>
+
+
+            <!-- VENTA 2 -->
+            <article class="fila-venta-emprendedor venta-filtrable"
+                     data-orden="#CC-1047"
+                     data-cliente="Daniel Rojas"
+                     data-estado="pendiente"
+                     data-fecha="hoy">
+
+                <div class="numero-orden-venta">
+                    <strong>#CC-1047</strong>
+                    <span>Pago pendiente</span>
+                </div>
+
+                <div class="cliente-venta-emprendedor">
+
+                    <span class="avatar-cliente-venta">
+                        DR
+                    </span>
+
+                    <div>
+                        <strong>Daniel Rojas</strong>
+                        <span>daniel@gmail.com</span>
+                    </div>
+
+                </div>
+
+                <span>04/08/2026</span>
+
+                <span>1 producto</span>
+
+                <strong class="total-venta-emprendedor">
+                    ₡12.000
+                </strong>
+
+                <span class="estado-venta-tabla pendiente">
+                    Pendiente
+                </span>
+
+                <button type="button"
+                        class="boton-ver-detalle-venta"
+                        data-id="2"
+                        data-orden="#CC-1047"
+                        data-cliente="Daniel Rojas"
+                        data-correo="daniel@gmail.com"
+                        data-fecha="4 de agosto de 2026"
+                        data-total="₡12.000"
+                        data-estado="Pendiente"
+                        data-productos="Set decorativo artesanal">
+
+                    <i class="bi bi-eye-fill"></i>
+                    Ver detalle
+
+                </button>
+
+            </article>
+
+
+            <!-- VENTA 3 -->
+            <article class="fila-venta-emprendedor venta-filtrable"
+                     data-orden="#CC-1046"
+                     data-cliente="Ana Solano"
+                     data-estado="preparacion"
+                     data-fecha="semana">
+
+                <div class="numero-orden-venta">
+                    <strong>#CC-1046</strong>
+                    <span>Pago confirmado</span>
+                </div>
+
+                <div class="cliente-venta-emprendedor">
+
+                    <span class="avatar-cliente-venta">
+                        AS
+                    </span>
+
+                    <div>
+                        <strong>Ana Solano</strong>
+                        <span>ana@gmail.com</span>
+                    </div>
+
+                </div>
+
+                <span>03/08/2026</span>
+
+                <span>3 productos</span>
+
+                <strong class="total-venta-emprendedor">
+                    ₡24.500
+                </strong>
+
+                <span class="estado-venta-tabla preparacion">
+                    En preparación
+                </span>
+
+                <button type="button"
+                        class="boton-ver-detalle-venta"
+                        data-id="3"
+                        data-orden="#CC-1046"
+                        data-cliente="Ana Solano"
+                        data-correo="ana@gmail.com"
+                        data-fecha="3 de agosto de 2026"
+                        data-total="₡24.500"
+                        data-estado="En preparación"
+                        data-productos="Bolso tejido, aretes y llavero">
+
+                    <i class="bi bi-eye-fill"></i>
+                    Ver detalle
+
+                </button>
+
+            </article>
+
+
+            <!-- VENTA 4 -->
+            <article class="fila-venta-emprendedor venta-filtrable"
+                     data-orden="#CC-1045"
+                     data-cliente="Carlos Vargas"
+                     data-estado="enviada"
+                     data-fecha="semana">
+
+                <div class="numero-orden-venta">
+                    <strong>#CC-1045</strong>
+                    <span>Pago confirmado</span>
+                </div>
+
+                <div class="cliente-venta-emprendedor">
+
+                    <span class="avatar-cliente-venta">
+                        CV
+                    </span>
+
+                    <div>
+                        <strong>Carlos Vargas</strong>
+                        <span>carlos@gmail.com</span>
+                    </div>
+
+                </div>
+
+                <span>02/08/2026</span>
+
+                <span>1 producto</span>
+
+                <strong class="total-venta-emprendedor">
+                    ₡22.000
+                </strong>
+
+                <span class="estado-venta-tabla enviada">
+                    Enviada
+                </span>
+
+                <button type="button"
+                        class="boton-ver-detalle-venta"
+                        data-id="4"
+                        data-orden="#CC-1045"
+                        data-cliente="Carlos Vargas"
+                        data-correo="carlos@gmail.com"
+                        data-fecha="2 de agosto de 2026"
+                        data-total="₡22.000"
+                        data-estado="Enviada"
+                        data-productos="Cuadro personalizado">
+
+                    <i class="bi bi-eye-fill"></i>
+                    Ver detalle
+
+                </button>
+
+            </article>
+
+
+            <!-- VENTA 5 -->
+            <article class="fila-venta-emprendedor venta-filtrable"
+                     data-orden="#CC-1044"
+                     data-cliente="Laura Méndez"
+                     data-estado="cancelada"
+                     data-fecha="mes">
+
+                <div class="numero-orden-venta">
+                    <strong>#CC-1044</strong>
+                    <span>Pago reembolsado</span>
+                </div>
+
+                <div class="cliente-venta-emprendedor">
+
+                    <span class="avatar-cliente-venta">
+                        LM
+                    </span>
+
+                    <div>
+                        <strong>Laura Méndez</strong>
+                        <span>laura@gmail.com</span>
+                    </div>
+
+                </div>
+
+                <span>30/07/2026</span>
+
+                <span>1 producto</span>
+
+                <strong class="total-venta-emprendedor">
+                    ₡15.000
+                </strong>
+
+                <span class="estado-venta-tabla cancelada">
+                    Cancelada
+                </span>
+
+                <button type="button"
+                        class="boton-ver-detalle-venta"
+                        data-id="5"
+                        data-orden="#CC-1044"
+                        data-cliente="Laura Méndez"
+                        data-correo="laura@gmail.com"
+                        data-fecha="30 de julio de 2026"
+                        data-total="₡15.000"
+                        data-estado="Cancelada"
+                        data-productos="Diseño de invitación digital">
+
+                    <i class="bi bi-eye-fill"></i>
+                    Ver detalle
+
+                </button>
+
+            </article>
+
+        </div>
+
+
+        <div id="mensajeSinVentas"
+             class="mensaje-sin-ventas">
+
+            <i class="bi bi-receipt"></i>
+
+            <h2>No se encontraron ventas</h2>
+
+            <p>
+                Modifica los filtros o utiliza otro término de búsqueda.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="pie-listado-ventas">
+
+        <span>
+            Mostrando 5 de 12 órdenes
+        </span>
+
+        <div class="paginacion-ventas">
+
+            <button type="button"
+                    disabled
+                    aria-label="Página anterior">
+
+                <i class="bi bi-chevron-left"></i>
+
+            </button>
+
+            <button type="button"
+                    class="pagina-activa">
+                1
+            </button>
+
+            <button type="button">
+                2
+            </button>
+
+            <button type="button">
+                3
+            </button>
+
+            <button type="button"
+                    aria-label="Página siguiente">
+
+                <i class="bi bi-chevron-right"></i>
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- INFORMACIÓN -->
+<section class="grid-informacion-ventas">
+
+    <article>
+
+        <span>
+            <i class="bi bi-clock-history"></i>
+        </span>
+
+        <div>
+            <h2>Actualiza los estados</h2>
+
+            <p>
+                Mantén informado al cliente cambiando el estado
+                de la orden durante cada etapa.
+            </p>
+        </div>
+
+    </article>
+
+    <article>
+
+        <span>
+            <i class="bi bi-box-seam-fill"></i>
+        </span>
+
+        <div>
+            <h2>Prepara los productos</h2>
+
+            <p>
+                Revisa el detalle de la venta antes de preparar
+                y entregar el pedido.
+            </p>
+        </div>
+
+    </article>
+
+    <article>
+
+        <span>
+            <i class="bi bi-check-circle-fill"></i>
+        </span>
+
+        <div>
+            <h2>Confirma las entregas</h2>
+
+            <p>
+                Marca la orden como entregada una vez que el cliente
+                reciba sus productos.
+            </p>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- MODAL DETALLE DE VENTA -->
+<div id="modalDetalleVenta"
+     class="modal-detalle-venta @(abrirModal ? "visible" : "")"
+     aria-hidden="@(abrirModal ? "false" : "true")">
+
+    <div id="fondoModalDetalleVenta"
+         class="fondo-modal-detalle-venta">
+    </div>
+
+    <div class="contenido-modal-detalle-venta"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloDetalleVenta">
+
+        <button type="button"
+                id="cerrarModalDetalleVenta"
+                class="cerrar-modal-detalle-venta"
+                aria-label="Cerrar">
+
+            <i class="bi bi-x-lg"></i>
+
+        </button>
+
+        <div class="cabecera-modal-venta">
+
+            <span class="icono-modal-venta">
+                <i class="bi bi-receipt-cutoff"></i>
+            </span>
+
+            <div>
+                <span>Detalle de la orden</span>
+
+                <h2 id="tituloDetalleVenta">
+                    <span id="detalleNumeroOrden">
+                        @Model.NumeroOrden
+                    </span>
+                </h2>
+            </div>
+
+        </div>
+
+
+        <div class="grid-datos-detalle-venta">
+
+            <div>
+                <span>Cliente</span>
+                <strong id="detalleClienteVenta">—</strong>
+            </div>
+
+            <div>
+                <span>Correo</span>
+                <strong id="detalleCorreoVenta">—</strong>
+            </div>
+
+            <div>
+                <span>Fecha</span>
+                <strong id="detalleFechaVenta">—</strong>
+            </div>
+
+            <div>
+                <span>Total</span>
+                <strong id="detalleTotalVenta">—</strong>
+            </div>
+
+            <div class="dato-amplio-detalle-venta">
+                <span>Productos</span>
+                <strong id="detalleProductosVenta">—</strong>
+            </div>
+
+            <div class="dato-amplio-detalle-venta">
+                <span>Estado actual</span>
+                <strong id="detalleEstadoVenta">—</strong>
+            </div>
+
+        </div>
+
+
+        <form asp-controller="Emprendedor"
+              asp-action="ActualizarEstadoVenta"
+              method="post"
+              novalidate>
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="All"
+                 class="resumen-validacion-emprendedor">
+            </div>
+
+            <input asp-for="IdVenta"
+                   type="hidden"
+                   id="idVentaSeleccionada" />
+
+            <input asp-for="NumeroOrden"
+                   type="hidden"
+                   id="numeroOrdenSeleccionada" />
+
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="NuevoEstado"></label>
+
+                <select asp-for="NuevoEstado"
+                        id="nuevoEstadoVenta"
+                        class="control-emprendedor">
+
+                    <option value="">
+                        Seleccione un estado
+                    </option>
+
+                    <option value="Pendiente">
+                        Pendiente
+                    </option>
+
+                    <option value="En preparación">
+                        En preparación
+                    </option>
+
+                    <option value="Enviada">
+                        Enviada
+                    </option>
+
+                    <option value="Entregada">
+                        Entregada
+                    </option>
+
+                    <option value="Cancelada">
+                        Cancelada
+                    </option>
+
+                </select>
+
+                <span asp-validation-for="NuevoEstado"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+
+            <div class="grupo-campo-emprendedor">
+
+                <label asp-for="Observacion"></label>
+
+                <textarea asp-for="Observacion"
+                          class="control-emprendedor textarea-emprendedor"
+                          rows="4"
+                          maxlength="300"
+                          placeholder="Agrega una observación relacionada con el cambio...">
+                </textarea>
+
+                <div class="ayuda-campo-emprendedor">
+                    Campo opcional. Máximo 300 caracteres.
+                </div>
+
+                <span asp-validation-for="Observacion"
+                      class="mensaje-validacion-emprendedor">
+                </span>
+
+            </div>
+
+
+            <label class="confirmacion-cambio-venta">
+
+                <input asp-for="ConfirmaCambio" />
+
+                <span>
+                    Confirmo que deseo actualizar el estado
+                    de esta orden.
+                </span>
+
+            </label>
+
+            <span asp-validation-for="ConfirmaCambio"
+                  class="mensaje-validacion-emprendedor">
+            </span>
+
+
+            <div class="acciones-modal-venta">
+
+                <button type="button"
+                        id="cancelarCambioVenta"
+                        class="boton-cancelar-cambio-venta">
+
+                    Cerrar
+
+                </button>
+
+                <button type="submit"
+                        class="boton-guardar-cambio-venta">
+
+                    <i class="bi bi-check-circle-fill"></i>
+                    Guardar estado
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const buscador =
+                document.getElementById("buscarVentaEmprendedor");
+
+            const filtroEstado =
+                document.getElementById("filtroEstadoVenta");
+
+            const filtroFecha =
+                document.getElementById("filtroFechaVenta");
+
+            const botonLimpiar =
+                document.getElementById("limpiarFiltrosVentas");
+
+            const botonPendientes =
+                document.getElementById("mostrarVentasPendientes");
+
+            const ventas =
+                document.querySelectorAll(".venta-filtrable");
+
+            const mensajeSinVentas =
+                document.getElementById("mensajeSinVentas");
+
+
+            const filtrarVentas = () => {
+
+                const texto =
+                    buscador.value.trim().toLowerCase();
+
+                const estado =
+                    filtroEstado.value;
+
+                const fecha =
+                    filtroFecha.value;
+
+                let visibles = 0;
+
+                ventas.forEach((venta) => {
+
+                    const orden =
+                        venta.dataset.orden.toLowerCase();
+
+                    const cliente =
+                        venta.dataset.cliente.toLowerCase();
+
+                    const estadoVenta =
+                        venta.dataset.estado;
+
+                    const fechaVenta =
+                        venta.dataset.fecha;
+
+                    const coincideTexto =
+                        orden.includes(texto) ||
+                        cliente.includes(texto);
+
+                    const coincideEstado =
+                        estado === "todos" ||
+                        estadoVenta === estado;
+
+                    const coincideFecha =
+                        fecha === "todos" ||
+                        fechaVenta === fecha ||
+                        (
+                            fecha === "mes" &&
+                            ["hoy", "semana", "mes"]
+                                .includes(fechaVenta)
+                        ) ||
+                        (
+                            fecha === "semana" &&
+                            ["hoy", "semana"]
+                                .includes(fechaVenta)
+                        );
+
+                    const mostrar =
+                        coincideTexto &&
+                        coincideEstado &&
+                        coincideFecha;
+
+                    venta.style.display =
+                        mostrar ? "" : "none";
+
+                    if (mostrar) {
+                        visibles++;
+                    }
+                });
+
+                mensajeSinVentas.style.display =
+                    visibles === 0
+                        ? "flex"
+                        : "none";
+            };
+
+
+            buscador?.addEventListener(
+                "input",
+                filtrarVentas
+            );
+
+            filtroEstado?.addEventListener(
+                "change",
+                filtrarVentas
+            );
+
+            filtroFecha?.addEventListener(
+                "change",
+                filtrarVentas
+            );
+
+            botonLimpiar?.addEventListener("click", () => {
+
+                buscador.value = "";
+                filtroEstado.value = "todos";
+                filtroFecha.value = "todos";
+
+                filtrarVentas();
+            });
+
+            botonPendientes?.addEventListener("click", () => {
+
+                buscador.value = "";
+                filtroFecha.value = "todos";
+                filtroEstado.value = "pendiente";
+
+                filtrarVentas();
+            });
+
+
+            const modal =
+                document.getElementById("modalDetalleVenta");
+
+            const fondo =
+                document.getElementById("fondoModalDetalleVenta");
+
+            const botonCerrar =
+                document.getElementById("cerrarModalDetalleVenta");
+
+            const botonCancelar =
+                document.getElementById("cancelarCambioVenta");
+
+            const botonesDetalle =
+                document.querySelectorAll(".boton-ver-detalle-venta");
+
+            const campoId =
+                document.getElementById("idVentaSeleccionada");
+
+            const campoOrden =
+                document.getElementById("numeroOrdenSeleccionada");
+
+            const detalleOrden =
+                document.getElementById("detalleNumeroOrden");
+
+            const detalleCliente =
+                document.getElementById("detalleClienteVenta");
+
+            const detalleCorreo =
+                document.getElementById("detalleCorreoVenta");
+
+            const detalleFecha =
+                document.getElementById("detalleFechaVenta");
+
+            const detalleTotal =
+                document.getElementById("detalleTotalVenta");
+
+            const detalleProductos =
+                document.getElementById("detalleProductosVenta");
+
+            const detalleEstado =
+                document.getElementById("detalleEstadoVenta");
+
+            const nuevoEstado =
+                document.getElementById("nuevoEstadoVenta");
+
+
+            const abrirModal = (boton) => {
+
+                campoId.value =
+                    boton.dataset.id;
+
+                campoOrden.value =
+                    boton.dataset.orden;
+
+                detalleOrden.textContent =
+                    boton.dataset.orden;
+
+                detalleCliente.textContent =
+                    boton.dataset.cliente;
+
+                detalleCorreo.textContent =
+                    boton.dataset.correo;
+
+                detalleFecha.textContent =
+                    boton.dataset.fecha;
+
+                detalleTotal.textContent =
+                    boton.dataset.total;
+
+                detalleProductos.textContent =
+                    boton.dataset.productos;
+
+                detalleEstado.textContent =
+                    boton.dataset.estado;
+
+                nuevoEstado.value =
+                    boton.dataset.estado;
+
+                modal.classList.add("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                document.body.classList.add(
+                    "modal-venta-abierto"
+                );
+            };
+
+
+            const cerrarModal = () => {
+
+                modal.classList.remove("visible");
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                document.body.classList.remove(
+                    "modal-venta-abierto"
+                );
+            };
+
+
+            botonesDetalle.forEach((boton) => {
+
+                boton.addEventListener(
+                    "click",
+                    () => abrirModal(boton)
+                );
+            });
+
+            botonCerrar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            botonCancelar?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            fondo?.addEventListener(
+                "click",
+                cerrarModal
+            );
+
+            document.addEventListener("keydown", (evento) => {
+
+                if (evento.key === "Escape") {
+                    cerrarModal();
+                }
+            });
+
+
+            if (modal?.classList.contains("visible")) {
+
+                document.body.classList.add(
+                    "modal-venta-abierto"
+                );
+
+                detalleOrden.textContent =
+                    campoOrden?.value || "Orden";
+
+                detalleCliente.textContent =
+                    "Cliente seleccionado";
+
+                detalleEstado.textContent =
+                    nuevoEstado?.value || "Sin seleccionar";
+            }
+        });
+    </script>
+}

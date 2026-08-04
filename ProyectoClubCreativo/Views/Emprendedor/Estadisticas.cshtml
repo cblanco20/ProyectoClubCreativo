@@ -1,0 +1,1245 @@
+﻿@{
+    ViewData["Title"] = "Estadísticas del emprendimiento";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Crecimiento
+        </span>
+
+        <h1>Estadísticas del emprendimiento</h1>
+
+        <p>
+            Consulta el rendimiento de tus ventas, productos,
+            visitas, favoritos y valoraciones.
+        </p>
+    </div>
+
+    <div class="acciones-cabecera-estadisticas">
+
+        <select id="periodoEstadisticas"
+                class="selector-periodo-estadisticas"
+                aria-label="Seleccionar período">
+
+            <option value="7">
+                Últimos 7 días
+            </option>
+
+            <option value="30" selected>
+                Últimos 30 días
+            </option>
+
+            <option value="90">
+                Últimos 3 meses
+            </option>
+
+            <option value="365">
+                Último año
+            </option>
+
+        </select>
+
+        <button type="button"
+                id="botonActualizarEstadisticas"
+                class="boton-actualizar-estadisticas">
+
+            <i class="bi bi-arrow-clockwise"></i>
+            Actualizar
+
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- MENSAJE DE ACTUALIZACIÓN -->
+<div id="mensajeActualizacionEstadisticas"
+     class="mensaje-actualizacion-estadisticas">
+
+    <i class="bi bi-check-circle-fill"></i>
+
+    <span>
+        Las estadísticas fueron actualizadas correctamente.
+    </span>
+
+</div>
+
+
+<!-- RESUMEN -->
+<section class="resumen-estadisticas-emprendedor">
+
+    <article class="tarjeta-estadistica-principal">
+
+        <div class="cabecera-tarjeta-estadistica">
+
+            <span class="icono-estadistica-principal ventas">
+                <i class="bi bi-cash-coin"></i>
+            </span>
+
+            <span class="variacion-estadistica positiva">
+                <i class="bi bi-arrow-up-right"></i>
+                12,5 %
+            </span>
+
+        </div>
+
+        <span class="etiqueta-estadistica">
+            Ventas del período
+        </span>
+
+        <strong id="valorVentasEstadisticas">
+            ₡145.000
+        </strong>
+
+        <small id="comparacionVentasEstadisticas">
+            ₡16.100 más que el período anterior
+        </small>
+
+    </article>
+
+
+    <article class="tarjeta-estadistica-principal">
+
+        <div class="cabecera-tarjeta-estadistica">
+
+            <span class="icono-estadistica-principal ordenes">
+                <i class="bi bi-bag-check-fill"></i>
+            </span>
+
+            <span class="variacion-estadistica positiva">
+                <i class="bi bi-arrow-up-right"></i>
+                8,3 %
+            </span>
+
+        </div>
+
+        <span class="etiqueta-estadistica">
+            Órdenes recibidas
+        </span>
+
+        <strong id="valorOrdenesEstadisticas">
+            12
+        </strong>
+
+        <small id="comparacionOrdenesEstadisticas">
+            2 órdenes más que el período anterior
+        </small>
+
+    </article>
+
+
+    <article class="tarjeta-estadistica-principal">
+
+        <div class="cabecera-tarjeta-estadistica">
+
+            <span class="icono-estadistica-principal visitas">
+                <i class="bi bi-eye-fill"></i>
+            </span>
+
+            <span class="variacion-estadistica positiva">
+                <i class="bi bi-arrow-up-right"></i>
+                18,7 %
+            </span>
+
+        </div>
+
+        <span class="etiqueta-estadistica">
+            Visitas al perfil
+        </span>
+
+        <strong id="valorVisitasEstadisticas">
+            1.248
+        </strong>
+
+        <small id="comparacionVisitasEstadisticas">
+            197 visitas más que el período anterior
+        </small>
+
+    </article>
+
+
+    <article class="tarjeta-estadistica-principal">
+
+        <div class="cabecera-tarjeta-estadistica">
+
+            <span class="icono-estadistica-principal favoritos">
+                <i class="bi bi-heart-fill"></i>
+            </span>
+
+            <span class="variacion-estadistica positiva">
+                <i class="bi bi-arrow-up-right"></i>
+                6,4 %
+            </span>
+
+        </div>
+
+        <span class="etiqueta-estadistica">
+            Productos favoritos
+        </span>
+
+        <strong id="valorFavoritosEstadisticas">
+            36
+        </strong>
+
+        <small id="comparacionFavoritosEstadisticas">
+            4 favoritos más que el período anterior
+        </small>
+
+    </article>
+
+</section>
+
+
+<!-- SEGUNDA FILA DE DATOS -->
+<section class="resumen-secundario-estadisticas">
+
+    <article>
+
+        <span class="icono-resumen-secundario valoracion">
+            <i class="bi bi-star-fill"></i>
+        </span>
+
+        <div>
+            <span>Valoración promedio</span>
+
+            <strong>4,8 de 5</strong>
+
+            <div class="estrellas-resumen-estadisticas">
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
+                <i class="bi bi-star-half"></i>
+            </div>
+        </div>
+
+    </article>
+
+
+    <article>
+
+        <span class="icono-resumen-secundario conversion">
+            <i class="bi bi-percent"></i>
+        </span>
+
+        <div>
+            <span>Tasa de conversión</span>
+            <strong id="valorConversionEstadisticas">3,9 %</strong>
+            <small>Visitas que finalizaron en compra</small>
+        </div>
+
+    </article>
+
+
+    <article>
+
+        <span class="icono-resumen-secundario promedio">
+            <i class="bi bi-receipt-cutoff"></i>
+        </span>
+
+        <div>
+            <span>Venta promedio</span>
+            <strong id="valorPromedioEstadisticas">₡12.083</strong>
+            <small>Promedio por cada orden</small>
+        </div>
+
+    </article>
+
+
+    <article>
+
+        <span class="icono-resumen-secundario productos">
+            <i class="bi bi-box-seam-fill"></i>
+        </span>
+
+        <div>
+            <span>Productos activos</span>
+            <strong>6 de 8</strong>
+            <small>75 % del catálogo publicado</small>
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- GRÁFICOS PRINCIPALES -->
+<section class="grid-graficos-estadisticas">
+
+    <!-- VENTAS -->
+    <article class="bloque-estadisticas-emprendedor grafico-ventas-estadisticas">
+
+        <div class="encabezado-bloque-estadisticas">
+
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Rendimiento
+                </span>
+
+                <h2>Evolución de ventas</h2>
+
+                <p id="descripcionPeriodoVentas">
+                    Ingresos obtenidos durante los últimos 30 días.
+                </p>
+            </div>
+
+            <div class="leyenda-grafico-estadisticas">
+
+                <span>
+                    <i class="indicador-leyenda ventas-actuales"></i>
+                    Período actual
+                </span>
+
+                <span>
+                    <i class="indicador-leyenda ventas-anteriores"></i>
+                    Período anterior
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="grafico-lineas-estadisticas">
+
+            <div class="escala-grafico-ventas">
+
+                <span>₡50 mil</span>
+                <span>₡40 mil</span>
+                <span>₡30 mil</span>
+                <span>₡20 mil</span>
+                <span>₡10 mil</span>
+                <span>₡0</span>
+
+            </div>
+
+            <div class="area-grafico-ventas">
+
+                <div class="lineas-horizontales-grafico">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <svg viewBox="0 0 700 260"
+                     preserveAspectRatio="none"
+                     class="svg-ventas-estadisticas"
+                     aria-label="Gráfico de evolución de ventas">
+
+                    <defs>
+
+                        <linearGradient id="rellenoVentas"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1">
+
+                            <stop offset="0%"
+                                  stop-color="#7f45c6"
+                                  stop-opacity="0.28">
+                            </stop>
+
+                            <stop offset="100%"
+                                  stop-color="#7f45c6"
+                                  stop-opacity="0">
+                            </stop>
+
+                        </linearGradient>
+
+                    </defs>
+
+                    <path class="area-ventas-svg"
+                          d="M0,210
+                        C60,190 85,170 120,178
+                        C170,190 200,120 250,135
+                        C310,155 335,80 390,100
+                        C440,120 475,55 530,72
+                        C585,90 625,35 700,48
+                        L700,260
+                        L0,260 Z">
+                    </path>
+
+                    <path class="linea-anterior-svg"
+                          d="M0,225
+                        C70,210 90,195 130,200
+                        C180,208 215,165 260,172
+                        C320,182 350,135 400,145
+                        C455,155 490,105 545,115
+                        C600,125 650,82 700,92">
+                    </path>
+
+                    <path class="linea-actual-svg"
+                          d="M0,210
+                        C60,190 85,170 120,178
+                        C170,190 200,120 250,135
+                        C310,155 335,80 390,100
+                        C440,120 475,55 530,72
+                        C585,90 625,35 700,48">
+                    </path>
+
+                    <g class="puntos-grafico-ventas">
+
+                        <circle cx="0" cy="210" r="5"></circle>
+                        <circle cx="120" cy="178" r="5"></circle>
+                        <circle cx="250" cy="135" r="5"></circle>
+                        <circle cx="390" cy="100" r="5"></circle>
+                        <circle cx="530" cy="72" r="5"></circle>
+                        <circle cx="700" cy="48" r="5"></circle>
+
+                    </g>
+
+                </svg>
+
+                <div class="etiquetas-grafico-ventas">
+
+                    <span>Semana 1</span>
+                    <span>Semana 2</span>
+                    <span>Semana 3</span>
+                    <span>Semana 4</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </article>
+
+
+    <!-- CATEGORÍAS -->
+    <article class="bloque-estadisticas-emprendedor">
+
+        <div class="encabezado-bloque-estadisticas">
+
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Distribución
+                </span>
+
+                <h2>Ventas por categoría</h2>
+
+                <p>
+                    Participación de cada categoría en los ingresos.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="grafico-circular-estadisticas">
+
+            <div class="circulo-categorias-estadisticas">
+
+                <div class="centro-circulo-estadisticas">
+                    <strong>₡145 mil</strong>
+                    <span>Total vendido</span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="leyenda-categorias-estadisticas">
+
+            <div>
+                <span class="color-categoria accesorios"></span>
+
+                <div>
+                    <strong>Accesorios</strong>
+                    <small>38 %</small>
+                </div>
+
+                <strong>₡55.100</strong>
+            </div>
+
+            <div>
+                <span class="color-categoria textiles"></span>
+
+                <div>
+                    <strong>Moda y textiles</strong>
+                    <small>27 %</small>
+                </div>
+
+                <strong>₡39.150</strong>
+            </div>
+
+            <div>
+                <span class="color-categoria decoracion"></span>
+
+                <div>
+                    <strong>Decoración</strong>
+                    <small>22 %</small>
+                </div>
+
+                <strong>₡31.900</strong>
+            </div>
+
+            <div>
+                <span class="color-categoria servicios"></span>
+
+                <div>
+                    <strong>Servicios</strong>
+                    <small>13 %</small>
+                </div>
+
+                <strong>₡18.850</strong>
+            </div>
+
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- PRODUCTOS Y ACTIVIDAD -->
+<section class="grid-detalles-estadisticas">
+
+    <!-- PRODUCTOS MÁS VENDIDOS -->
+    <article class="bloque-estadisticas-emprendedor">
+
+        <div class="encabezado-bloque-estadisticas">
+
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Catálogo
+                </span>
+
+                <h2>Productos más vendidos</h2>
+
+                <p>
+                    Productos con mejores resultados durante el período.
+                </p>
+            </div>
+
+            <a asp-controller="Emprendedor"
+               asp-action="MisProductos">
+
+                Ver productos
+                <i class="bi bi-arrow-right"></i>
+
+            </a>
+
+        </div>
+
+
+        <div class="lista-productos-estadisticas">
+
+            <article class="producto-estadistica">
+
+                <span class="posicion-producto-estadistica primero">
+                    1
+                </span>
+
+                <img src="~/images/producto-1.jpg"
+                     alt="Aretes artesanales" />
+
+                <div class="informacion-producto-estadistica">
+
+                    <strong>Aretes artesanales</strong>
+                    <span>Accesorios y joyería</span>
+
+                    <div class="barra-producto-estadistica">
+                        <span style="width: 92%;"></span>
+                    </div>
+
+                </div>
+
+                <div class="resultado-producto-estadistica">
+                    <strong>18 ventas</strong>
+                    <span>₡153.000</span>
+                </div>
+
+            </article>
+
+
+            <article class="producto-estadistica">
+
+                <span class="posicion-producto-estadistica segundo">
+                    2
+                </span>
+
+                <img src="~/images/producto-2.jpg"
+                     alt="Bolso tejido artesanal" />
+
+                <div class="informacion-producto-estadistica">
+
+                    <strong>Bolso tejido artesanal</strong>
+                    <span>Moda y textiles</span>
+
+                    <div class="barra-producto-estadistica">
+                        <span style="width: 74%;"></span>
+                    </div>
+
+                </div>
+
+                <div class="resultado-producto-estadistica">
+                    <strong>12 ventas</strong>
+                    <span>₡216.000</span>
+                </div>
+
+            </article>
+
+
+            <article class="producto-estadistica">
+
+                <span class="posicion-producto-estadistica tercero">
+                    3
+                </span>
+
+                <img src="~/images/noticia-emprendimiento.jpg"
+                     alt="Llaveros personalizados" />
+
+                <div class="informacion-producto-estadistica">
+
+                    <strong>Llaveros personalizados</strong>
+                    <span>Accesorios y joyería</span>
+
+                    <div class="barra-producto-estadistica">
+                        <span style="width: 59%;"></span>
+                    </div>
+
+                </div>
+
+                <div class="resultado-producto-estadistica">
+                    <strong>9 ventas</strong>
+                    <span>₡45.000</span>
+                </div>
+
+            </article>
+
+
+            <article class="producto-estadistica">
+
+                <span class="posicion-producto-estadistica">
+                    4
+                </span>
+
+                <img src="~/images/noticia-concurso.jpg"
+                     alt="Cuadro personalizado" />
+
+                <div class="informacion-producto-estadistica">
+
+                    <strong>Cuadro personalizado</strong>
+                    <span>Decoración</span>
+
+                    <div class="barra-producto-estadistica">
+                        <span style="width: 43%;"></span>
+                    </div>
+
+                </div>
+
+                <div class="resultado-producto-estadistica">
+                    <strong>6 ventas</strong>
+                    <span>₡132.000</span>
+                </div>
+
+            </article>
+
+        </div>
+
+    </article>
+
+
+    <!-- ACTIVIDAD RECIENTE -->
+    <article class="bloque-estadisticas-emprendedor">
+
+        <div class="encabezado-bloque-estadisticas">
+
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Actividad
+                </span>
+
+                <h2>Actividad reciente</h2>
+
+                <p>
+                    Principales movimientos del emprendimiento.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="linea-tiempo-estadisticas">
+
+            <div class="actividad-estadistica">
+
+                <span class="icono-actividad-estadistica venta">
+                    <i class="bi bi-bag-check-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Nueva venta recibida</strong>
+
+                    <p>
+                        María Gómez realizó una compra por ₡18.500.
+                    </p>
+
+                    <span>Hace 25 minutos</span>
+                </div>
+
+            </div>
+
+
+            <div class="actividad-estadistica">
+
+                <span class="icono-actividad-estadistica favorito">
+                    <i class="bi bi-heart-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Producto agregado a favoritos</strong>
+
+                    <p>
+                        El bolso tejido artesanal recibió un nuevo favorito.
+                    </p>
+
+                    <span>Hace 1 hora</span>
+                </div>
+
+            </div>
+
+
+            <div class="actividad-estadistica">
+
+                <span class="icono-actividad-estadistica visita">
+                    <i class="bi bi-eye-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Aumento de visitas</strong>
+
+                    <p>
+                        El perfil recibió 48 visitas durante el día.
+                    </p>
+
+                    <span>Hace 3 horas</span>
+                </div>
+
+            </div>
+
+
+            <div class="actividad-estadistica">
+
+                <span class="icono-actividad-estadistica valoracion">
+                    <i class="bi bi-star-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Nueva valoración</strong>
+
+                    <p>
+                        Un cliente calificó el emprendimiento con 5 estrellas.
+                    </p>
+
+                    <span>Ayer</span>
+                </div>
+
+            </div>
+
+
+            <div class="actividad-estadistica">
+
+                <span class="icono-actividad-estadistica evento">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </span>
+
+                <div>
+                    <strong>Participación aprobada</strong>
+
+                    <p>
+                        La solicitud para Feria Creativa San Pedro fue aprobada.
+                    </p>
+
+                    <span>Hace 2 días</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </article>
+
+</section>
+
+
+<!-- RENDIMIENTO DE PRODUCTOS -->
+<section class="bloque-estadisticas-emprendedor tabla-rendimiento-estadisticas">
+
+    <div class="encabezado-bloque-estadisticas">
+
+        <div>
+            <span class="subtitulo-emprendedor">
+                Rendimiento individual
+            </span>
+
+            <h2>Rendimiento de productos</h2>
+
+            <p>
+                Compara las visitas, favoritos, ventas e ingresos
+                de tus publicaciones.
+            </p>
+        </div>
+
+        <div class="buscador-rendimiento-estadisticas">
+
+            <i class="bi bi-search"></i>
+
+            <input type="search"
+                   id="buscarProductoEstadisticas"
+                   placeholder="Buscar producto..."
+                   aria-label="Buscar producto en estadísticas" />
+
+        </div>
+
+    </div>
+
+
+    <div class="contenedor-tabla-rendimiento">
+
+        <div class="tabla-productos-estadisticas">
+
+            <div class="fila-producto-rendimiento encabezado-rendimiento">
+                <span>Producto</span>
+                <span>Visitas</span>
+                <span>Favoritos</span>
+                <span>Ventas</span>
+                <span>Conversión</span>
+                <span>Ingresos</span>
+            </div>
+
+
+            <article class="fila-producto-rendimiento producto-rendimiento-filtrable"
+                     data-producto="Aretes artesanales">
+
+                <div class="producto-tabla-estadisticas">
+
+                    <img src="~/images/producto-1.jpg"
+                         alt="Aretes artesanales" />
+
+                    <div>
+                        <strong>Aretes artesanales</strong>
+                        <span>Accesorios y joyería</span>
+                    </div>
+
+                </div>
+
+                <span>426</span>
+                <span>18</span>
+                <strong>18</strong>
+
+                <span class="conversion-producto-estadistica alta">
+                    4,2 %
+                </span>
+
+                <strong class="ingreso-producto-estadistica">
+                    ₡153.000
+                </strong>
+
+            </article>
+
+
+            <article class="fila-producto-rendimiento producto-rendimiento-filtrable"
+                     data-producto="Bolso tejido artesanal">
+
+                <div class="producto-tabla-estadisticas">
+
+                    <img src="~/images/producto-2.jpg"
+                         alt="Bolso tejido artesanal" />
+
+                    <div>
+                        <strong>Bolso tejido artesanal</strong>
+                        <span>Moda y textiles</span>
+                    </div>
+
+                </div>
+
+                <span>318</span>
+                <span>11</span>
+                <strong>12</strong>
+
+                <span class="conversion-producto-estadistica media">
+                    3,8 %
+                </span>
+
+                <strong class="ingreso-producto-estadistica">
+                    ₡216.000
+                </strong>
+
+            </article>
+
+
+            <article class="fila-producto-rendimiento producto-rendimiento-filtrable"
+                     data-producto="Llaveros personalizados">
+
+                <div class="producto-tabla-estadisticas">
+
+                    <img src="~/images/noticia-emprendimiento.jpg"
+                         alt="Llaveros personalizados" />
+
+                    <div>
+                        <strong>Llaveros personalizados</strong>
+                        <span>Accesorios y joyería</span>
+                    </div>
+
+                </div>
+
+                <span>265</span>
+                <span>7</span>
+                <strong>9</strong>
+
+                <span class="conversion-producto-estadistica media">
+                    3,4 %
+                </span>
+
+                <strong class="ingreso-producto-estadistica">
+                    ₡45.000
+                </strong>
+
+            </article>
+
+
+            <article class="fila-producto-rendimiento producto-rendimiento-filtrable"
+                     data-producto="Cuadro personalizado">
+
+                <div class="producto-tabla-estadisticas">
+
+                    <img src="~/images/noticia-concurso.jpg"
+                         alt="Cuadro personalizado" />
+
+                    <div>
+                        <strong>Cuadro personalizado</strong>
+                        <span>Decoración</span>
+                    </div>
+
+                </div>
+
+                <span>174</span>
+                <span>5</span>
+                <strong>6</strong>
+
+                <span class="conversion-producto-estadistica baja">
+                    2,9 %
+                </span>
+
+                <strong class="ingreso-producto-estadistica">
+                    ₡132.000
+                </strong>
+
+            </article>
+
+        </div>
+
+
+        <div id="mensajeSinProductosEstadisticas"
+             class="mensaje-sin-productos-estadisticas">
+
+            <i class="bi bi-bar-chart"></i>
+
+            <h2>No se encontraron productos</h2>
+
+            <p>
+                Utiliza otro término de búsqueda.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- RECOMENDACIONES -->
+<section class="recomendaciones-estadisticas-emprendedor">
+
+    <div class="encabezado-recomendaciones-estadisticas">
+
+        <span class="icono-recomendaciones-estadisticas">
+            <i class="bi bi-lightbulb-fill"></i>
+        </span>
+
+        <div>
+            <span class="subtitulo-emprendedor">
+                Recomendaciones
+            </span>
+
+            <h2>Oportunidades para mejorar</h2>
+
+            <p>
+                Acciones sugeridas según el rendimiento del emprendimiento.
+            </p>
+        </div>
+
+    </div>
+
+
+    <div class="grid-recomendaciones-estadisticas">
+
+        <article>
+
+            <span class="numero-recomendacion-estadistica">
+                01
+            </span>
+
+            <div>
+                <h3>Actualiza el inventario</h3>
+
+                <p>
+                    Tus dos productos más vendidos tienen pocas
+                    existencias disponibles.
+                </p>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="Inventario">
+
+                    Revisar inventario
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+            </div>
+
+        </article>
+
+
+        <article>
+
+            <span class="numero-recomendacion-estadistica">
+                02
+            </span>
+
+            <div>
+                <h3>Destaca tus mejores productos</h3>
+
+                <p>
+                    Los aretes artesanales generan la mayor cantidad
+                    de visitas y conversiones.
+                </p>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="MisProductos">
+
+                    Administrar productos
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+            </div>
+
+        </article>
+
+
+        <article>
+
+            <span class="numero-recomendacion-estadistica">
+                03
+            </span>
+
+            <div>
+                <h3>Participa en próximos eventos</h3>
+
+                <p>
+                    Los eventos pueden aumentar la visibilidad
+                    y las visitas al perfil.
+                </p>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="ParticipacionEventos">
+
+                    Ver eventos
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+            </div>
+
+        </article>
+
+    </div>
+
+</section>
+
+
+@section Scripts {
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const selectorPeriodo =
+                document.getElementById("periodoEstadisticas");
+
+            const botonActualizar =
+                document.getElementById(
+                    "botonActualizarEstadisticas"
+                );
+
+            const mensajeActualizacion =
+                document.getElementById(
+                    "mensajeActualizacionEstadisticas"
+                );
+
+            const descripcionPeriodo =
+                document.getElementById(
+                    "descripcionPeriodoVentas"
+                );
+
+
+            const valoresPorPeriodo = {
+
+                "7": {
+                    ventas: "₡42.500",
+                    ordenes: "4",
+                    visitas: "326",
+                    favoritos: "11",
+                    conversion: "4,1 %",
+                    promedio: "₡10.625",
+                    descripcion:
+                        "Ingresos obtenidos durante los últimos 7 días."
+                },
+
+                "30": {
+                    ventas: "₡145.000",
+                    ordenes: "12",
+                    visitas: "1.248",
+                    favoritos: "36",
+                    conversion: "3,9 %",
+                    promedio: "₡12.083",
+                    descripcion:
+                        "Ingresos obtenidos durante los últimos 30 días."
+                },
+
+                "90": {
+                    ventas: "₡426.500",
+                    ordenes: "35",
+                    visitas: "3.842",
+                    favoritos: "104",
+                    conversion: "4,3 %",
+                    promedio: "₡12.186",
+                    descripcion:
+                        "Ingresos obtenidos durante los últimos 3 meses."
+                },
+
+                "365": {
+                    ventas: "₡1.785.000",
+                    ordenes: "148",
+                    visitas: "15.760",
+                    favoritos: "418",
+                    conversion: "4,7 %",
+                    promedio: "₡12.061",
+                    descripcion:
+                        "Ingresos obtenidos durante el último año."
+                }
+            };
+
+
+            const actualizarEstadisticas = () => {
+
+                const periodo =
+                    selectorPeriodo.value;
+
+                const valores =
+                    valoresPorPeriodo[periodo];
+
+                document.getElementById(
+                    "valorVentasEstadisticas"
+                ).textContent = valores.ventas;
+
+                document.getElementById(
+                    "valorOrdenesEstadisticas"
+                ).textContent = valores.ordenes;
+
+                document.getElementById(
+                    "valorVisitasEstadisticas"
+                ).textContent = valores.visitas;
+
+                document.getElementById(
+                    "valorFavoritosEstadisticas"
+                ).textContent = valores.favoritos;
+
+                document.getElementById(
+                    "valorConversionEstadisticas"
+                ).textContent = valores.conversion;
+
+                document.getElementById(
+                    "valorPromedioEstadisticas"
+                ).textContent = valores.promedio;
+
+                descripcionPeriodo.textContent =
+                    valores.descripcion;
+
+                mensajeActualizacion.classList.add(
+                    "visible"
+                );
+
+                window.setTimeout(() => {
+
+                    mensajeActualizacion.classList.remove(
+                        "visible"
+                    );
+
+                }, 3000);
+            };
+
+
+            botonActualizar?.addEventListener(
+                "click",
+                actualizarEstadisticas
+            );
+
+
+            const buscadorProductos =
+                document.getElementById(
+                    "buscarProductoEstadisticas"
+                );
+
+            const productos =
+                document.querySelectorAll(
+                    ".producto-rendimiento-filtrable"
+                );
+
+            const mensajeSinProductos =
+                document.getElementById(
+                    "mensajeSinProductosEstadisticas"
+                );
+
+
+            buscadorProductos?.addEventListener("input", () => {
+
+                const texto =
+                    buscadorProductos.value
+                        .trim()
+                        .toLowerCase();
+
+                let visibles = 0;
+
+                productos.forEach((producto) => {
+
+                    const nombre =
+                        producto.dataset.producto
+                            .toLowerCase();
+
+                    const mostrar =
+                        nombre.includes(texto);
+
+                    producto.style.display =
+                        mostrar ? "" : "none";
+
+                    if (mostrar) {
+                        visibles++;
+                    }
+                });
+
+                mensajeSinProductos.style.display =
+                    visibles === 0
+                        ? "flex"
+                        : "none";
+            });
+        });
+    </script>
+}

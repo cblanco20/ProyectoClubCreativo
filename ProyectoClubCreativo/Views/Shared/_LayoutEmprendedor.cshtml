@@ -1,0 +1,454 @@
+﻿@{
+    string controladorActual =
+        ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+
+    string accionActual =
+        ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    string ClaseEmprendedor(params string[] acciones)
+    {
+        return controladorActual == "Emprendedor" &&
+               acciones.Contains(
+                   accionActual,
+                   StringComparer.OrdinalIgnoreCase
+               )
+            ? "enlace-emprendedor activo"
+            : "enlace-emprendedor";
+    }
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - Club Creativo MiVo</title>
+
+    <link rel="icon"
+          type="image/x-icon"
+          href="~/favicon.ico" />
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <link rel="stylesheet"
+          href="~/css/club-creativo.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/acceso.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/css/emprendedor.css"
+          asp-append-version="true" />
+</head>
+
+<body class="pagina-emprendedor">
+
+    <!-- Fondo oscuro para celular -->
+    <div id="fondoMenuEmprendedor"
+         class="fondo-menu-emprendedor">
+    </div>
+
+    <!-- =========================================
+                 MENÚ LATERAL
+    ========================================== -->
+    <aside id="menuEmprendedor"
+           class="menu-emprendedor">
+
+        <div class="encabezado-menu-emprendedor">
+
+            <a asp-controller="Emprendedor"
+               asp-action="Panel"
+               class="marca-menu-emprendedor">
+
+                <img src="~/images/logo.jpg"
+                     alt="Club Creativo"
+                     class="logo-menu-emprendedor" />
+
+                <span>
+                    <strong>Club</strong> Creativo
+                </span>
+
+            </a>
+
+            <button id="cerrarMenuEmprendedor"
+                    type="button"
+                    class="cerrar-menu-emprendedor"
+                    aria-label="Cerrar menú">
+
+                <i class="bi bi-x-lg"></i>
+
+            </button>
+
+        </div>
+
+        <!-- Información del emprendimiento -->
+        <div class="resumen-menu-emprendedor">
+
+            <div class="avatar-menu-emprendedor">
+
+                <img src="~/images/registro-emprendedor.jpg"
+                     alt="Emprendimiento creativo" />
+
+            </div>
+
+            <div class="datos-menu-emprendedor">
+
+                <strong>Mi emprendimiento</strong>
+
+                <span>
+                    <i class="bi bi-hourglass-split"></i>
+                    Solicitud pendiente
+                </span>
+
+            </div>
+
+        </div>
+
+        <!-- Navegación -->
+        <nav class="navegacion-emprendedor">
+
+            <span class="titulo-grupo-emprendedor">
+                Administración
+            </span>
+
+            <a asp-controller="Emprendedor"
+               asp-action="Panel"
+               class="@ClaseEmprendedor("Panel")">
+
+                <i class="bi bi-grid-fill"></i>
+                Panel principal
+
+            </a>
+
+            <a asp-controller="Emprendedor"
+               asp-action="EstadoSolicitud"
+               class="@ClaseEmprendedor(
+                                   "EstadoSolicitud",
+                                   "SolicitudEmprendimiento"
+                              )">
+
+                <i class="bi bi-file-earmark-check-fill"></i>
+                Estado de solicitud
+
+            </a>
+
+            <a asp-controller="Emprendedor"
+               asp-action="PerfilEmprendimiento"
+               class="@ClaseEmprendedor(
+                                   "PerfilEmprendimiento",
+                                   "EditarEmprendimiento"
+                              )">
+
+                <i class="bi bi-shop-window"></i>
+                Mi emprendimiento
+
+            </a>
+
+            <span class="titulo-grupo-emprendedor">
+                Productos y ventas
+            </span>
+
+            <a asp-controller="Emprendedor"
+               asp-action="MisProductos"
+               class="@ClaseEmprendedor(
+                                   "MisProductos",
+                                   "CrearProducto",
+                                   "EditarProducto"
+                              )">
+
+                <i class="bi bi-box-seam-fill"></i>
+                Productos y servicios
+
+            </a>
+
+            <a asp-controller="Emprendedor"
+               asp-action="Inventario"
+               class="@ClaseEmprendedor("Inventario")">
+
+                <i class="bi bi-boxes"></i>
+                Inventario
+
+                <span class="contador-emprendedor">
+                    3
+                </span>
+
+            </a>
+
+            <a asp-controller="Emprendedor"
+               asp-action="Ventas"
+               class="@ClaseEmprendedor("Ventas")">
+
+                <i class="bi bi-receipt-cutoff"></i>
+                Ventas
+
+            </a>
+
+            <span class="titulo-grupo-emprendedor">
+                Crecimiento
+            </span>
+
+            <a asp-controller="Emprendedor"
+               asp-action="ParticipacionEventos"
+               class="@ClaseEmprendedor("ParticipacionEventos")">
+
+                <i class="bi bi-calendar-event-fill"></i>
+                Participación en eventos
+
+            </a>
+
+            <a asp-controller="Emprendedor"
+               asp-action="PlanesSuscripcion"
+               class="@ClaseEmprendedor(
+                                   "PlanesSuscripcion",
+                                   "MiSuscripcion"
+                              )">
+
+                <i class="bi bi-gem"></i>
+                Suscripción
+
+            </a>
+
+            <a asp-controller="Emprendedor"
+               asp-action="Estadisticas"
+               class="@ClaseEmprendedor("Estadisticas")">
+
+                <i class="bi bi-bar-chart-line-fill"></i>
+                Estadísticas
+
+            </a>
+
+            <span class="titulo-grupo-emprendedor">
+                Explorar
+            </span>
+
+            <a asp-controller="Home"
+               asp-action="CatalogoProductos"
+               class="enlace-emprendedor">
+
+                <i class="bi bi-bag-heart-fill"></i>
+                Catálogo público
+
+            </a>
+
+            <a asp-controller="Home"
+               asp-action="Emprendimientos"
+               class="enlace-emprendedor">
+
+                <i class="bi bi-buildings-fill"></i>
+                Emprendimientos
+
+            </a>
+
+            <a asp-controller="Home"
+               asp-action="Eventos"
+               class="enlace-emprendedor">
+
+                <i class="bi bi-calendar2-event-fill"></i>
+                Eventos públicos
+
+            </a>
+
+        </nav>
+
+        <a asp-controller="Emprendedor"
+           asp-action="CerrarSesion"
+           class="cerrar-sesion-emprendedor">
+
+            <i class="bi bi-box-arrow-left"></i>
+            Cerrar sesión
+
+        </a>
+
+    </aside>
+
+    <!-- =========================================
+             ESTRUCTURA PRINCIPAL
+    ========================================== -->
+    <div class="estructura-emprendedor">
+
+        <!-- Encabezado -->
+        <header class="encabezado-emprendedor">
+
+            <button id="abrirMenuEmprendedor"
+                    type="button"
+                    class="boton-menu-emprendedor"
+                    aria-label="Abrir menú"
+                    aria-expanded="false"
+                    aria-controls="menuEmprendedor">
+
+                <i class="bi bi-list"></i>
+
+            </button>
+
+            <a asp-controller="Emprendedor"
+               asp-action="Panel"
+               class="marca-encabezado-emprendedor">
+
+                <img src="~/images/logo.jpg"
+                     alt="Club Creativo"
+                     class="logo-encabezado-emprendedor" />
+
+                <span>
+                    <strong>Club</strong> Creativo
+                </span>
+
+            </a>
+
+            <!-- Navegación pública -->
+            <nav class="menu-publico-emprendedor">
+
+                <a asp-controller="Home"
+                   asp-action="Index">
+                    Inicio
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="CatalogoProductos">
+                    Productos
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Emprendimientos">
+                    Emprendimientos
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Eventos">
+                    Eventos
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Talleres">
+                    Talleres
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Contacto">
+                    Contacto
+                </a>
+
+            </nav>
+
+            <!-- Acciones -->
+            <div class="acciones-emprendedor">
+
+                <a asp-controller="Emprendedor"
+                   asp-action="CrearProducto"
+                   class="boton-crear-encabezado">
+
+                    <i class="bi bi-plus-lg"></i>
+
+                    <span>
+                        Crear producto
+                    </span>
+
+                </a>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="Ventas"
+                   class="accion-icono-emprendedor"
+                   aria-label="Ventas">
+
+                    <i class="bi bi-bag-check"></i>
+
+                </a>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="Panel"
+                   class="accion-icono-emprendedor"
+                   aria-label="Notificaciones">
+
+                    <i class="bi bi-bell"></i>
+
+                    <span class="indicador-notificacion-emprendedor">
+                    </span>
+
+                </a>
+
+                <a asp-controller="Emprendedor"
+                   asp-action="PerfilEmprendimiento"
+                   class="perfil-encabezado-emprendedor">
+
+                    <span class="avatar-encabezado-emprendedor">
+                        <i class="bi bi-shop"></i>
+                    </span>
+
+                    <span class="nombre-encabezado-emprendedor">
+                        Mi emprendimiento
+                    </span>
+
+                </a>
+
+            </div>
+
+        </header>
+
+        <!-- Contenido de cada vista -->
+        <main class="contenido-principal-emprendedor">
+
+            @RenderBody()
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer-emprendedor">
+
+            <div class="informacion-footer-emprendedor">
+
+                <strong>
+                    Club Creativo MiVo
+                </strong>
+
+                <span>
+                    Impulsando el talento y el emprendimiento costarricense.
+                </span>
+
+            </div>
+
+            <div class="enlaces-footer-emprendedor">
+
+                <a asp-controller="Home"
+                   asp-action="Reglamento">
+                    Reglamento
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="PreguntasFrecuentes">
+                    Preguntas frecuentes
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Contacto">
+                    Contacto
+                </a>
+
+            </div>
+
+        </footer>
+
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="~/js/emprendedor.js"
+            asp-append-version="true">
+    </script>
+
+    @await RenderSectionAsync(
+        "Scripts",
+        required: false
+    )
+
+</body>
+</html>
