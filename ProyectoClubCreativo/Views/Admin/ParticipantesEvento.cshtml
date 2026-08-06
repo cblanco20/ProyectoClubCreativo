@@ -1,0 +1,47 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.EventoAdminViewModel
+@{
+    ViewData["Title"] = "Participantes: " + Model.Nombre; Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="Eventos" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver a eventos</a>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-people-fill"></i> @Model.Nombre — @Model.Inscritos / @Model.CupoTotal inscritos</h2>
+        <div class="grupo-acciones-admin">
+            <form asp-action="GenerarQrEvento" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="boton-admin boton-admin-oscuro"><i class="bi bi-qr-code"></i> @(Model.QrGenerado ? "Regenerar QR" : "Generar QR")</button></form>
+        </div>
+    </div>
+
+    <h3>Emprendimientos asignados</h3>
+    <div class="grupo-acciones-admin" style="margin-bottom:14px;">
+        @foreach (var em in Model.EmprendimientosAsignados)
+        {
+            <span class="etiqueta-estado-admin estado-activo">@em</span>
+        }
+    </div>
+    <form asp-action="AsignarEmprendimiento" method="post" class="formulario-admin" style="max-width:420px; margin-bottom:22px;">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="grupo-formulario"><input type="text" name="nombreEmprendimiento" placeholder="Nombre del emprendimiento" required /></div>
+        <button type="submit" class="boton-admin boton-admin-secundario">Asignar</button>
+    </form>
+
+    <h3>Participantes</h3>
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead><tr><th>Nombre</th><th>Emprendimiento</th><th>Estado</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Participantes)
+                {
+                    <tr><td>@p.Nombre</td><td>@p.Emprendimiento</td><td><span class="etiqueta-estado-admin @(p.Estado == "Confirmado" ? "estado-activo" : "estado-pendiente")">@p.Estado</span></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <form asp-action="CancelarEvento" method="post" class="formulario-admin" style="margin-top:22px;">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="grupo-formulario"><label>Motivo de cancelación del evento</label><textarea name="motivo" rows="2" required></textarea></div>
+        <button type="submit" class="boton-admin boton-admin-peligro">Cancelar evento</button>
+    </form>
+</article>

@@ -1,0 +1,54 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.ActividadQrAdminViewModel
+@{
+    ViewData["Title"] = "Asistencia: " + Model.Nombre; Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="AsistenciaQr" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver</a>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-qr-code-scan"></i> @Model.Nombre <span class="etiqueta-estado-admin estado-activo">@Model.Tipo</span></h2>
+        <div class="grupo-acciones-admin">
+            @if (!Model.QrGenerado)
+            {
+                <form asp-action="GenerarQrAsistencia" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="boton-admin boton-admin-primario"><i class="bi bi-qr-code"></i> Generar QR</button></form>
+            }
+            else
+            {
+                <a asp-action="DescargarQrAsistencia" asp-route-id="@Model.Id" class="boton-admin boton-admin-secundario"><i class="bi bi-download"></i> Descargar QR</a>
+                <form asp-action="RegenerarQrAsistencia" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="boton-admin boton-admin-oscuro"><i class="bi bi-arrow-repeat"></i> Regenerar</button></form>
+            }
+        </div>
+    </div>
+
+    <h3>Asistentes (@Model.Asistentes.Count(x => x.Presente) presentes de @Model.Asistentes.Count)</h3>
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Asistentes)
+                {
+                    <tr>
+                        <td>@p.Nombre</td>
+                        <td>@p.Correo</td>
+                        <td><span class="etiqueta-estado-admin @(p.Presente ? "estado-activo" : "estado-pendiente")">@(p.Presente ? "Presente" : "Sin validar")</span></td>
+                        <td>
+                            @if (!p.Presente)
+                            {
+                                <form asp-action="ValidarAsistencia" method="post">
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <input type="hidden" name="correo" value="@p.Correo" />
+                                    <button class="boton-admin boton-admin-exito">Validar</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Asistentes.Count == 0)
+                {
+                    <tr><td colspan="4">Todavía no hay inscritos para validar.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

@@ -11,6 +11,9 @@ namespace ProyectoClubCreativo.Controllers
             return View(new InicioSesionViewModel());
         }
 
+        private const string CorreoAdmin = "jossete.sanchez@clubcreativomivo.com";
+        private const string ContrasenaAdmin = "ClubCreativo2026*";
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult IniciarSesion(InicioSesionViewModel modelo)
@@ -20,10 +23,23 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
+            bool esAdmin =
+                modelo.Correo.Equals(CorreoAdmin, StringComparison.OrdinalIgnoreCase) &&
+                modelo.Contrasena == ContrasenaAdmin;
+
+            if (!esAdmin)
+            {
+                ModelState.AddModelError(string.Empty, "Correo o contraseña incorrectos.");
+                return View(modelo);
+            }
+
             TempData["MensajeExito"] =
                 "El formulario de inicio de sesión se validó correctamente.";
 
-            return RedirectToAction(nameof(IniciarSesion));
+            return RedirectToAction(
+                "Panel",
+                "Admin"
+            );
         }
 
         [HttpGet]

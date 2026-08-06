@@ -1,0 +1,60 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoVentasAdminViewModel
+
+@{
+    ViewData["Title"] = "Gestión de ventas";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="grid-estadisticas-admin">
+    <div class="tarjeta-estadistica-admin">
+        <div class="icono-estadistica-admin icono-ventas-admin"><i class="bi bi-cash-stack"></i></div>
+        <div><strong>₡@Model.TotalVendido.ToString("N0")</strong><span>Total vendido (pagadas)</span></div>
+    </div>
+    <div class="tarjeta-estadistica-admin">
+        <div class="icono-estadistica-admin icono-productos-admin"><i class="bi bi-receipt"></i></div>
+        <div><strong>@Model.TotalOrdenes</strong><span>Órdenes totales</span></div>
+    </div>
+    <div class="tarjeta-estadistica-admin">
+        <div class="icono-estadistica-admin icono-solicitudes-admin"><i class="bi bi-hourglass-split"></i></div>
+        <div><strong>@Model.TotalPendientes</strong><span>Pendientes</span></div>
+    </div>
+    <div class="tarjeta-estadistica-admin">
+        <div class="icono-estadistica-admin icono-emprendimientos-admin"><i class="bi bi-x-circle"></i></div>
+        <div><strong>@Model.TotalCanceladas</strong><span>Canceladas</span></div>
+    </div>
+</div>
+
+<div class="pestanas-admin">
+    @foreach (var e in new[] { "Todas", "Pagada", "Pendiente", "Cancelada" })
+    {
+        <a asp-action="Ventas" asp-route-estado="@e" class="pestana-admin @(Model.FiltroEstado == e ? "activa" : "")">@e</a>
+    }
+</div>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-receipt"></i> Órdenes (@Model.Ventas.Count)</h2>
+    </div>
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr><th>Orden</th><th>Cliente</th><th>Emprendimiento</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model.Ventas)
+                {
+                    string clase = v.Estado switch { "Pagada" => "estado-activo", "Cancelada" => "estado-rechazado", _ => "estado-pendiente" };
+                    <tr>
+                        <td>@v.NumeroOrden</td>
+                        <td>@v.Cliente</td>
+                        <td>@v.Emprendimiento</td>
+                        <td>@v.Fecha</td>
+                        <td>₡@v.Total.ToString("N0")</td>
+                        <td><span class="etiqueta-estado-admin @clase">@v.Estado</span></td>
+                        <td><a asp-action="DetalleVenta" asp-route-id="@v.Id" class="boton-admin boton-admin-secundario">Ver</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

@@ -1,0 +1,40 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoEventosAdminViewModel
+@{
+    ViewData["Title"] = "Gestión de eventos"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="pestanas-admin">
+    @foreach (var e in new[] { "Todos", "Programado", "Cancelado", "Finalizado" })
+    {
+        <a asp-action="Eventos" asp-route-estado="@e" class="pestana-admin @(Model.FiltroEstado == e ? "activa" : "")">@e</a>
+    }
+</div>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-calendar-event-fill"></i> Eventos (@Model.Eventos.Count)</h2>
+        <a asp-action="CrearEvento" class="boton-admin boton-admin-primario"><i class="bi bi-plus-lg"></i> Crear evento</a>
+    </div>
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead><tr><th>Evento</th><th>Fecha</th><th>Ubicación</th><th>Inscritos</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var ev in Model.Eventos)
+                {
+                    string clase = ev.Estado switch { "Programado" => "estado-activo", "Cancelado" => "estado-rechazado", _ => "estado-pendiente" };
+                    <tr>
+                        <td>@ev.Nombre</td>
+                        <td>@ev.Fecha</td>
+                        <td>@ev.Ubicacion</td>
+                        <td>@ev.Inscritos / @ev.CupoTotal</td>
+                        <td><span class="etiqueta-estado-admin @clase">@ev.Estado</span></td>
+                        <td class="grupo-acciones-admin">
+                            <a asp-action="ParticipantesEvento" asp-route-id="@ev.Id" class="boton-admin boton-admin-secundario">Ver</a>
+                            <a asp-action="EditarEvento" asp-route-id="@ev.Id" class="boton-admin boton-admin-secundario">Editar</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

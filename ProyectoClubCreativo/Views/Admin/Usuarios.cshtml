@@ -1,0 +1,78 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoUsuariosAdminViewModel
+
+@{
+    ViewData["Title"] = "Gestión de usuarios";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<form asp-controller="Admin" asp-action="Usuarios" method="get" class="barra-filtros-admin">
+    <div class="campo-filtro-admin" style="min-width:260px;">
+        <label>Buscar</label>
+        <input type="text" name="busqueda" value="@Model.Busqueda" placeholder="Nombre o correo electrónico" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label>Rol</label>
+        <select name="rol">
+            @{
+                string[] roles = { "Todos", "Usuario", "Emprendedor", "Administrador" };
+            }
+            @foreach (var rol in roles)
+            {
+                <option value="@rol" selected="@(Model.RolFiltro == rol)">@rol</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="boton-filtro-admin"><i class="bi bi-search"></i> Buscar</button>
+</form>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-people-fill"></i> Usuarios (@Model.Usuarios.Count)</h2>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                    <th>Registro</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var usuario in Model.Usuarios)
+                {
+                    string claseRol = usuario.Rol switch
+                    {
+                        "Administrador" => "rol-admin-tag",
+                        "Emprendedor" => "rol-emprendedor-tag",
+                        _ => "rol-usuario-tag"
+                    };
+
+                    <tr>
+                        <td>
+                            <div class="celda-usuario-admin">
+                                <img src="@usuario.Foto" class="foto-tabla-admin" alt="@usuario.Nombre" />
+                                @usuario.Nombre
+                            </div>
+                        </td>
+                        <td>@usuario.Correo</td>
+                        <td><span class="etiqueta-estado-admin @claseRol">@usuario.Rol</span></td>
+                        <td>@usuario.FechaRegistro</td>
+                        <td>
+                            <span class="etiqueta-estado-admin estado-@usuario.Estado.ToLower()">@usuario.Estado</span>
+                        </td>
+                        <td>
+                            <a asp-controller="Admin" asp-action="PerfilUsuario" asp-route-id="@usuario.Id" class="boton-admin boton-admin-secundario">
+                                <i class="bi bi-eye-fill"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

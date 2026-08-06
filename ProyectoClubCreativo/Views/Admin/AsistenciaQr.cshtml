@@ -1,0 +1,28 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.Admin.ActividadQrAdminViewModel>
+@{
+    ViewData["Title"] = "Asistencia QR"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-qr-code-scan"></i> Actividades con control de asistencia (@Model.Count)</h2>
+    </div>
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead><tr><th>Actividad</th><th>Tipo</th><th>Fecha</th><th>QR</th><th>Presentes</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td>@a.Nombre</td>
+                        <td>@a.Tipo</td>
+                        <td>@a.Fecha</td>
+                        <td><span class="etiqueta-estado-admin @(a.QrGenerado ? "estado-activo" : "estado-pendiente")">@(a.QrGenerado ? "Generado" : "Sin generar")</span></td>
+                        <td>@a.Asistentes.Count(x => x.Presente) / @a.Asistentes.Count</td>
+                        <td><a asp-action="DetalleAsistenciaQr" asp-route-id="@a.Id" class="boton-admin boton-admin-secundario">Ver</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

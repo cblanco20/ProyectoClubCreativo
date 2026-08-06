@@ -1,0 +1,89 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.ProductoAdminViewModel
+
+@{
+    ViewData["Title"] = "Revisar producto";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    string claseEstado = Model.Estado switch
+    {
+        "Activo" => "estado-activo",
+        "Pausado" => "estado-pausado",
+        _ => "estado-revision"
+    };
+}
+
+<a asp-controller="Admin" asp-action="Productos" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver al listado
+</a>
+
+<div class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <img src="@Model.Imagen" alt="@Model.Nombre" style="width:100%;max-width:320px;border-radius:var(--radio-medio);margin-bottom:16px;" />
+
+        <div class="encabezado-bloque-admin">
+            <h2>@Model.Nombre</h2>
+            <span class="etiqueta-estado-admin @claseEstado">@Model.Estado</span>
+        </div>
+
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-shop"></i></span>
+            <div><strong>@Model.Emprendimiento</strong><span>@Model.Categoria</span></div>
+        </div>
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-cash-coin"></i></span>
+            <div><strong>₡@Model.Precio.ToString("N0")</strong><span>Precio publicado</span></div>
+        </div>
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-calendar-event-fill"></i></span>
+            <div><strong>@Model.FechaPublicacion</strong><span>Fecha de publicación</span></div>
+        </div>
+
+        @if (Model.Reportes > 0)
+        {
+            <div class="item-alerta-admin nivel-critica" style="margin-top:10px;">
+                <i class="bi bi-flag-fill"></i>
+                <div><p>Este producto tiene <strong>@Model.Reportes</strong> reporte(s) de usuarios.</p></div>
+            </div>
+        }
+
+        <p style="margin-top:14px;font-size:14px;color:var(--color-gris-oscuro);">
+            @Model.Descripcion
+        </p>
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-sliders"></i> Acciones</h2>
+        </div>
+
+        <form asp-controller="Admin" asp-action="CambiarEstadoProducto" method="post" class="formulario-admin" style="margin-bottom:20px;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <div class="grupo-formulario">
+                <label>Cambiar estado</label>
+                <select name="estado">
+                    <option selected="@(Model.Estado == "Activo")">Activo</option>
+                    <option selected="@(Model.Estado == "Pausado")">Pausado</option>
+                    <option selected="@(Model.Estado == "En revisión")">En revisión</option>
+                </select>
+            </div>
+
+            <button type="submit" class="boton-admin boton-admin-oscuro" style="width:100%;justify-content:center;">
+                <i class="bi bi-arrow-repeat"></i> Actualizar estado
+            </button>
+        </form>
+
+        <form asp-controller="Admin" asp-action="EliminarProducto" method="post"
+              onsubmit="return confirm('¿Eliminar este producto por contenido inapropiado? Esta acción no se puede deshacer.');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <button type="submit" class="boton-admin boton-admin-peligro" style="width:100%;justify-content:center;">
+                <i class="bi bi-trash-fill"></i> Eliminar contenido inapropiado
+            </button>
+        </form>
+    </article>
+
+</div>

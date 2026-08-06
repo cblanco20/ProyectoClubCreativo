@@ -1,0 +1,27 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.RecompensaAdminViewModel
+@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Recompensa"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml"; bool esNuevo = Model.Id == 0;
+}
+
+<a asp-action="PuntosRecompensas" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin"><h2><i class="bi bi-gift-fill"></i> @ViewData["Title"]</h2></div>
+
+    <form asp-action="@(esNuevo ? "CrearRecompensa" : "EditarRecompensa")" method="post" class="formulario-admin">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="grupo-formulario"><label asp-for="Nombre"></label><input asp-for="Nombre" /></div>
+        <div class="grupo-formulario"><label asp-for="Descripcion"></label><textarea asp-for="Descripcion" rows="3"></textarea></div>
+        <div class="grupo-formulario"><label asp-for="CostoPuntos">Costo en puntos</label><input asp-for="CostoPuntos" type="number" /></div>
+        <div class="grupo-formulario">
+            <label><input asp-for="Activa" type="checkbox" style="width:auto;margin-right:8px;" /> Recompensa activa y disponible para canje</label>
+        </div>
+
+        <button type="submit" class="boton-admin boton-admin-primario">
+            <i class="bi bi-check-circle-fill"></i> @(esNuevo ? "Crear recompensa" : "Guardar cambios")
+        </button>
+    </form>
+</article>

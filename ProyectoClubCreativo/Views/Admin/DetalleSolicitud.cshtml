@@ -1,0 +1,85 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.SolicitudEmprendimientoAdminViewModel
+
+@{
+    ViewData["Title"] = "Detalle de solicitud";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-controller="Admin" asp-action="Emprendimientos" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver al listado
+</a>
+
+<div class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-buildings-fill"></i> @Model.NombreComercial</h2>
+            <span class="etiqueta-estado-admin estado-@Model.Estado.ToLower()">@Model.Estado</span>
+        </div>
+
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-person-fill"></i></span>
+            <div><strong>@Model.Solicitante</strong><span>Solicitante</span></div>
+        </div>
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-tag-fill"></i></span>
+            <div><strong>@Model.Categoria</strong><span>Categoría</span></div>
+        </div>
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-envelope-fill"></i></span>
+            <div><strong>@Model.Correo</strong><span>@Model.Telefono</span></div>
+        </div>
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-calendar-event-fill"></i></span>
+            <div><strong>@Model.FechaSolicitud</strong><span>Fecha de solicitud</span></div>
+        </div>
+
+        <p style="margin-top:14px;font-size:14px;color:var(--color-gris-oscuro);">
+            @Model.Descripcion
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.MotivoRechazo))
+        {
+            <div class="item-alerta-admin nivel-critica" style="margin-top:14px;">
+                <i class="bi bi-x-circle-fill"></i>
+                <div><p><strong>Motivo de rechazo:</strong> @Model.MotivoRechazo</p></div>
+            </div>
+        }
+    </article>
+
+    @if (Model.Estado == "Pendiente")
+    {
+        <article class="bloque-admin">
+            <div class="encabezado-bloque-admin">
+                <h2><i class="bi bi-check2-square"></i> Resolver solicitud</h2>
+            </div>
+
+            <form asp-controller="Admin" asp-action="Aprobar" method="post" style="margin-bottom:18px;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="boton-admin boton-admin-exito" style="width:100%;justify-content:center;">
+                    <i class="bi bi-check-circle-fill"></i> Aprobar solicitud
+                </button>
+            </form>
+
+            <form asp-controller="Admin" asp-action="Rechazar" method="post" class="formulario-admin">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <div class="grupo-formulario">
+                    <label>Motivo del rechazo</label>
+                    <textarea name="Motivo" rows="4" placeholder="Explique por qué se rechaza esta solicitud...">@Model.MotivoRechazo</textarea>
+                    @if (ViewData.ModelState["Motivo"]?.Errors.Count > 0)
+                    {
+                        <span class="mensaje-validacion">@ViewData.ModelState["Motivo"]!.Errors[0].ErrorMessage</span>
+                    }
+                </div>
+
+                <button type="submit" class="boton-admin boton-admin-peligro" style="width:100%;justify-content:center;">
+                    <i class="bi bi-x-circle-fill"></i> Rechazar solicitud
+                </button>
+            </form>
+        </article>
+    }
+
+</div>

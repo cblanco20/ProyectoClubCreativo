@@ -1,0 +1,185 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.DashboardAdminViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    int maxVentas = Model.VentasPorMes.Count > 0 ? Model.VentasPorMes.Max(v => v.Valor) : 1;
+
+    string[] coloresDona = { "#F47A20", "#3D8BEA", "#D8B4E8", "#2FB380", "#E7E7E7" };
+    int totalCategorias = Model.ProductosPorCategoria.Sum(c => c.Valor);
+    string gradienteDona = "";
+    double acumulado = 0;
+
+    for (int i = 0; i < Model.ProductosPorCategoria.Count; i++)
+    {
+        double porcentaje = totalCategorias == 0 ? 0 : (double)Model.ProductosPorCategoria[i].Valor / totalCategorias * 100;
+        string color = coloresDona[i % coloresDona.Length];
+        gradienteDona += $"{color} {acumulado}% {acumulado + porcentaje}%, ";
+        acumulado += porcentaje;
+    }
+
+    gradienteDona = gradienteDona.TrimEnd(',', ' ');
+}
+
+<!-- Filtros -->
+<form asp-controller="Admin" asp-action="Panel" method="get" class="barra-filtros-admin">
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaInicio"></label>
+        <input asp-for="Filtro.FechaInicio" type="date" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaFin"></label>
+        <input asp-for="Filtro.FechaFin" type="date" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.Evento"></label>
+        <select asp-for="Filtro.Evento">
+            <option value="">Todos los eventos</option>
+            @foreach (var evento in Model.ProximosEventos)
+            {
+                <option value="@evento.Nombre">@evento.Nombre</option>
+            }
+        </select>
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.Emprendimiento"></label>
+        <select asp-for="Filtro.Emprendimiento">
+            <option value="">Todos los emprendimientos</option>
+            <option>Artesanías MiVo</option>
+            <option>Orquídea</option>
+            <option>Luz Natural</option>
+            <option>Trazo Libre</option>
+        </select>
+    </div>
+    <button type="submit" class="boton-filtro-admin">
+        <i class="bi bi-funnel-fill"></i> Filtrar
+    </button>
+</form>
+
+<!-- Indicadores generales -->
+<section class="grid-estadisticas-admin">
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-usuarios-admin"><i class="bi bi-people-fill"></i></span>
+        <div><strong>@Model.TotalUsuarios</strong><span>Total de usuarios</span></div>
+    </article>
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-emprendimientos-admin"><i class="bi bi-buildings-fill"></i></span>
+        <div><strong>@Model.EmprendimientosRegistrados</strong><span>Emprendimientos registrados</span></div>
+    </article>
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-solicitudes-admin"><i class="bi bi-file-earmark-text-fill"></i></span>
+        <div><strong>@Model.SolicitudesPendientes</strong><span>Solicitudes pendientes</span></div>
+    </article>
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-productos-admin"><i class="bi bi-box-seam-fill"></i></span>
+        <div><strong>@Model.ProductosActivos</strong><span>Productos activos</span></div>
+    </article>
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-ventas-admin"><i class="bi bi-cash-coin"></i></span>
+        <div>
+            <strong>₡@Model.VentasTotal.ToString("N0")</strong>
+            <span>Ventas <span class="variacion-positiva">+@Model.VariacionVentasPorcentaje%</span></span>
+        </div>
+    </article>
+</section>
+
+<!-- Gráficos -->
+<section class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-bar-chart-fill"></i> Ventas por mes</h2>
+        </div>
+        <div class="grafico-barras-admin">
+            @foreach (var punto in Model.VentasPorMes)
+            {
+                int alturaPorcentaje = (int)((double)punto.Valor / maxVentas * 100);
+                <div class="barra-admin-grupo">
+                    <div class="barra-admin" style="height:@(alturaPorcentaje)%;"></div>
+                    <span>@punto.Etiqueta</span>
+                </div>
+            }
+        </div>
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-pie-chart-fill"></i> Productos por categoría</h2>
+        </div>
+        <div class="grafico-dona-admin" style="background: conic-gradient(@gradienteDona);"></div>
+        <div class="leyenda-dona-admin">
+            @for (int i = 0; i < Model.ProductosPorCategoria.Count; i++)
+            {
+                <div class="item-leyenda-dona">
+                    <span class="punto-leyenda-dona" style="background-color:@coloresDona[i % coloresDona.Length];"></span>
+                    @Model.ProductosPorCategoria[i].Etiqueta (@Model.ProductosPorCategoria[i].Valor)
+                </div>
+            }
+        </div>
+    </article>
+
+</section>
+
+<section class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-exclamation-triangle-fill"></i> Alertas</h2>
+        </div>
+        @foreach (var alerta in Model.Alertas)
+        {
+            <div class="item-alerta-admin nivel-@alerta.Nivel">
+                <i class="bi @alerta.Icono"></i>
+                <div>
+                    <p>@alerta.Mensaje</p>
+                    <span>@alerta.Tipo · @alerta.Fecha</span>
+                </div>
+            </div>
+        }
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-clock-history"></i> Actividad reciente</h2>
+        </div>
+        @foreach (var actividad in Model.ActividadReciente)
+        {
+            <div class="item-lista-admin">
+                <span class="icono-lista-admin"><i class="bi @actividad.Icono"></i></span>
+                <div><strong>@actividad.Mensaje</strong><span>@actividad.Fecha</span></div>
+            </div>
+        }
+    </article>
+
+</section>
+
+<section class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-calendar-event-fill"></i> Próximos eventos</h2>
+        </div>
+        @foreach (var evento in Model.ProximosEventos)
+        {
+            <div class="item-lista-admin">
+                <span class="icono-lista-admin"><i class="bi bi-calendar-event-fill"></i></span>
+                <div><strong>@evento.Nombre</strong><span>@evento.Fecha · @evento.Ubicacion · @evento.Inscritos inscritos</span></div>
+            </div>
+        }
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-palette-fill"></i> Talleres disponibles</h2>
+        </div>
+        @foreach (var taller in Model.TalleresDisponibles)
+        {
+            <div class="item-lista-admin">
+                <span class="icono-lista-admin"><i class="bi bi-palette-fill"></i></span>
+                <div><strong>@taller.Nombre</strong><span>@taller.Fecha · @taller.CuposDisponibles de @taller.CuposTotales cupos</span></div>
+            </div>
+        }
+    </article>
+
+</section>

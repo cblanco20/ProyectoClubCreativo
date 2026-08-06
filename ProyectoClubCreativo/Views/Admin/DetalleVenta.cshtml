@@ -1,0 +1,53 @@
+﻿name@model ProyectoClubCreativo.Models.ViewModels.Admin.VentaAdminViewModel
+
+@{
+    ViewData["Title"] = "Detalle de orden";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    string clase = Model.Estado switch { "Pagada" => "estado-activo", "Cancelada" => "estado-rechazado", _ => "estado-pendiente" };
+}
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-receipt"></i> @Model.NumeroOrden</h2>
+        <span class="etiqueta-estado-admin @clase">@Model.Estado</span>
+    </div>
+
+    <div class="formulario-admin">
+        <div class="fila-formulario">
+            <div><label>Cliente</label><p>@Model.Cliente</p></div>
+            <div><label>Emprendimiento</label><p>@Model.Emprendimiento</p></div>
+            <div><label>Fecha</label><p>@Model.Fecha</p></div>
+            <div><label>Método de pago</label><p>@Model.MetodoPago</p></div>
+        </div>
+    </div>
+
+    <div class="tabla-admin-contenedor" style="margin-top:18px;">
+        <table class="tabla-admin">
+            <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th>Subtotal</th></tr></thead>
+            <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr><td>@i.Producto</td><td>@i.Cantidad</td><td>₡@i.PrecioUnitario.ToString("N0")</td><td>₡@((i.Cantidad * i.PrecioUnitario).ToString("N0"))</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2 style="text-align:right; margin-top:14px;">Total: ₡@Model.Total.ToString("N0")</h2>
+
+    @if (Model.Estado == "Cancelada")
+    {
+        <p><strong>Motivo de cancelación:</strong> @Model.MotivoCancelacion</p>
+    }
+    else
+    {
+        <form asp-action="CancelarVenta" method="post" class="formulario-admin" style="margin-top:18px;">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="grupo-formulario">
+                <label>Motivo de cancelación</label>
+                <textarea name="motivo" rows="2" required></textarea>
+            </div>
+            <button type="submit" class="boton-admin boton-admin-peligro">Cancelar orden</button>
+        </form>
+    }
+</article>

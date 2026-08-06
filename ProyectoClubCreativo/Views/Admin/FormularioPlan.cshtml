@@ -1,0 +1,66 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.PlanSuscripcionViewModel
+
+@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Plan de suscripción";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    bool esNuevo = Model.Id == 0;
+}
+
+<a asp-controller="Admin" asp-action="Suscripciones" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver a suscripciones
+</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-gem"></i> @ViewData["Title"]</h2>
+    </div>
+
+    <form asp-controller="Admin" asp-action="@(esNuevo ? "CrearPlan" : "EditarPlan")" method="post" class="formulario-admin">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Nombre"></label>
+            <input asp-for="Nombre" placeholder="Ej. Plan Emprendedor" />
+            <span asp-validation-for="Nombre" class="mensaje-validacion"></span>
+        </div>
+
+        <div class="fila-formulario">
+            <div class="grupo-formulario">
+                <label asp-for="Precio">Precio (₡)</label>
+                <input asp-for="Precio" type="number" step="0.01" />
+                <span asp-validation-for="Precio" class="mensaje-validacion"></span>
+            </div>
+            <div class="grupo-formulario">
+                <label asp-for="Periodicidad"></label>
+                <select asp-for="Periodicidad">
+                    <option>Mensual</option>
+                    <option>Trimestral</option>
+                    <option>Anual</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Beneficios"></label>
+            <textarea asp-for="Beneficios" rows="4" placeholder="Un beneficio por línea"></textarea>
+        </div>
+
+        <div class="grupo-formulario">
+            <label>
+                <input asp-for="Activo" type="checkbox" style="width:auto;margin-right:8px;" />
+                Plan activo y disponible para nuevas suscripciones
+            </label>
+        </div>
+
+        <button type="submit" class="boton-admin boton-admin-primario">
+            <i class="bi bi-check-circle-fill"></i> @(esNuevo ? "Crear plan" : "Guardar cambios")
+        </button>
+    </form>
+</article>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

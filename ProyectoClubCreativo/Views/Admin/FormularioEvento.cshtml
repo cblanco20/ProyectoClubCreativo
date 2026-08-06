@@ -1,0 +1,37 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.EventoAdminViewModel
+@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Evento"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml"; bool esNuevo = Model.Id == 0;
+}
+
+<a asp-action="Eventos" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver a eventos</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin"><h2><i class="bi bi-calendar-event-fill"></i> @ViewData["Title"]</h2></div>
+
+    <form asp-action="@(esNuevo ? "CrearEvento" : "EditarEvento")" method="post" class="formulario-admin">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Nombre"></label>
+            <input asp-for="Nombre" placeholder="Ej. Feria Creativa Cartago" />
+        </div>
+        <div class="fila-formulario">
+            <div class="grupo-formulario"><label asp-for="Fecha"></label><input asp-for="Fecha" placeholder="Ej. 20 de octubre" /></div>
+            <div class="grupo-formulario"><label asp-for="Ubicacion"></label><input asp-for="Ubicacion" /></div>
+        </div>
+        <div class="fila-formulario">
+            <div class="grupo-formulario"><label asp-for="CupoTotal">Cupo total</label><input asp-for="CupoTotal" type="number" /></div>
+            <div class="grupo-formulario">
+                <label asp-for="Estado"></label>
+                <select asp-for="Estado"><option>Programado</option><option>Cancelado</option><option>Finalizado</option></select>
+            </div>
+        </div>
+        <div class="grupo-formulario"><label asp-for="Descripcion"></label><textarea asp-for="Descripcion" rows="3"></textarea></div>
+
+        <button type="submit" class="boton-admin boton-admin-primario">
+            <i class="bi bi-check-circle-fill"></i> @(esNuevo ? "Crear evento" : "Guardar cambios")
+        </button>
+    </form>
+</article>

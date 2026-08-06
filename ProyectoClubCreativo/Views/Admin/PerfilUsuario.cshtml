@@ -1,0 +1,109 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.PerfilUsuarioAdminViewModel
+
+@{
+    ViewData["Title"] = "Perfil de usuario";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-controller="Admin" asp-action="Usuarios" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver al listado
+</a>
+
+<div class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-person-circle"></i> Editar información</h2>
+        </div>
+
+        <form asp-controller="Admin" asp-action="PerfilUsuario" method="post" class="formulario-admin">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="FechaRegistro" />
+            <input type="hidden" asp-for="Foto" />
+            <input type="hidden" asp-for="ComprasRealizadas" />
+            <input type="hidden" asp-for="PuntosAcumulados" />
+
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <div class="fila-formulario">
+                <div class="grupo-formulario">
+                    <label asp-for="Nombre"></label>
+                    <input asp-for="Nombre" />
+                    <span asp-validation-for="Nombre" class="mensaje-validacion"></span>
+                </div>
+                <div class="grupo-formulario">
+                    <label asp-for="Apellidos"></label>
+                    <input asp-for="Apellidos" />
+                    <span asp-validation-for="Apellidos" class="mensaje-validacion"></span>
+                </div>
+            </div>
+
+            <div class="fila-formulario">
+                <div class="grupo-formulario">
+                    <label asp-for="Correo"></label>
+                    <input asp-for="Correo" />
+                    <span asp-validation-for="Correo" class="mensaje-validacion"></span>
+                </div>
+                <div class="grupo-formulario">
+                    <label asp-for="Telefono"></label>
+                    <input asp-for="Telefono" />
+                </div>
+            </div>
+
+            <div class="fila-formulario">
+                <div class="grupo-formulario">
+                    <label asp-for="Provincia"></label>
+                    <input asp-for="Provincia" />
+                </div>
+                <div class="grupo-formulario">
+                    <label asp-for="Rol"></label>
+                    <select asp-for="Rol">
+                        <option>Usuario</option>
+                        <option>Emprendedor</option>
+                        <option>Administrador</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grupo-formulario">
+                <label asp-for="Estado"></label>
+                <select asp-for="Estado">
+                    <option>Activo</option>
+                    <option>Inactivo</option>
+                </select>
+            </div>
+
+            <div class="grupo-acciones-admin">
+                <button type="submit" class="boton-admin boton-admin-primario">
+                    <i class="bi bi-check-circle-fill"></i> Guardar cambios
+                </button>
+            </div>
+        </form>
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-info-circle-fill"></i> Resumen</h2>
+        </div>
+
+        <div class="item-lista-admin">
+            <img src="@Model.Foto" class="foto-tabla-admin" style="width:52px;height:52px;" alt="Foto" />
+            <div>
+                <strong>@Model.Nombre @Model.Apellidos</strong>
+                <span>Miembro desde @Model.FechaRegistro</span>
+            </div>
+        </div>
+
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-bag-check-fill"></i></span>
+            <div><strong>@Model.ComprasRealizadas compras realizadas</strong><span>Historial de pedidos</span></div>
+        </div>
+
+        <div class="item-lista-admin">
+            <span class="icono-lista-admin"><i class="bi bi-star-fill"></i></span>
+            <div><strong>@Model.PuntosAcumulados puntos</strong><span>Tarjeta Creativo Frecuente</span></div>
+        </div>
+    </article>
+
+</div>

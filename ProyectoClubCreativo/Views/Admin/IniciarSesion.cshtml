@@ -1,0 +1,77 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.AdminLoginViewModel
+
+@{
+    ViewData["Title"] = "Acceso administrador";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+        <div class="tarjeta-formulario-acceso">
+
+            <div class="encabezado-formulario-acceso">
+                <span class="etiqueta-admin-login">
+                    <i class="bi bi-shield-lock-fill"></i> Panel administrativo
+                </span>
+
+                <h1 class="titulo-formulario-acceso">Inicia sesión</h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Acceso exclusivo para la administración de Club Creativo MiVo.
+                </p>
+            </div>
+
+            <form asp-controller="Admin" asp-action="IniciarSesion" method="post" novalidate>
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Correo"></label>
+                    <input asp-for="Correo" class="control-formulario" placeholder="admin@clubcreativomivo.com" autocomplete="email" />
+                    <span asp-validation-for="Correo" class="mensaje-validacion"></span>
+                </div>
+
+                <div class="grupo-formulario">
+                    <label asp-for="Contrasena">Contraseña</label>
+
+                    <div class="campo-contrasena">
+                        <input asp-for="Contrasena" id="contrasenaAdminLogin" class="control-formulario" placeholder="Ingresa tu contraseña" autocomplete="current-password" />
+
+                        <button type="button" class="boton-ver-contrasena" data-toggle-password="contrasenaAdminLogin" aria-label="Mostrar contraseña">
+                            ◉
+                        </button>
+                    </div>
+
+                    <span asp-validation-for="Contrasena" class="mensaje-validacion"></span>
+                </div>
+
+                <button type="submit" class="boton-formulario-acceso">
+                    Iniciar sesión
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <aside class="panel-visual-acceso panel-visual-emprendedor">
+        <div class="contenido-visual-acceso">
+            <img src="~/images/acceso-feria.jpg" alt="Club Creativo" class="imagen-ovalada-acceso" />
+
+            <h2 class="titulo-visual-acceso">Hola, Jossete</h2>
+
+            <p class="texto-visual-acceso">
+                Gestiona usuarios, emprendimientos, suscripciones y productos
+                de toda la comunidad Club Creativo desde un solo lugar.
+            </p>
+        </div>
+    </aside>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,72 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.PuntosRecompensasAdminViewModel
+@{
+    ViewData["Title"] = "Puntos y recompensas"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="pestanas-admin">
+    <a asp-action="PuntosRecompensas" asp-route-pestana="Recompensas" class="pestana-admin @(Model.Pestana == "Recompensas" ? "activa" : "")">Recompensas</a>
+    <a asp-action="PuntosRecompensas" asp-route-pestana="Movimientos" class="pestana-admin @(Model.Pestana == "Movimientos" ? "activa" : "")">Movimientos</a>
+</div>
+
+@if (Model.Pestana == "Recompensas")
+{
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-gift-fill"></i> Recompensas (@Model.Recompensas.Count)</h2>
+            <a asp-action="CrearRecompensa" class="boton-admin boton-admin-primario"><i class="bi bi-plus-lg"></i> Crear recompensa</a>
+        </div>
+        <div class="tabla-admin-contenedor">
+            <table class="tabla-admin">
+                <thead><tr><th>Recompensa</th><th>Costo</th><th>Canjes</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Recompensas)
+                    {
+                        <tr>
+                            <td>@r.Nombre</td>
+                            <td>@r.CostoPuntos pts</td>
+                            <td>@r.CantidadCanjes</td>
+                            <td><span class="etiqueta-estado-admin @(r.Activa ? "estado-activo" : "estado-inactivo")">@(r.Activa ? "Activa" : "Inactiva")</span></td>
+                            <td><a asp-action="EditarRecompensa" asp-route-id="@r.Id" class="boton-admin boton-admin-secundario">Editar</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+}
+else
+{
+    <article class="bloque-admin" style="max-width:520px; margin-bottom:22px;">
+        <div class="encabezado-bloque-admin"><h2><i class="bi bi-sliders"></i> Asignar o ajustar puntos</h2></div>
+        <form asp-action="AjustarPuntos" method="post" class="formulario-admin">
+            @Html.AntiForgeryToken()
+            <div class="grupo-formulario"><label>Correo del usuario</label><input type="email" name="Correo" required /></div>
+            <div class="fila-formulario">
+                <div class="grupo-formulario"><label>Puntos (usá negativo para restar)</label><input type="number" name="Puntos" required /></div>
+                <div class="grupo-formulario"><label>Motivo</label><input type="text" name="Motivo" required /></div>
+            </div>
+            <button type="submit" class="boton-admin boton-admin-primario">Aplicar</button>
+        </form>
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin"><h2><i class="bi bi-clock-history"></i> Movimientos</h2></div>
+        <div class="tabla-admin-contenedor">
+            <table class="tabla-admin">
+                <thead><tr><th>Usuario</th><th>Tipo</th><th>Puntos</th><th>Motivo</th><th>Fecha</th></tr></thead>
+                <tbody>
+                    @foreach (var m in Model.Movimientos)
+                    {
+                        <tr>
+                            <td>@m.Usuario</td>
+                            <td>@m.Tipo</td>
+                            <td class="@(m.Puntos < 0 ? "variacion-negativa" : "variacion-positiva")">@m.Puntos</td>
+                            <td>@m.Motivo</td>
+                            <td>@m.Fecha</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+}

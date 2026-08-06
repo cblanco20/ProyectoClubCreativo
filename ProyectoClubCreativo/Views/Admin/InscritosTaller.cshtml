@@ -1,0 +1,36 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.TallerAdminViewModel
+@{
+    ViewData["Title"] = "Inscritos: " + Model.Nombre; Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="Talleres" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver a talleres</a>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-people-fill"></i> @Model.Nombre — @Model.CuposDisponibles / @Model.CuposTotales cupos disponibles</h2>
+        <form asp-action="GenerarQrTaller" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="boton-admin boton-admin-oscuro"><i class="bi bi-qr-code"></i> @(Model.QrGenerado ? "Regenerar QR" : "Generar QR")</button></form>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th></tr></thead>
+            <tbody>
+                @foreach (var i in Model.Inscritos)
+                {
+                    <tr><td>@i.Nombre</td><td>@i.Correo</td><td><span class="etiqueta-estado-admin @(i.Estado == "Confirmado" ? "estado-activo" : "estado-pendiente")">@i.Estado</span></td></tr>
+                }
+                @if (Model.Inscritos.Count == 0)
+                {
+                    <tr><td colspan="3">Todavía no hay inscritos.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <form asp-action="CancelarTaller" method="post" class="formulario-admin" style="margin-top:22px;">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="grupo-formulario"><label>Motivo de cancelación del taller</label><textarea name="motivo" rows="2" required></textarea></div>
+        <button type="submit" class="boton-admin boton-admin-peligro">Cancelar taller</button>
+    </form>
+</article>
+}

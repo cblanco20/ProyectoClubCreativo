@@ -1,0 +1,34 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.TallerAdminViewModel
+@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Taller"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml"; bool esNuevo = Model.Id == 0;
+}
+
+<a asp-action="Talleres" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver a talleres</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin"><h2><i class="bi bi-palette-fill"></i> @ViewData["Title"]</h2></div>
+
+    <form asp-action="@(esNuevo ? "CrearTaller" : "EditarTaller")" method="post" class="formulario-admin">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="grupo-formulario"><label asp-for="Nombre"></label><input asp-for="Nombre" placeholder="Ej. Pintura en tela" /></div>
+        <div class="fila-formulario">
+            <div class="grupo-formulario"><label asp-for="Fecha"></label><input asp-for="Fecha" placeholder="Ej. 12 de octubre" /></div>
+            <div class="grupo-formulario">
+                <label asp-for="Estado"></label>
+                <select asp-for="Estado"><option>Programado</option><option>Cancelado</option><option>Finalizado</option></select>
+            </div>
+        </div>
+        <div class="fila-formulario">
+            <div class="grupo-formulario"><label asp-for="CuposTotales">Cupos totales</label><input asp-for="CuposTotales" type="number" /></div>
+            <div class="grupo-formulario"><label asp-for="CuposDisponibles">Cupos disponibles</label><input asp-for="CuposDisponibles" type="number" /></div>
+        </div>
+        <div class="grupo-formulario"><label asp-for="Descripcion"></label><textarea asp-for="Descripcion" rows="3"></textarea></div>
+
+        <button type="submit" class="boton-admin boton-admin-primario">
+            <i class="bi bi-check-circle-fill"></i> @(esNuevo ? "Crear taller" : "Guardar cambios")
+        </button>
+    </form>
+</article>
