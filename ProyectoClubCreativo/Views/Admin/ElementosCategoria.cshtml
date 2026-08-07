@@ -1,0 +1,37 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.ElementosCategoriaViewModel
+@{
+    ViewData["Title"] = "Elementos asociados";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="Categorias" asp-route-tipo="@Model.Categoria.Tipo" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver al listado
+</a>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-diagram-3-fill"></i> Elementos de "@Model.Categoria.Nombre"</h2>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var elemento in Model.Elementos)
+                {
+                    <tr>
+                        <td>@elemento.Nombre</td>
+                        <td>@elemento.Tipo</td>
+                        <td><span class="etiqueta-estado-admin estado-@elemento.Estado.ToLower()">@elemento.Estado</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

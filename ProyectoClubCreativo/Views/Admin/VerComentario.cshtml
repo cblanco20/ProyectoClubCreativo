@@ -1,0 +1,41 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.ComentarioAdminViewModel
+@{
+    ViewData["Title"] = "Detalle de comentario";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="Comentarios" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver al listado
+</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-chat-square-text-fill"></i> Comentario de @Model.Autor</h2>
+        <span class="etiqueta-estado-admin estado-@Model.Estado.ToLower()">@Model.Estado</span>
+    </div>
+
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-link-45deg"></i></span>
+        <div><strong>@Model.ElementoRelacionado</strong><span>@Model.Origen · @Model.Fecha</span></div>
+    </div>
+
+    @if (Model.Reportes > 0)
+    {
+        <div class="item-alerta-admin nivel-advertencia">
+            <i class="bi bi-flag-fill"></i>
+            <div><p>Este comentario fue reportado por @Model.Reportes persona(s).</p></div>
+        </div>
+    }
+
+    <div class="caja-contenido-admin">
+        @Model.Contenido
+    </div>
+
+    <form asp-action="EliminarComentario" method="post" onsubmit="return confirm('¿Eliminar este comentario por contenido inapropiado?');">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="boton-admin boton-admin-peligro">
+            <i class="bi bi-trash-fill"></i> Eliminar comentario inapropiado
+        </button>
+    </form>
+</article>

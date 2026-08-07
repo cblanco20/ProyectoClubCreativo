@@ -1,0 +1,87 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoComentariosAdminViewModel
+
+@{
+    ViewData["Title"] = "Moderación de comentarios";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    string[] estados = { "Todos", "Visible", "Reportado", "Eliminado" };
+    string[] origenes = { "Todos", "Producto", "Evento", "Taller", "Noticia" };
+}
+
+<form asp-controller="Admin" asp-action="Comentarios" method="get" class="barra-filtros-admin">
+    <div class="campo-filtro-admin" style="min-width:240px;">
+        <label>Buscar</label>
+        <input type="text" name="busqueda" value="@Model.Busqueda" placeholder="Contenido o autor" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label>Estado</label>
+        <select name="estado">
+            @foreach (var e in estados)
+            {
+                <option value="@e" selected="@(Model.FiltroEstado == e)">@e</option>
+            }
+        </select>
+    </div>
+    <div class="campo-filtro-admin">
+        <label>Origen</label>
+        <select name="origen">
+            @foreach (var o in origenes)
+            {
+                <option value="@o" selected="@(Model.FiltroOrigen == o)">@o</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="boton-filtro-admin"><i class="bi bi-search"></i> Buscar</button>
+</form>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-chat-square-text-fill"></i> Comentarios (@Model.Comentarios.Count)</h2>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Autor</th>
+                    <th>Comentario</th>
+                    <th>Origen</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var comentario in Model.Comentarios)
+                {
+                    string clase = comentario.Estado switch
+                    {
+                        "Visible" => "estado-activo",
+                        "Reportado" => "estado-pendiente",
+                        _ => "estado-inactivo"
+                    };
+
+                    <tr>
+                        <td>@comentario.Autor</td>
+                        <td>@(comentario.Contenido.Length > 60 ? comentario.Contenido[..60] + "…" : comentario.Contenido)</td>
+                        <td>@comentario.Origen<br /><small>@comentario.ElementoRelacionado</small></td>
+                        <td>@comentario.Fecha</td>
+                        <td>
+                            <span class="etiqueta-estado-admin @clase">@comentario.Estado</span>
+                            @if (comentario.Reportes > 0)
+                            {
+                                <span class="etiqueta-estado-admin estado-rechazado" style="margin-left:6px;">
+                                    <i class="bi bi-flag-fill"></i>&nbsp;@comentario.Reportes
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="VerComentario" asp-route-id="@comentario.Id" class="boton-admin boton-admin-secundario">
+                                <i class="bi bi-eye-fill"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

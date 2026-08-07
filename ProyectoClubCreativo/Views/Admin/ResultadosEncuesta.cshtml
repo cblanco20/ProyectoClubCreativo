@@ -1,0 +1,40 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.EncuestaAdminViewModel
+@{
+    ViewData["Title"] = "Resultados de encuesta";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="Encuestas" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver a encuestas
+</a>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-bar-chart-fill"></i> @Model.Titulo</h2>
+        <span class="etiqueta-estado-admin estado-@Model.Estado.ToLower()">@Model.Estado</span>
+    </div>
+
+    <p style="font-size:13px;color:var(--color-gris-oscuro);">
+        @Model.TotalRespuestas respuesta(s) recibidas · Creada el @Model.FechaCreacion
+    </p>
+
+    @foreach (var pregunta in Model.Preguntas)
+    {
+        int totalVotos = pregunta.Opciones.Sum(o => o.Votos);
+
+        <div class="resultado-pregunta-admin">
+            <h4>@pregunta.Texto</h4>
+            @foreach (var opcion in pregunta.Opciones)
+            {
+                int porcentaje = totalVotos == 0 ? 0 : (int)((double)opcion.Votos / totalVotos * 100);
+                <div class="barra-resultado-admin">
+                    <span>@opcion.Texto</span>
+                    <div class="pista-resultado-admin">
+                        <div class="relleno-resultado-admin" style="width:@(porcentaje)%;"></div>
+                    </div>
+                    <span>@opcion.Votos (@porcentaje%)</span>
+                </div>
+            }
+        </div>
+    }
+</article>

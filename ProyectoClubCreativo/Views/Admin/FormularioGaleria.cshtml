@@ -1,0 +1,98 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.GaleriaAdminViewModel
+@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Galería";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    bool esNueva = Model.Id == 0;
+}
+
+<a asp-action="Galerias" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver a galerías
+</a>
+
+<div class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-images"></i> @ViewData["Title"]</h2>
+        </div>
+
+        <form asp-action="@(esNueva ? "CrearGaleria" : "EditarGaleria")" method="post" class="formulario-admin">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <div class="grupo-formulario">
+                <label asp-for="Nombre"></label>
+                <input asp-for="Nombre" placeholder="Ej. Feria Creativa Cartago" />
+                <span class="mensaje-validacion" asp-validation-for="Nombre"></span>
+            </div>
+
+            <div class="grupo-formulario">
+                <label asp-for="Descripcion"></label>
+                <textarea asp-for="Descripcion" rows="3"></textarea>
+            </div>
+
+            <div class="fila-formulario">
+                <div class="grupo-formulario">
+                    <label asp-for="Categoria"></label>
+                    <select asp-for="Categoria">
+                        <option>Eventos</option>
+                        <option>Talleres</option>
+                        <option>Emprendimientos</option>
+                        <option>General</option>
+                    </select>
+                </div>
+                <div class="grupo-formulario">
+                    <label asp-for="Estado"></label>
+                    <select asp-for="Estado">
+                        <option>Publicada</option>
+                        <option>Oculta</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="boton-admin boton-admin-primario">
+                <i class="bi bi-check-circle-fill"></i> @(esNueva ? "Crear galería" : "Guardar cambios")
+            </button>
+        </form>
+    </article>
+
+    @if (!esNueva)
+    {
+        <article class="bloque-admin">
+            <div class="encabezado-bloque-admin">
+                <h2><i class="bi bi-cloud-upload-fill"></i> Cargar imágenes</h2>
+            </div>
+
+            <form asp-action="CargarImagenesGaleria" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <label for="archivosGaleria" class="zona-carga-admin">
+                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                    <strong>Hacé clic para seleccionar imágenes</strong>
+                    <span>Formatos permitidos: JPG, PNG, WEBP</span>
+                </label>
+                <input id="archivosGaleria" type="file" name="imagenes" multiple accept="image/*" style="display:none;" onchange="this.form.submit();" />
+            </form>
+
+            <div class="grid-imagenes-galeria-admin">
+                @foreach (var imagen in Model.Imagenes)
+                {
+                    <div class="miniatura-imagen-galeria">
+                        <img src="@imagen.Url" alt="@imagen.NombreArchivo" />
+                        <form asp-action="EliminarImagenGaleria" method="post" onsubmit="return confirm('¿Eliminar esta imagen de la galería?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="imagenId" value="@imagen.Id" />
+                            <button type="submit" class="boton-eliminar-miniatura" aria-label="Eliminar imagen">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </article>
+    }
+
+</div>

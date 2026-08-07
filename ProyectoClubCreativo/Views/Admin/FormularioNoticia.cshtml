@@ -1,0 +1,57 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.NoticiaAdminViewModel
+@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Publicación";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    bool esNueva = Model.Id == 0;
+}
+
+<a asp-action="Noticias" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver a noticias
+</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-newspaper"></i> @ViewData["Title"]</h2>
+    </div>
+
+    <form asp-action="@(esNueva ? "CrearNoticia" : "EditarNoticia")" method="post" class="formulario-admin">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Autor" />
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Titulo"></label>
+            <input asp-for="Titulo" placeholder="Ej. Nueva alianza con artesanos locales" />
+            <span class="mensaje-validacion" asp-validation-for="Titulo"></span>
+        </div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Contenido"></label>
+            <textarea asp-for="Contenido" rows="5"></textarea>
+            <span class="mensaje-validacion" asp-validation-for="Contenido"></span>
+        </div>
+
+        <div class="fila-formulario">
+            <div class="grupo-formulario">
+                <label asp-for="Categoria"></label>
+                <select asp-for="Categoria">
+                    <option>Anuncio</option>
+                    <option>Noticia</option>
+                </select>
+            </div>
+            <div class="grupo-formulario">
+                <label asp-for="Estado"></label>
+                <select asp-for="Estado">
+                    <option>Borrador</option>
+                    <option>Publicada</option>
+                    <option>Inactiva</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="boton-admin boton-admin-primario">
+            <i class="bi bi-check-circle-fill"></i> @(esNueva ? "Crear publicación" : "Guardar cambios")
+        </button>
+    </form>
+</article>

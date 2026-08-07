@@ -1,0 +1,122 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.ReporteAdminViewModel
+
+@{
+    ViewData["Title"] = "Reportes y estadísticas";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    int maxBarras = Model.GraficoBarras.Count > 0 ? Model.GraficoBarras.Max(v => v.Valor) : 1;
+
+    string[] coloresDona = { "#F47A20", "#3D8BEA", "#D8B4E8", "#2FB380", "#E7E7E7" };
+    int totalDona = Model.GraficoDona.Sum(c => c.Valor);
+    string gradienteDona = "";
+    double acumulado = 0;
+
+    for (int i = 0; i < Model.GraficoDona.Count; i++)
+    {
+        double porcentaje = totalDona == 0 ? 0 : (double)Model.GraficoDona[i].Valor / totalDona * 100;
+        string color = coloresDona[i % coloresDona.Length];
+        gradienteDona += $"{color} {acumulado}% {acumulado + porcentaje}%, ";
+        acumulado += porcentaje;
+    }
+
+    gradienteDona = gradienteDona.TrimEnd(',', ' ');
+}
+
+<form asp-controller="Admin" asp-action="Reportes" method="get" class="barra-filtros-admin">
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.TipoReporte"></label>
+        <select asp-for="Filtro.TipoReporte">
+            <option value="Ventas">Ventas</option>
+            <option value="Usuarios">Usuarios</option>
+            <option value="Emprendimientos">Emprendimientos</option>
+            <option value="Productos">Productos</option>
+            <option value="Eventos">Eventos</option>
+        </select>
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaInicio"></label>
+        <input asp-for="Filtro.FechaInicio" type="date" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaFin"></label>
+        <input asp-for="Filtro.FechaFin" type="date" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.Categoria"></label>
+        <input asp-for="Filtro.Categoria" placeholder="Opcional" />
+    </div>
+    <button type="submit" class="boton-filtro-admin"><i class="bi bi-funnel-fill"></i> Generar reporte</button>
+    <a asp-action="ExportarReporte"
+       asp-route-Filtro.TipoReporte="@Model.Filtro.TipoReporte"
+       asp-route-Filtro.FechaInicio="@Model.Filtro.FechaInicio?.ToString("yyyy-MM-dd")"
+       asp-route-Filtro.FechaFin="@Model.Filtro.FechaFin?.ToString("yyyy-MM-dd")"
+       asp-route-Filtro.Categoria="@Model.Filtro.Categoria"
+       class="boton-admin boton-admin-oscuro">
+        <i class="bi bi-download"></i> Exportar CSV
+    </a>
+</form>
+
+<section class="grid-dashboard-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-bar-chart-fill"></i> @Model.Titulo</h2>
+        </div>
+        <div class="grafico-barras-admin">
+            @foreach (var punto in Model.GraficoBarras)
+            {
+                int alturaPorcentaje = (int)((double)punto.Valor / maxBarras * 100);
+                <div class="barra-admin-grupo">
+                    <div class="barra-admin" style="height:@(alturaPorcentaje)%;"></div>
+                    <span>@punto.Etiqueta</span>
+                </div>
+            }
+        </div>
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-pie-chart-fill"></i> Distribución</h2>
+        </div>
+        <div class="grafico-dona-admin" style="background: conic-gradient(@gradienteDona);"></div>
+        <div class="leyenda-dona-admin">
+            @for (int i = 0; i < Model.GraficoDona.Count; i++)
+            {
+                <div class="item-leyenda-dona">
+                    <span class="punto-leyenda-dona" style="background-color:@coloresDona[i % coloresDona.Length];"></span>
+                    @Model.GraficoDona[i].Etiqueta (@Model.GraficoDona[i].Valor)
+                </div>
+            }
+        </div>
+    </article>
+
+</section>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-table"></i> Resultados</h2>
+    </div>
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    @foreach (var columna in Model.Columnas)
+                    {
+                        <th>@columna</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var fila in Model.Filas)
+                {
+                    <tr>
+                        <td>@fila.Columna1</td>
+                        <td>@fila.Columna2</td>
+                        <td>@fila.Columna3</td>
+                        <td>@fila.Columna4</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

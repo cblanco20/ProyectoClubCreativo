@@ -1,0 +1,37 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.MovimientoBitacoraViewModel
+@{
+    ViewData["Title"] = "Detalle de movimiento";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="Bitacora" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver a la bitácora
+</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-journal-text"></i> @Model.Accion</h2>
+        <span class="etiqueta-nivel-admin nivel-@Model.Nivel">@Model.Nivel</span>
+    </div>
+
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-person-fill"></i></span>
+        <div><strong>@Model.Usuario</strong><span>Usuario responsable</span></div>
+    </div>
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-diagram-3-fill"></i></span>
+        <div><strong>@Model.Modulo</strong><span>Módulo afectado</span></div>
+    </div>
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-clock-fill"></i></span>
+        <div><strong>@Model.Fecha</strong><span>Fecha y hora</span></div>
+    </div>
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-geo-alt-fill"></i></span>
+        <div><strong>@Model.DireccionIp</strong><span>Dirección IP</span></div>
+    </div>
+
+    <div class="caja-contenido-admin">
+        @Model.Detalle
+    </div>
+</article>

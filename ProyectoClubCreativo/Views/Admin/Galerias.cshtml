@@ -1,0 +1,39 @@
+@model List<ProyectoClubCreativo.Models.ViewModels.Admin.GaleriaAdminViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de galerías";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="grupo-acciones-admin" style="margin-bottom:20px;">
+    <a asp-action="CrearGaleria" class="boton-admin boton-admin-primario">
+        <i class="bi bi-plus-circle-fill"></i> Crear galería
+    </a>
+</div>
+
+<div class="grid-galeria-admin">
+    @foreach (var galeria in Model)
+    {
+        <article class="tarjeta-galeria-admin">
+            <img src="@galeria.Portada" alt="@galeria.Nombre" class="portada-galeria-admin" />
+            <div class="cuerpo-galeria-admin">
+                <h3>@galeria.Nombre</h3>
+                <p>@galeria.Categoria · @galeria.Imagenes.Count imagen(es)</p>
+                <span class="etiqueta-estado-admin estado-@galeria.Estado.ToLower()">@galeria.Estado</span>
+
+                <div class="pie-galeria-admin">
+                    <a asp-action="EditarGaleria" asp-route-id="@galeria.Id" class="boton-admin boton-admin-secundario">
+                        <i class="bi bi-pencil-fill"></i> Editar
+                    </a>
+                    <form asp-action="EliminarGaleria" method="post" onsubmit="return confirm('¿Eliminar esta galería de forma permanente?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@galeria.Id" />
+                        <button type="submit" class="boton-admin boton-admin-peligro">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </article>
+    }
+</div>

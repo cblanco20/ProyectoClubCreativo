@@ -1,0 +1,69 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoCategoriasAdminViewModel
+
+@{
+    ViewData["Title"] = "Categorías y etiquetas";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="pestanas-admin">
+    <a asp-action="Categorias" asp-route-tipo="Categoria" class="pestana-admin @(Model.FiltroTipo == "Categoria" ? "activa" : "")">
+        <i class="bi bi-folder-fill"></i> Categorías
+    </a>
+    <a asp-action="Categorias" asp-route-tipo="Etiqueta" class="pestana-admin @(Model.FiltroTipo == "Etiqueta" ? "activa" : "")">
+        <i class="bi bi-tags-fill"></i> Etiquetas
+    </a>
+</div>
+
+<div class="grupo-acciones-admin" style="margin-bottom:20px;">
+    <a asp-action="CrearCategoria" asp-route-tipo="@Model.FiltroTipo" class="boton-admin boton-admin-primario">
+        <i class="bi bi-plus-circle-fill"></i> @(Model.FiltroTipo == "Etiqueta" ? "Crear etiqueta" : "Crear categoría")
+    </a>
+</div>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-tags-fill"></i> @(Model.FiltroTipo == "Etiqueta" ? "Etiquetas" : "Categorías") (@Model.Categorias.Count)</h2>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Módulo</th>
+                    <th>Elementos asociados</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var categoria in Model.Categorias)
+                {
+                    <tr>
+                        <td><strong>@categoria.Nombre</strong></td>
+                        <td>@categoria.Descripcion</td>
+                        <td>@categoria.Modulo</td>
+                        <td>
+                            <a asp-action="ElementosCategoria" asp-route-id="@categoria.Id" class="etiqueta-estado-admin estado-activo" style="text-decoration:none;">
+                                @categoria.ElementosAsociados elemento(s)
+                            </a>
+                        </td>
+                        <td>
+                            <div class="grupo-acciones-admin">
+                                <a asp-action="EditarCategoria" asp-route-id="@categoria.Id" class="boton-admin boton-admin-secundario">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <form asp-action="EliminarCategoria" method="post" onsubmit="return confirm('¿Eliminar este elemento de forma permanente?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@categoria.Id" />
+                                    <input type="hidden" name="tipo" value="@categoria.Tipo" />
+                                    <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-trash-fill"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

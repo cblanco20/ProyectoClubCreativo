@@ -776,3 +776,218 @@ transform:translateX(3px);
         display: none;
     }
 }
+
+/* =========================================================
+   MÓDULOS ADICIONALES DE GESTIÓN
+   ========================================================= */
+
+/* ---------- GALERÍAS ---------- */
+.grid-galeria-admin {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 20px;
+}
+
+.tarjeta-galeria-admin {
+    overflow: hidden;
+    background-color: var(--color-blanco);
+    border-radius: var(--radio-medio);
+    box-shadow: var(--sombra-suave);
+    transition: transform .25s ease;
+}
+
+    .tarjeta-galeria-admin:hover {
+        transform: translateY(-4px);
+    }
+
+.portada-galeria-admin {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+}
+
+.cuerpo-galeria-admin {
+    padding: 16px;
+}
+
+    .cuerpo-galeria-admin h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        color: var(--color-negro);
+    }
+
+    .cuerpo-galeria-admin p {
+        margin: 0 0 10px;
+        font-size: 12.5px;
+        color: var(--color-gris-oscuro);
+    }
+
+.pie-galeria-admin {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.zona-carga-admin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 28px;
+    text-align: center;
+    border: 2px dashed var(--color-gris-medio);
+    border-radius: var(--radio-medio);
+    color: var(--color-gris-oscuro);
+    background-color: var(--color-gris-claro);
+    cursor: pointer;
+}
+
+    .zona-carga-admin i {
+        font-size: 26px;
+        color: var(--color-naranja);
+    }
+
+.grid-imagenes-galeria-admin {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.miniatura-imagen-galeria {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+}
+
+    .miniatura-imagen-galeria img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.boton-eliminar-miniatura {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(224, 69, 60, .9);
+    color: var(--color-blanco);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ---------- COMENTARIOS ---------- */
+.caja-contenido-admin {
+    padding: 16px;
+    margin-bottom: 16px;
+    background-color: var(--color-gris-claro);
+    border-radius: var(--radio-pequeno);
+    font-size: 14px;
+    color: var(--color-negro);
+    line-height: 1.6;
+}
+
+/* ---------- ENCUESTAS ---------- */
+.resultado-pregunta-admin {
+    margin-bottom: 22px;
+}
+
+    .resultado-pregunta-admin h4 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        color: var(--color-negro);
+    }
+
+.barra-resultado-admin {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+    .barra-resultado-admin span:first-child {
+        min-width: 130px;
+        font-size: 12.5px;
+        color: var(--color-gris-oscuro);
+    }
+
+.pista-resultado-admin {
+    flex: 1;
+    height: 10px;
+    border-radius: 6px;
+    background-color: var(--color-gris-medio);
+    overflow: hidden;
+}
+
+.relleno-resultado-admin {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--color-naranja), var(--color-naranja-oscuro));
+}
+
+.barra-resultado-admin span:last-child {
+    min-width: 70px;
+    text-align: right;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--color-negro);
+}
+
+/* ---------- BITÁCORA / SEGURIDAD ---------- */
+.grid-resumen-seguridad-admin {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin-bottom: 22px;
+}
+
+@media (max-width: 991px) {
+    .grid-resumen-seguridad-admin {
+        grid-template-columns: 1fr;
+    }
+}
+
+.etiqueta-nivel-admin {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.etiqueta-nivel-admin.nivel-informativa { background-color: rgba(61, 139, 234, .13); color: var(--color-azul-oscuro); }
+.etiqueta-nivel-admin.nivel-advertencia { background-color: rgba(255, 229, 72, .28); color: #8A6D00; }
+.etiqueta-nivel-admin.nivel-critica { background-color: rgba(224, 69, 60, .13); color: #C6362D; }
+
+/* ---------- NOTIFICACIONES ---------- */
+.grupo-radio-admin {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.opcion-radio-admin {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid var(--color-gris-medio);
+    border-radius: 10px;
+    font-size: 13.5px;
+    cursor: pointer;
+}
+
+    .opcion-radio-admin input {
+        width: auto;
+    }

@@ -1,0 +1,87 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.PromocionAdminViewModel
+@{
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Promoción";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    bool esNueva = Model.Id == 0;
+}
+
+<a asp-action="Promociones" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver a promociones
+</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-megaphone-fill"></i> @ViewData["Title"]</h2>
+    </div>
+
+    <form asp-action="@(esNueva ? "CrearPromocion" : "EditarPromocion")" method="post" class="formulario-admin">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Usos" />
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Nombre"></label>
+            <input asp-for="Nombre" placeholder="Ej. Descuento Feria San Pedro" />
+            <span class="mensaje-validacion" asp-validation-for="Nombre"></span>
+        </div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Descripcion"></label>
+            <textarea asp-for="Descripcion" rows="3"></textarea>
+        </div>
+
+        <div class="fila-formulario">
+            <div class="grupo-formulario">
+                <label asp-for="TipoDescuento"></label>
+                <select asp-for="TipoDescuento">
+                    <option>Porcentaje</option>
+                    <option>Monto fijo</option>
+                </select>
+            </div>
+            <div class="grupo-formulario">
+                <label asp-for="ValorDescuento"></label>
+                <input asp-for="ValorDescuento" type="number" step="0.01" />
+            </div>
+        </div>
+
+        <div class="fila-formulario">
+            <div class="grupo-formulario">
+                <label asp-for="FechaInicio"></label>
+                <input asp-for="FechaInicio" type="date" />
+                <span class="mensaje-validacion" asp-validation-for="FechaInicio"></span>
+            </div>
+            <div class="grupo-formulario">
+                <label asp-for="FechaFin"></label>
+                <input asp-for="FechaFin" type="date" />
+                <span class="mensaje-validacion" asp-validation-for="FechaFin"></span>
+            </div>
+        </div>
+
+        <div class="fila-formulario">
+            <div class="grupo-formulario">
+                <label asp-for="Emprendimiento"></label>
+                <select asp-for="Emprendimiento">
+                    <option>Todos</option>
+                    <option>Artesanías MiVo</option>
+                    <option>Orquídea</option>
+                    <option>Luz Natural</option>
+                    <option>Trazo Libre</option>
+                </select>
+            </div>
+            <div class="grupo-formulario">
+                <label asp-for="Estado"></label>
+                <select asp-for="Estado">
+                    <option>Programada</option>
+                    <option>Activa</option>
+                    <option>Finalizada</option>
+                    <option>Desactivada</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="boton-admin boton-admin-primario">
+            <i class="bi bi-check-circle-fill"></i> @(esNueva ? "Crear promoción" : "Guardar cambios")
+        </button>
+    </form>
+</article>

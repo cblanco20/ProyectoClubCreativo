@@ -1,0 +1,113 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.NotificacionesAdminViewModel
+
+@{
+    ViewData["Title"] = "Gestión de notificaciones";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="pestanas-admin">
+    <a asp-action="Notificaciones" asp-route-pestana="Enviar" class="pestana-admin @(Model.Pestana == "Enviar" ? "activa" : "")">
+        <i class="bi bi-send-fill"></i> Nueva notificación
+    </a>
+    <a asp-action="Notificaciones" asp-route-pestana="Historial" class="pestana-admin @(Model.Pestana == "Historial" ? "activa" : "")">
+        <i class="bi bi-clock-history"></i> Historial (@Model.Historial.Count)
+    </a>
+</div>
+
+@if (Model.Pestana == "Historial")
+{
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-clock-history"></i> Historial de notificaciones</h2>
+        </div>
+
+        <div class="tabla-admin-contenedor">
+            <table class="tabla-admin">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Mensaje</th>
+                        <th>Destinatario</th>
+                        <th>Fecha</th>
+                        <th>Alcance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var notificacion in Model.Historial)
+                    {
+                        <tr>
+                            <td><strong>@notificacion.Titulo</strong></td>
+                            <td>@notificacion.Mensaje</td>
+                            <td>@notificacion.Destinatario</td>
+                            <td>@notificacion.Fecha</td>
+                            <td><span class="etiqueta-estado-admin estado-activo">@notificacion.TotalDestinatarios</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+}
+else
+{
+    <article class="bloque-admin" style="max-width:640px;">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-bell-fill"></i> Crear notificación</h2>
+        </div>
+
+        <form asp-action="EnviarNotificacion" method="post" class="formulario-admin">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <div class="grupo-formulario">
+                <label asp-for="Nueva.Titulo"></label>
+                <input asp-for="Nueva.Titulo" placeholder="Ej. Nueva feria en San Pedro" />
+                <span class="mensaje-validacion" asp-validation-for="Nueva.Titulo"></span>
+            </div>
+
+            <div class="grupo-formulario">
+                <label asp-for="Nueva.Mensaje"></label>
+                <textarea asp-for="Nueva.Mensaje" rows="3" placeholder="Escribí el contenido de la notificación..."></textarea>
+                <span class="mensaje-validacion" asp-validation-for="Nueva.Mensaje"></span>
+            </div>
+
+            <div class="grupo-formulario">
+                <label>Seleccionar destinatario</label>
+                <div class="grupo-radio-admin">
+                    <label class="opcion-radio-admin">
+                        <input type="radio" asp-for="Nueva.TipoDestinatario" value="Todos" />
+                        Enviar a todos
+                    </label>
+                    <label class="opcion-radio-admin">
+                        <input type="radio" asp-for="Nueva.TipoDestinatario" value="Grupo" />
+                        Enviar a un grupo
+                    </label>
+                    <label class="opcion-radio-admin">
+                        <input type="radio" asp-for="Nueva.TipoDestinatario" value="Individual" />
+                        Usuario específico
+                    </label>
+                </div>
+            </div>
+
+            <div class="fila-formulario">
+                <div class="grupo-formulario">
+                    <label asp-for="Nueva.GrupoDestino"></label>
+                    <select asp-for="Nueva.GrupoDestino">
+                        <option value="">Seleccione un grupo</option>
+                        <option>Usuarios</option>
+                        <option>Emprendedores</option>
+                        <option>Administradores</option>
+                    </select>
+                </div>
+                <div class="grupo-formulario">
+                    <label asp-for="Nueva.UsuarioDestino"></label>
+                    <input asp-for="Nueva.UsuarioDestino" placeholder="correo@ejemplo.com" />
+                </div>
+            </div>
+
+            <button type="submit" class="boton-admin boton-admin-primario">
+                <i class="bi bi-send-fill"></i> Enviar notificación
+            </button>
+        </form>
+    </article>
+}

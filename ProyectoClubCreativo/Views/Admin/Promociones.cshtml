@@ -1,0 +1,79 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoPromocionesAdminViewModel
+
+@{
+    ViewData["Title"] = "Promociones y campañas";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    string[] estados = { "Todas", "Programada", "Activa", "Finalizada", "Desactivada" };
+}
+
+<div class="pestanas-admin">
+    @foreach (var estado in estados)
+    {
+        <a asp-action="Promociones" asp-route-estado="@estado" class="pestana-admin @(Model.FiltroEstado == estado ? "activa" : "")">@estado</a>
+    }
+</div>
+
+<div class="grupo-acciones-admin" style="margin-bottom:20px;">
+    <a asp-action="CrearPromocion" class="boton-admin boton-admin-primario">
+        <i class="bi bi-plus-circle-fill"></i> Crear promoción
+    </a>
+</div>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-megaphone-fill"></i> Promociones (@Model.Promociones.Count)</h2>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Promoción</th>
+                    <th>Descuento</th>
+                    <th>Vigencia</th>
+                    <th>Emprendimiento</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var promocion in Model.Promociones)
+                {
+                    string clase = promocion.Estado switch
+                    {
+                        "Activa" => "estado-activo",
+                        "Programada" => "estado-porvencer",
+                        "Desactivada" => "estado-pausado",
+                        _ => "estado-inactivo"
+                    };
+
+                    <tr>
+                        <td><strong>@promocion.Nombre</strong></td>
+                        <td>@(promocion.TipoDescuento == "Porcentaje" ? $"{promocion.ValorDescuento}%" : $"₡{promocion.ValorDescuento:N0}")</td>
+                        <td>@promocion.FechaInicio.ToString("dd/MM/yyyy") - @promocion.FechaFin.ToString("dd/MM/yyyy")</td>
+                        <td>@promocion.Emprendimiento</td>
+                        <td><span class="etiqueta-estado-admin @clase">@promocion.Estado</span></td>
+                        <td>
+                            <div class="grupo-acciones-admin">
+                                <a asp-action="DetallePromocion" asp-route-id="@promocion.Id" class="boton-admin boton-admin-secundario">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+                                <a asp-action="EditarPromocion" asp-route-id="@promocion.Id" class="boton-admin boton-admin-secundario">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                @if (promocion.Estado != "Desactivada")
+                                {
+                                    <form asp-action="DesactivarPromocion" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@promocion.Id" />
+                                        <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-slash-circle"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

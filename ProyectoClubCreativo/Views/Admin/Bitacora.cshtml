@@ -1,0 +1,133 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.BitacoraAdminViewModel
+
+@{
+    ViewData["Title"] = "Seguridad y auditoría";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<form asp-controller="Admin" asp-action="Bitacora" method="get" class="barra-filtros-admin">
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.Usuario"></label>
+        <input asp-for="Filtro.Usuario" placeholder="Nombre de usuario" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaInicio"></label>
+        <input asp-for="Filtro.FechaInicio" type="date" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaFin"></label>
+        <input asp-for="Filtro.FechaFin" type="date" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.Accion"></label>
+        <select asp-for="Filtro.Accion">
+            <option value="Todas">Todas</option>
+            <option>Inicio de sesión</option>
+            <option>Aprobación</option>
+            <option>Edición</option>
+            <option>Eliminación</option>
+            <option>Intento fallido</option>
+        </select>
+    </div>
+    <button type="submit" class="boton-filtro-admin"><i class="bi bi-funnel-fill"></i> Filtrar</button>
+</form>
+
+<section class="grid-resumen-seguridad-admin">
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-exclamation-triangle-fill"></i> Alertas de seguridad</h2>
+        </div>
+        @foreach (var alerta in Model.Alertas)
+        {
+            <div class="item-alerta-admin nivel-@alerta.Nivel">
+                <i class="bi @alerta.Icono"></i>
+                <div>
+                    <p>@alerta.Mensaje</p>
+                    <span>@alerta.Tipo · @alerta.Fecha</span>
+                </div>
+            </div>
+        }
+    </article>
+
+    <article class="bloque-admin">
+        <div class="encabezado-bloque-admin">
+            <h2><i class="bi bi-shield-x"></i> Intentos fallidos</h2>
+        </div>
+        <div class="tabla-admin-contenedor">
+            <table class="tabla-admin">
+                <thead>
+                    <tr>
+                        <th>Correo</th>
+                        <th>IP</th>
+                        <th>Fecha</th>
+                        <th>Intentos</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var intento in Model.IntentosFallidos)
+                    {
+                        <tr>
+                            <td>@intento.Correo</td>
+                            <td>@intento.DireccionIp</td>
+                            <td>@intento.Fecha</td>
+                            <td>@intento.Intentos</td>
+                            <td>
+                                @if (intento.Bloqueado)
+                                {
+                                    <span class="etiqueta-estado-admin estado-rechazado">Bloqueado</span>
+                                }
+                                else
+                                {
+                                    <span class="etiqueta-estado-admin estado-pendiente">Activo</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+</section>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-journal-text"></i> Bitácora de movimientos (@Model.Movimientos.Count)</h2>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Módulo</th>
+                    <th>Fecha</th>
+                    <th>IP</th>
+                    <th>Nivel</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var movimiento in Model.Movimientos)
+                {
+                    <tr>
+                        <td>@movimiento.Usuario</td>
+                        <td>@movimiento.Accion</td>
+                        <td>@movimiento.Modulo</td>
+                        <td>@movimiento.Fecha</td>
+                        <td>@movimiento.DireccionIp</td>
+                        <td><span class="etiqueta-nivel-admin nivel-@movimiento.Nivel">@movimiento.Nivel</span></td>
+                        <td>
+                            <a asp-action="DetalleMovimiento" asp-route-id="@movimiento.Id" class="boton-admin boton-admin-secundario">
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

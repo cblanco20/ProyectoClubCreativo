@@ -5,6 +5,12 @@ namespace ProyectoClubCreativo.Controllers
 {
     public class AdminController : Controller
     {
+        private readonly IWebHostEnvironment _entornoWeb;
+
+        public AdminController(IWebHostEnvironment entornoWeb)
+        {
+            _entornoWeb = entornoWeb;
+        }
 
         public IActionResult CerrarSesion()
         {
@@ -778,6 +784,710 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
+        // ---------- NOTIFICACIONES ----------
+        [HttpGet]
+        public IActionResult Notificaciones(string pestana = "Enviar")
+        {
+            return View(new NotificacionesAdminViewModel
+            {
+                Pestana = pestana,
+                Historial = ObtenerNotificacionesDemo()
+            });
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EnviarNotificacion(NotificacionFormViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(nameof(Notificaciones), new NotificacionesAdminViewModel
+                {
+                    Pestana = "Enviar",
+                    Nueva = modelo,
+                    Historial = ObtenerNotificacionesDemo()
+                });
+            }
+
+            string destinatario = modelo.TipoDestinatario switch
+            {
+                "Individual" => $"Usuario: {modelo.UsuarioDestino}",
+                "Grupo" => $"Grupo: {modelo.GrupoDestino}",
+                _ => "Todos los usuarios"
+            };
+
+            TempData["MensajeAdmin"] = $"La notificación \"{modelo.Titulo}\" fue enviada a {destinatario}.";
+            return RedirectToAction(nameof(Notificaciones), new { pestana = "Historial" });
+        }
+
+        private static List<NotificacionEnviadaViewModel> ObtenerNotificacionesDemo()
+        {
+            return
+            [
+                new() { Id = 1, Titulo = "Nueva feria en San Pedro", Mensaje = "Inscribite antes del 10 de agosto.", Destinatario = "Todos los usuarios", Fecha = "04/08/2026", TotalDestinatarios = 486 },
+                new() { Id = 2, Titulo = "Recordatorio de suscripción", Mensaje = "Tu plan vence pronto, renová para seguir disfrutando de tus beneficios.", Destinatario = "Grupo: Emprendedores", Fecha = "02/08/2026", TotalDestinatarios = 57 },
+                new() { Id = 3, Titulo = "Bienvenida al club", Mensaje = "Gracias por unirte a Club Creativo.", Destinatario = "Usuario: maria@ejemplo.com", Fecha = "30/07/2026", TotalDestinatarios = 1 }
+            ];
+        }
+
+        // ---------- GALERÍAS ----------
+        [HttpGet]
+        public IActionResult Galerias()
+        {
+            return View(ObtenerGaleriasDemo());
+        }
+
+        [HttpGet]
+        public IActionResult CrearGaleria()
+        {
+            ViewData["Titulo"] = "Crear galería";
+            return View("FormularioGaleria", new GaleriaAdminViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CrearGaleria(GaleriaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Crear galería";
+            if (!ModelState.IsValid) return View("FormularioGaleria", modelo);
+            TempData["MensajeAdmin"] = $"La galería \"{modelo.Nombre}\" fue creada correctamente.";
+            return RedirectToAction(nameof(Galerias));
+        }
+
+        [HttpGet]
+        public IActionResult EditarGaleria(int id = 1)
+        {
+            ViewData["Titulo"] = "Editar galería";
+            var galeria = ObtenerGaleriasDemo().FirstOrDefault(g => g.Id == id) ?? new GaleriaAdminViewModel { Id = id };
+            return View("FormularioGaleria", galeria);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditarGaleria(GaleriaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Editar galería";
+            if (!ModelState.IsValid) return View("FormularioGaleria", modelo);
+            TempData["MensajeAdmin"] = $"La galería \"{modelo.Nombre}\" fue actualizada correctamente.";
+            return RedirectToAction(nameof(Galerias));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CargarImagenesGaleria(int id, List<IFormFile> imagenes)
+        {
+            if (imagenes is { Count: > 0 })
+            {
+                string carpeta = Path.Combine(_entornoWeb.WebRootPath, "uploads", "galerias");
+                Directory.CreateDirectory(carpeta);
+
+                foreach (var archivo in imagenes)
+                {
+                    if (archivo.Length <= 0) continue;
+                    string nombreArchivo = $"{Guid.NewGuid()}{Path.GetExtension(archivo.FileName)}";
+                    string rutaCompleta = Path.Combine(carpeta, nombreArchivo);
+                    using var flujo = new FileStream(rutaCompleta, FileMode.Create);
+                    await archivo.CopyToAsync(flujo);
+                }
+
+                TempData["MensajeAdmin"] = $"Se cargaron {imagenes.Count} imagen(es) a la galería correctamente.";
+            }
+            else
+            {
+                TempData["MensajeAdmin"] = "Seleccioná al menos una imagen para cargar.";
+            }
+
+            return RedirectToAction(nameof(EditarGaleria), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EliminarImagenGaleria(int id, int imagenId)
+        {
+            TempData["MensajeAdmin"] = "La imagen fue eliminada de la galería.";
+            return RedirectToAction(nameof(EditarGaleria), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EliminarGaleria(int id)
+        {
+            TempData["MensajeAdmin"] = "La galería fue eliminada correctamente.";
+            return RedirectToAction(nameof(Galerias));
+        }
+
+        private static List<GaleriaAdminViewModel> ObtenerGaleriasDemo()
+        {
+            return
+            [
+                new() { Id = 1, Nombre = "Arte Inarrivo San Pedro 2026", Descripcion = "Fotografías del evento realizado en San Pedro.", Categoria = "Eventos", Estado = "Publicada", Portada = "/images/logo.jpg", FechaCreacion = "16/08/2026",
+                    Imagenes = [ new() { Id = 1, Url = "/images/logo.jpg", NombreArchivo = "portada.jpg" }, new() { Id = 2, Url = "/images/logo.jpg", NombreArchivo = "stand-1.jpg" } ] },
+                new() { Id = 2, Nombre = "Taller de cerámica", Descripcion = "Registro fotográfico del taller de cerámica para principiantes.", Categoria = "Talleres", Estado = "Publicada", Portada = "/images/logo.jpg", FechaCreacion = "24/08/2026", Imagenes = [] },
+                new() { Id = 3, Nombre = "Emprendimientos destacados", Descripcion = "Galería con productos de emprendimientos aliados.", Categoria = "Emprendimientos", Estado = "Oculta", Portada = "/images/logo.jpg", FechaCreacion = "10/07/2026", Imagenes = [] }
+            ];
+        }
+
+        // ---------- NOTICIAS Y ANUNCIOS ----------
+        [HttpGet]
+        public IActionResult Noticias(string estado = "Todas")
+        {
+            var noticias = ObtenerNoticiasDemo();
+            return View(new ListadoNoticiasAdminViewModel
+            {
+                FiltroEstado = estado,
+                Noticias = estado == "Todas" ? noticias : noticias.Where(n => n.Estado == estado).ToList()
+            });
+        }
+
+        [HttpGet]
+        public IActionResult CrearNoticia()
+        {
+            ViewData["Titulo"] = "Crear publicación";
+            return View("FormularioNoticia", new NoticiaAdminViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CrearNoticia(NoticiaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Crear publicación";
+            if (!ModelState.IsValid) return View("FormularioNoticia", modelo);
+            TempData["MensajeAdmin"] = $"La publicación \"{modelo.Titulo}\" fue creada correctamente.";
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        [HttpGet]
+        public IActionResult EditarNoticia(int id = 1)
+        {
+            ViewData["Titulo"] = "Editar publicación";
+            var noticia = ObtenerNoticiasDemo().FirstOrDefault(n => n.Id == id) ?? new NoticiaAdminViewModel { Id = id };
+            return View("FormularioNoticia", noticia);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditarNoticia(NoticiaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Editar publicación";
+            if (!ModelState.IsValid) return View("FormularioNoticia", modelo);
+            TempData["MensajeAdmin"] = $"La publicación \"{modelo.Titulo}\" fue actualizada correctamente.";
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult PublicarNoticia(int id)
+        {
+            TempData["MensajeAdmin"] = "La publicación fue publicada correctamente.";
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DesactivarNoticia(int id)
+        {
+            TempData["MensajeAdmin"] = "La publicación fue desactivada.";
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EliminarNoticia(int id)
+        {
+            TempData["MensajeAdmin"] = "La publicación fue eliminada correctamente.";
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        private static List<NoticiaAdminViewModel> ObtenerNoticiasDemo()
+        {
+            return
+            [
+                new() { Id = 1, Titulo = "Nueva alianza con artesanos locales", Contenido = "Club Creativo firma una alianza para fortalecer el catálogo de productos artesanales.", Categoria = "Noticia", Estado = "Publicada", Autor = "Jossete Sánchez", FechaPublicacion = "01/08/2026" },
+                new() { Id = 2, Titulo = "Cambios en el horario de atención", Contenido = "A partir de setiembre el horario de atención se extiende hasta las 7:00 p. m.", Categoria = "Anuncio", Estado = "Publicada", Autor = "Jossete Sánchez", FechaPublicacion = "28/07/2026" },
+                new() { Id = 3, Titulo = "Próxima feria en Heredia", Contenido = "Se viene una nueva edición de la Feria Creativa en Heredia este 20 de setiembre.", Categoria = "Anuncio", Estado = "Borrador", Autor = "Jossete Sánchez", FechaPublicacion = "" },
+                new() { Id = 4, Titulo = "Resultados de la encuesta 2025", Contenido = "Compartimos los resultados de la última encuesta de satisfacción de los usuarios.", Categoria = "Noticia", Estado = "Inactiva", Autor = "Jossete Sánchez", FechaPublicacion = "15/03/2026" }
+            ];
+        }
+
+        // ---------- REPORTES Y ESTADÍSTICAS ----------
+        [HttpGet]
+        public IActionResult Reportes(FiltroReporteViewModel filtro)
+        {
+            filtro ??= new FiltroReporteViewModel();
+            return View(ConstruirReporte(filtro));
+        }
+
+        [HttpGet]
+        public IActionResult ExportarReporte(FiltroReporteViewModel filtro)
+        {
+            ReporteAdminViewModel modelo = ConstruirReporte(filtro ?? new FiltroReporteViewModel());
+
+            var constructor = new System.Text.StringBuilder();
+            constructor.AppendLine(string.Join(",", modelo.Columnas));
+            foreach (var fila in modelo.Filas)
+            {
+                constructor.AppendLine(string.Join(",", fila.Columna1, fila.Columna2, fila.Columna3, fila.Columna4));
+            }
+
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(constructor.ToString());
+            string nombreArchivo = $"reporte-{modelo.Filtro.TipoReporte.ToLower()}.csv";
+            return File(bytes, "text/csv", nombreArchivo);
+        }
+
+        private static ReporteAdminViewModel ConstruirReporte(FiltroReporteViewModel filtro)
+        {
+            (List<PuntoGraficoViewModel> barras, List<PuntoGraficoViewModel> dona, string[] columnas, List<FilaReporteViewModel> filas, string titulo) = filtro.TipoReporte switch
+            {
+                "Usuarios" => (
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 40 }, new() { Etiqueta = "Abr", Valor = 55 }, new() { Etiqueta = "May", Valor = 48 }, new() { Etiqueta = "Jun", Valor = 63 }, new() { Etiqueta = "Jul", Valor = 70 }, new() { Etiqueta = "Ago", Valor = 82 } },
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Usuario", Valor = 340 }, new() { Etiqueta = "Emprendedor", Valor = 120 }, new() { Etiqueta = "Administrador", Valor = 6 } },
+                    new[] { "Usuario", "Rol", "Registro", "Estado" },
+                    new List<FilaReporteViewModel> {
+                        new() { Columna1 = "Maria Montero Cruz", Columna2 = "Usuario", Columna3 = "12/01/2026", Columna4 = "Activo" },
+                        new() { Columna1 = "Valentín Arce Mora", Columna2 = "Emprendedor", Columna3 = "20/05/2026", Columna4 = "Activo" }
+                    },
+                    "Reporte de usuarios"
+                ),
+                "Emprendimientos" => (
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 4 }, new() { Etiqueta = "Abr", Valor = 6 }, new() { Etiqueta = "May", Valor = 5 }, new() { Etiqueta = "Jun", Valor = 9 }, new() { Etiqueta = "Jul", Valor = 8 }, new() { Etiqueta = "Ago", Valor = 12 } },
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Aprobados", Valor = 42 }, new() { Etiqueta = "Pendientes", Valor = 8 }, new() { Etiqueta = "Rechazados", Valor = 7 } },
+                    new[] { "Emprendimiento", "Categoría", "Solicitud", "Estado" },
+                    new List<FilaReporteViewModel> {
+                        new() { Columna1 = "Artesanías MiVo", Columna2 = "Arte e ilustración", Columna3 = "01/08/2026", Columna4 = "Pendiente" },
+                        new() { Columna1 = "Orquídea", Columna2 = "Accesorios", Columna3 = "10/07/2026", Columna4 = "Aprobado" }
+                    },
+                    "Reporte de emprendimientos"
+                ),
+                "Productos" => (
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 30 }, new() { Etiqueta = "Abr", Valor = 42 }, new() { Etiqueta = "May", Valor = 38 }, new() { Etiqueta = "Jun", Valor = 55 }, new() { Etiqueta = "Jul", Valor = 60 }, new() { Etiqueta = "Ago", Valor = 72 } },
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Arte e ilustración", Valor = 34 }, new() { Etiqueta = "Accesorios", Valor = 26 }, new() { Etiqueta = "Hogar y decoración", Valor = 20 } },
+                    new[] { "Producto", "Emprendimiento", "Categoría", "Estado" },
+                    new List<FilaReporteViewModel> {
+                        new() { Columna1 = "Aretes Orquídea", Columna2 = "Orquídea", Columna3 = "Accesorios", Columna4 = "Activo" },
+                        new() { Columna1 = "Vela Aromática Lavanda", Columna2 = "Luz Natural", Columna3 = "Velas y aromas", Columna4 = "Activo" }
+                    },
+                    "Reporte de productos"
+                ),
+                "Eventos" => (
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 1 }, new() { Etiqueta = "Abr", Valor = 2 }, new() { Etiqueta = "May", Valor = 1 }, new() { Etiqueta = "Jun", Valor = 3 }, new() { Etiqueta = "Jul", Valor = 2 }, new() { Etiqueta = "Ago", Valor = 3 } },
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Programados", Valor = 2 }, new() { Etiqueta = "Finalizados", Valor = 6 }, new() { Etiqueta = "Cancelados", Valor = 1 } },
+                    new[] { "Evento", "Ubicación", "Fecha", "Inscritos" },
+                    new List<FilaReporteViewModel> {
+                        new() { Columna1 = "Arte Inarrivo San Pedro", Columna2 = "San Pedro", Columna3 = "15 y 16 de agosto", Columna4 = "120" },
+                        new() { Columna1 = "Feria Creativa Santa Ana", Columna2 = "Santa Ana", Columna3 = "5 al 7 de setiembre", Columna4 = "86" }
+                    },
+                    "Reporte de eventos"
+                ),
+                _ => (
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 45 }, new() { Etiqueta = "Abr", Valor = 58 }, new() { Etiqueta = "May", Valor = 50 }, new() { Etiqueta = "Jun", Valor = 72 }, new() { Etiqueta = "Jul", Valor = 65 }, new() { Etiqueta = "Ago", Valor = 90 } },
+                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Pagadas", Valor = 58 }, new() { Etiqueta = "Pendientes", Valor = 12 }, new() { Etiqueta = "Canceladas", Valor = 6 } },
+                    new[] { "Orden", "Cliente", "Fecha", "Total" },
+                    new List<FilaReporteViewModel> {
+                        new() { Columna1 = "ORD-1042", Columna2 = "Maria Montero Cruz", Columna3 = "02/08/2026", Columna4 = "₡24 000" },
+                        new() { Columna1 = "ORD-1043", Columna2 = "Carla Ramírez Solís", Columna3 = "03/08/2026", Columna4 = "₡13 000" }
+                    },
+                    "Reporte de ventas"
+                )
+            };
+
+            return new ReporteAdminViewModel
+            {
+                Filtro = filtro,
+                GraficoBarras = barras,
+                GraficoDona = dona,
+                Columnas = columnas.ToList(),
+                Filas = filas,
+                Titulo = titulo
+            };
+        }
+
+        // ---------- MODERACIÓN DE COMENTARIOS ----------
+        [HttpGet]
+        public IActionResult Comentarios(string? busqueda, string estado = "Todos", string origen = "Todos")
+        {
+            var comentarios = ObtenerComentariosDemo();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                comentarios = comentarios
+                    .Where(c => c.Contenido.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ||
+                                c.Autor.Contains(busqueda, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (estado != "Todos") comentarios = comentarios.Where(c => c.Estado == estado).ToList();
+            if (origen != "Todos") comentarios = comentarios.Where(c => c.Origen == origen).ToList();
+
+            return View(new ListadoComentariosAdminViewModel
+            {
+                Busqueda = busqueda,
+                FiltroEstado = estado,
+                FiltroOrigen = origen,
+                Comentarios = comentarios
+            });
+        }
+
+        [HttpGet]
+        public IActionResult VerComentario(int id = 1)
+        {
+            var comentario = ObtenerComentariosDemo().FirstOrDefault(c => c.Id == id) ?? ObtenerComentariosDemo().First();
+            return View(comentario);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EliminarComentario(int id)
+        {
+            TempData["MensajeAdmin"] = "El comentario fue eliminado por contenido inapropiado.";
+            return RedirectToAction(nameof(Comentarios));
+        }
+
+        private static List<ComentarioAdminViewModel> ObtenerComentariosDemo()
+        {
+            return
+            [
+                new() { Id = 1, Autor = "Maria Montero Cruz", Contenido = "¡Excelente producto, llegó muy rápido y en perfecto estado!", Origen = "Producto", ElementoRelacionado = "Aretes Orquídea", Fecha = "03/08/2026", Estado = "Visible", Reportes = 0 },
+                new() { Id = 2, Autor = "Usuario anónimo", Contenido = "Contenido inapropiado reportado por varios usuarios de la comunidad.", Origen = "Noticia", ElementoRelacionado = "Cambios en el horario de atención", Fecha = "02/08/2026", Estado = "Reportado", Reportes = 4 },
+                new() { Id = 3, Autor = "Luis Fernández Rojas", Contenido = "Muy buen taller, aprendí bastante sobre cerámica.", Origen = "Taller", ElementoRelacionado = "Cerámica para principiantes", Fecha = "24/08/2026", Estado = "Visible", Reportes = 0 },
+                new() { Id = 4, Autor = "Carla Ramírez Solís", Contenido = "El evento estuvo muy desorganizado, no lo recomiendo para nada.", Origen = "Evento", ElementoRelacionado = "Feria Creativa Santa Ana", Fecha = "07/09/2026", Estado = "Reportado", Reportes = 2 }
+            ];
+        }
+
+        // ---------- CATEGORÍAS Y ETIQUETAS ----------
+        [HttpGet]
+        public IActionResult Categorias(string tipo = "Categoria")
+        {
+            var categorias = ObtenerCategoriasDemo();
+            return View(new ListadoCategoriasAdminViewModel
+            {
+                FiltroTipo = tipo,
+                Categorias = categorias.Where(c => c.Tipo == tipo).ToList()
+            });
+        }
+
+        [HttpGet]
+        public IActionResult CrearCategoria(string tipo = "Categoria")
+        {
+            ViewData["Titulo"] = tipo == "Etiqueta" ? "Crear etiqueta" : "Crear categoría";
+            return View("FormularioCategoria", new CategoriaAdminViewModel { Tipo = tipo });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CrearCategoria(CategoriaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = modelo.Tipo == "Etiqueta" ? "Crear etiqueta" : "Crear categoría";
+            if (!ModelState.IsValid) return View("FormularioCategoria", modelo);
+            TempData["MensajeAdmin"] = $"\"{modelo.Nombre}\" fue creada correctamente.";
+            return RedirectToAction(nameof(Categorias), new { tipo = modelo.Tipo });
+        }
+
+        [HttpGet]
+        public IActionResult EditarCategoria(int id = 1)
+        {
+            var categoria = ObtenerCategoriasDemo().FirstOrDefault(c => c.Id == id) ?? new CategoriaAdminViewModel { Id = id };
+            ViewData["Titulo"] = categoria.Tipo == "Etiqueta" ? "Editar etiqueta" : "Editar categoría";
+            return View("FormularioCategoria", categoria);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditarCategoria(CategoriaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = modelo.Tipo == "Etiqueta" ? "Editar etiqueta" : "Editar categoría";
+            if (!ModelState.IsValid) return View("FormularioCategoria", modelo);
+            TempData["MensajeAdmin"] = $"\"{modelo.Nombre}\" fue actualizada correctamente.";
+            return RedirectToAction(nameof(Categorias), new { tipo = modelo.Tipo });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EliminarCategoria(int id, string tipo = "Categoria")
+        {
+            TempData["MensajeAdmin"] = "El elemento fue eliminado correctamente.";
+            return RedirectToAction(nameof(Categorias), new { tipo });
+        }
+
+        [HttpGet]
+        public IActionResult ElementosCategoria(int id = 1)
+        {
+            var categoria = ObtenerCategoriasDemo().FirstOrDefault(c => c.Id == id) ?? ObtenerCategoriasDemo().First();
+            return View(new ElementosCategoriaViewModel
+            {
+                Categoria = categoria,
+                Elementos = ObtenerElementosAsociadosDemo(categoria.Modulo)
+            });
+        }
+
+        private static List<CategoriaAdminViewModel> ObtenerCategoriasDemo()
+        {
+            return
+            [
+                new() { Id = 1, Nombre = "Arte e ilustración", Descripcion = "Productos relacionados con arte e ilustraciones.", Tipo = "Categoria", Modulo = "Productos", ElementosAsociados = 34 },
+                new() { Id = 2, Nombre = "Accesorios", Descripcion = "Aretes, collares y accesorios artesanales.", Tipo = "Categoria", Modulo = "Productos", ElementosAsociados = 26 },
+                new() { Id = 3, Nombre = "Hogar y decoración", Descripcion = "Artículos decorativos hechos a mano.", Tipo = "Categoria", Modulo = "Productos", ElementosAsociados = 20 },
+                new() { Id = 4, Nombre = "Hecho a mano", Descripcion = "Etiqueta para productos artesanales.", Tipo = "Etiqueta", Modulo = "Productos", ElementosAsociados = 58 },
+                new() { Id = 5, Nombre = "Nuevo", Descripcion = "Etiqueta para publicaciones recientes.", Tipo = "Etiqueta", Modulo = "Noticias", ElementosAsociados = 12 }
+            ];
+        }
+
+        private static List<ElementoAsociadoViewModel> ObtenerElementosAsociadosDemo(string modulo)
+        {
+            return modulo switch
+            {
+                "Noticias" =>
+                [
+                    new() { Nombre = "Nueva alianza con artesanos locales", Tipo = "Noticia", Estado = "Publicada" },
+                    new() { Nombre = "Próxima feria en Heredia", Tipo = "Anuncio", Estado = "Borrador" }
+                ],
+                _ =>
+                [
+                    new() { Nombre = "Aretes Orquídea", Tipo = "Producto", Estado = "Activo" },
+                    new() { Nombre = "Vela Aromática Lavanda", Tipo = "Producto", Estado = "Activo" },
+                    new() { Nombre = "Cuadro decorativo Boho", Tipo = "Producto", Estado = "Pausado" }
+                ]
+            };
+        }
+
+        // ---------- PROMOCIONES Y CAMPAÑAS ----------
+        [HttpGet]
+        public IActionResult Promociones(string estado = "Todas")
+        {
+            var promociones = ObtenerPromocionesDemo();
+            return View(new ListadoPromocionesAdminViewModel
+            {
+                FiltroEstado = estado,
+                Promociones = estado == "Todas" ? promociones : promociones.Where(p => p.Estado == estado).ToList()
+            });
+        }
+
+        [HttpGet]
+        public IActionResult CrearPromocion()
+        {
+            ViewData["Titulo"] = "Crear promoción";
+            return View("FormularioPromocion", new PromocionAdminViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CrearPromocion(PromocionAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Crear promoción";
+            if (!ModelState.IsValid) return View("FormularioPromocion", modelo);
+            TempData["MensajeAdmin"] = $"La promoción \"{modelo.Nombre}\" fue programada del {modelo.FechaInicio:dd/MM/yyyy} al {modelo.FechaFin:dd/MM/yyyy}.";
+            return RedirectToAction(nameof(Promociones));
+        }
+
+        [HttpGet]
+        public IActionResult EditarPromocion(int id = 1)
+        {
+            ViewData["Titulo"] = "Editar promoción";
+            var promocion = ObtenerPromocionesDemo().FirstOrDefault(p => p.Id == id) ?? new PromocionAdminViewModel { Id = id };
+            return View("FormularioPromocion", promocion);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditarPromocion(PromocionAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Editar promoción";
+            if (!ModelState.IsValid) return View("FormularioPromocion", modelo);
+            TempData["MensajeAdmin"] = $"La promoción \"{modelo.Nombre}\" fue actualizada correctamente.";
+            return RedirectToAction(nameof(Promociones));
+        }
+
+        [HttpGet]
+        public IActionResult DetallePromocion(int id = 1)
+        {
+            var promocion = ObtenerPromocionesDemo().FirstOrDefault(p => p.Id == id) ?? ObtenerPromocionesDemo().First();
+            return View(promocion);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DesactivarPromocion(int id)
+        {
+            TempData["MensajeAdmin"] = "La promoción fue desactivada.";
+            return RedirectToAction(nameof(Promociones));
+        }
+
+        private static List<PromocionAdminViewModel> ObtenerPromocionesDemo()
+        {
+            return
+            [
+                new() { Id = 1, Nombre = "Descuento Feria San Pedro", Descripcion = "15% de descuento en productos participantes de la feria.", TipoDescuento = "Porcentaje", ValorDescuento = 15, FechaInicio = new DateTime(2026, 8, 10), FechaFin = new DateTime(2026, 8, 16), Estado = "Activa", Emprendimiento = "Todos", Usos = 48 },
+                new() { Id = 2, Nombre = "Envío gratis primera compra", Descripcion = "Envío sin costo para nuevos usuarios del club.", TipoDescuento = "Monto fijo", ValorDescuento = 2500, FechaInicio = new DateTime(2026, 9, 1), FechaFin = new DateTime(2026, 9, 30), Estado = "Programada", Emprendimiento = "Todos", Usos = 0 },
+                new() { Id = 3, Nombre = "Aniversario Orquídea", Descripcion = "20% de descuento en toda la tienda Orquídea.", TipoDescuento = "Porcentaje", ValorDescuento = 20, FechaInicio = new DateTime(2026, 6, 1), FechaFin = new DateTime(2026, 6, 15), Estado = "Finalizada", Emprendimiento = "Orquídea", Usos = 76 },
+                new() { Id = 4, Nombre = "Descuento talleres agosto", Descripcion = "10% de descuento en inscripciones a talleres.", TipoDescuento = "Porcentaje", ValorDescuento = 10, FechaInicio = new DateTime(2026, 8, 1), FechaFin = new DateTime(2026, 8, 31), Estado = "Desactivada", Emprendimiento = "Todos", Usos = 5 }
+            ];
+        }
+
+        // ---------- ENCUESTAS ----------
+        [HttpGet]
+        public IActionResult Encuestas(string estado = "Todas")
+        {
+            var encuestas = ObtenerEncuestasDemo();
+            return View(new ListadoEncuestasAdminViewModel
+            {
+                FiltroEstado = estado,
+                Encuestas = estado == "Todas" ? encuestas : encuestas.Where(e => e.Estado == estado).ToList()
+            });
+        }
+
+        [HttpGet]
+        public IActionResult CrearEncuesta()
+        {
+            ViewData["Titulo"] = "Crear encuesta";
+            return View("FormularioEncuesta", new EncuestaAdminViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CrearEncuesta(EncuestaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Crear encuesta";
+            if (!ModelState.IsValid) return View("FormularioEncuesta", modelo);
+            int totalPreguntas = modelo.PreguntasTexto.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+            TempData["MensajeAdmin"] = $"La encuesta \"{modelo.Titulo}\" fue creada con {totalPreguntas} pregunta(s).";
+            return RedirectToAction(nameof(Encuestas));
+        }
+
+        [HttpGet]
+        public IActionResult EditarEncuesta(int id = 1)
+        {
+            ViewData["Titulo"] = "Editar encuesta";
+            var encuesta = ObtenerEncuestasDemo().FirstOrDefault(e => e.Id == id) ?? new EncuestaAdminViewModel { Id = id };
+            return View("FormularioEncuesta", encuesta);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditarEncuesta(EncuestaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Editar encuesta";
+            if (!ModelState.IsValid) return View("FormularioEncuesta", modelo);
+            TempData["MensajeAdmin"] = $"La encuesta \"{modelo.Titulo}\" fue actualizada correctamente.";
+            return RedirectToAction(nameof(Encuestas));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult PublicarEncuesta(int id)
+        {
+            TempData["MensajeAdmin"] = "La encuesta fue publicada correctamente.";
+            return RedirectToAction(nameof(Encuestas));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CerrarEncuesta(int id)
+        {
+            TempData["MensajeAdmin"] = "La encuesta fue cerrada. Ya no se aceptan más respuestas.";
+            return RedirectToAction(nameof(Encuestas));
+        }
+
+        [HttpGet]
+        public IActionResult ResultadosEncuesta(int id = 1)
+        {
+            var encuesta = ObtenerEncuestasDemo().FirstOrDefault(e => e.Id == id) ?? ObtenerEncuestasDemo().First();
+            return View(encuesta);
+        }
+
+        private static List<EncuestaAdminViewModel> ObtenerEncuestasDemo()
+        {
+            return
+            [
+                new() { Id = 1, Titulo = "Satisfacción con la feria de agosto", Descripcion = "Ayudanos a mejorar futuras ediciones del evento.", Estado = "Publicada", FechaCreacion = "16/08/2026", TotalRespuestas = 128,
+                    PreguntasTexto = "¿Cómo calificarías la organización del evento?\n¿Qué tan probable es que asistas a la próxima edición?",
+                    Preguntas =
+                    [
+                        new() { Texto = "¿Cómo calificarías la organización del evento?", Opciones = [ new() { Texto = "Excelente", Votos = 62 }, new() { Texto = "Buena", Votos = 48 }, new() { Texto = "Regular", Votos = 14 }, new() { Texto = "Mala", Votos = 4 } ] },
+                        new() { Texto = "¿Qué tan probable es que asistas a la próxima edición?", Opciones = [ new() { Texto = "Muy probable", Votos = 80 }, new() { Texto = "Probable", Votos = 35 }, new() { Texto = "Poco probable", Votos = 13 } ] }
+                    ] },
+                new() { Id = 2, Titulo = "Nuevas categorías de productos", Descripcion = "Consulta sobre categorías de interés para el catálogo.", Estado = "Borrador", FechaCreacion = "01/08/2026", TotalRespuestas = 0,
+                    PreguntasTexto = "¿Qué categoría te gustaría ver en el catálogo?",
+                    Preguntas = [ new() { Texto = "¿Qué categoría te gustaría ver en el catálogo?", Opciones = [ new() { Texto = "Ropa artesanal", Votos = 0 }, new() { Texto = "Juguetes de madera", Votos = 0 } ] } ] },
+                new() { Id = 3, Titulo = "Evaluación del taller de cerámica", Descripcion = "Retroalimentación de los participantes del taller.", Estado = "Cerrada", FechaCreacion = "10/06/2026", TotalRespuestas = 45,
+                    PreguntasTexto = "¿Recomendarías este taller a otras personas?",
+                    Preguntas = [ new() { Texto = "¿Recomendarías este taller a otras personas?", Opciones = [ new() { Texto = "Sí", Votos = 41 }, new() { Texto = "No", Votos = 4 } ] } ] }
+            ];
+        }
+
+        // ---------- SEGURIDAD Y AUDITORÍA ----------
+        [HttpGet]
+        public IActionResult Bitacora(FiltroBitacoraViewModel filtro)
+        {
+            filtro ??= new FiltroBitacoraViewModel();
+            var movimientos = ObtenerMovimientosBitacoraDemo();
+
+            if (!string.IsNullOrWhiteSpace(filtro.Usuario))
+            {
+                movimientos = movimientos.Where(m => m.Usuario.Contains(filtro.Usuario, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(filtro.Accion) && filtro.Accion != "Todas")
+            {
+                movimientos = movimientos.Where(m => m.Accion == filtro.Accion).ToList();
+            }
+
+            if (filtro.FechaInicio is not null)
+            {
+                movimientos = movimientos.Where(m =>
+                    DateTime.TryParseExact(m.Fecha.Split(' ')[0], "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var fecha) &&
+                    fecha >= filtro.FechaInicio).ToList();
+            }
+
+            if (filtro.FechaFin is not null)
+            {
+                movimientos = movimientos.Where(m =>
+                    DateTime.TryParseExact(m.Fecha.Split(' ')[0], "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var fecha) &&
+                    fecha <= filtro.FechaFin).ToList();
+            }
+
+            return View(new BitacoraAdminViewModel
+            {
+                Filtro = filtro,
+                Movimientos = movimientos,
+                Alertas = ObtenerAlertasSeguridadDemo(),
+                IntentosFallidos = ObtenerIntentosFallidosDemo()
+            });
+        }
+
+        [HttpGet]
+        public IActionResult DetalleMovimiento(int id = 1)
+        {
+            var movimiento = ObtenerMovimientosBitacoraDemo().FirstOrDefault(m => m.Id == id) ?? ObtenerMovimientosBitacoraDemo().First();
+            return View(movimiento);
+        }
+
+        private static List<MovimientoBitacoraViewModel> ObtenerMovimientosBitacoraDemo()
+        {
+            return
+            [
+                new() { Id = 1, Usuario = "Jossete Sánchez", Accion = "Inicio de sesión", Modulo = "Acceso", Fecha = "05/08/2026 08:15", DireccionIp = "190.113.20.4", Detalle = "Inicio de sesión exitoso desde el panel de administración.", Nivel = "informativa" },
+                new() { Id = 2, Usuario = "Jossete Sánchez", Accion = "Aprobación", Modulo = "Emprendimientos", Fecha = "05/08/2026 09:02", DireccionIp = "190.113.20.4", Detalle = "Se aprobó la solicitud de emprendimiento \"Luz Natural\".", Nivel = "informativa" },
+                new() { Id = 3, Usuario = "Carla Ramírez Solís", Accion = "Eliminación", Modulo = "Comentarios", Fecha = "05/08/2026 10:40", DireccionIp = "201.203.14.88", Detalle = "Se eliminó un comentario reportado por contenido inapropiado.", Nivel = "advertencia" },
+                new() { Id = 4, Usuario = "Desconocido", Accion = "Intento fallido", Modulo = "Acceso", Fecha = "04/08/2026 22:18", DireccionIp = "45.66.12.9", Detalle = "Múltiples intentos fallidos de inicio de sesión para la cuenta admin@clubcreativomivo.com.", Nivel = "critica" },
+                new() { Id = 5, Usuario = "Jossete Sánchez", Accion = "Edición", Modulo = "Promociones", Fecha = "04/08/2026 15:22", DireccionIp = "190.113.20.4", Detalle = "Se editaron las fechas de la promoción \"Descuento Feria San Pedro\".", Nivel = "informativa" }
+            ];
+        }
+
+        private static List<AlertaAdminViewModel> ObtenerAlertasSeguridadDemo()
+        {
+            return
+            [
+                new() { Tipo = "Seguridad", Mensaje = "Se detectaron 5 intentos fallidos de inicio de sesión desde una misma dirección IP.", Fecha = "Hoy", Icono = "bi-shield-exclamation", Nivel = "critica" },
+                new() { Tipo = "Cuentas", Mensaje = "La cuenta admin@clubcreativomivo.com fue bloqueada temporalmente.", Fecha = "Hoy", Icono = "bi-lock-fill", Nivel = "advertencia" }
+            ];
+        }
+
+        private static List<IntentoFallidoViewModel> ObtenerIntentosFallidosDemo()
+        {
+            return
+            [
+                new() { Correo = "admin@clubcreativomivo.com", DireccionIp = "45.66.12.9", Fecha = "04/08/2026 22:18", Intentos = 5, Bloqueado = true },
+                new() { Correo = "carla@ejemplo.com", DireccionIp = "201.203.14.88", Fecha = "03/08/2026 19:40", Intentos = 2, Bloqueado = false }
+            ];
+        }
     }
 }

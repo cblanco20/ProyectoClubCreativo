@@ -1,0 +1,56 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.PromocionAdminViewModel
+@{
+    ViewData["Title"] = "Detalle de promoción";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    string clase = Model.Estado switch
+    {
+        "Activa" => "estado-activo",
+        "Programada" => "estado-porvencer",
+        "Desactivada" => "estado-pausado",
+        _ => "estado-inactivo"
+    };
+}
+
+<a asp-action="Promociones" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver a promociones
+</a>
+
+<article class="bloque-admin" style="max-width:640px;">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-megaphone-fill"></i> @Model.Nombre</h2>
+        <span class="etiqueta-estado-admin @clase">@Model.Estado</span>
+    </div>
+
+    <p style="font-size:14px;color:var(--color-gris-oscuro);">@Model.Descripcion</p>
+
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-percent"></i></span>
+        <div>
+            <strong>@(Model.TipoDescuento == "Porcentaje" ? $"{Model.ValorDescuento}%" : $"₡{Model.ValorDescuento:N0}")</strong>
+            <span>@Model.TipoDescuento</span>
+        </div>
+    </div>
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-calendar-range-fill"></i></span>
+        <div><strong>@Model.FechaInicio.ToString("dd/MM/yyyy") - @Model.FechaFin.ToString("dd/MM/yyyy")</strong><span>Vigencia programada</span></div>
+    </div>
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-buildings-fill"></i></span>
+        <div><strong>@Model.Emprendimiento</strong><span>Emprendimiento</span></div>
+    </div>
+    <div class="item-lista-admin">
+        <span class="icono-lista-admin"><i class="bi bi-graph-up"></i></span>
+        <div><strong>@Model.Usos</strong><span>Usos registrados</span></div>
+    </div>
+
+    @if (Model.Estado != "Desactivada")
+    {
+        <form asp-action="DesactivarPromocion" method="post" style="margin-top:18px;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="boton-admin boton-admin-peligro">
+                <i class="bi bi-slash-circle"></i> Desactivar promoción
+            </button>
+        </form>
+    }
+</article>

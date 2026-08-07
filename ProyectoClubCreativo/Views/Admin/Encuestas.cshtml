@@ -1,0 +1,86 @@
+@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoEncuestasAdminViewModel
+
+@{
+    ViewData["Title"] = "Encuestas";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    string[] estados = { "Todas", "Borrador", "Publicada", "Cerrada" };
+}
+
+<div class="pestanas-admin">
+    @foreach (var estado in estados)
+    {
+        <a asp-action="Encuestas" asp-route-estado="@estado" class="pestana-admin @(Model.FiltroEstado == estado ? "activa" : "")">@estado</a>
+    }
+</div>
+
+<div class="grupo-acciones-admin" style="margin-bottom:20px;">
+    <a asp-action="CrearEncuesta" class="boton-admin boton-admin-primario">
+        <i class="bi bi-plus-circle-fill"></i> Crear encuesta
+    </a>
+</div>
+
+<article class="bloque-admin">
+    <div class="encabezado-bloque-admin">
+        <h2><i class="bi bi-clipboard2-check-fill"></i> Encuestas (@Model.Encuestas.Count)</h2>
+    </div>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Preguntas</th>
+                    <th>Creación</th>
+                    <th>Respuestas</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var encuesta in Model.Encuestas)
+                {
+                    string clase = encuesta.Estado switch
+                    {
+                        "Publicada" => "estado-activo",
+                        "Cerrada" => "estado-inactivo",
+                        _ => "estado-pendiente"
+                    };
+
+                    <tr>
+                        <td><strong>@encuesta.Titulo</strong></td>
+                        <td>@encuesta.Preguntas.Count</td>
+                        <td>@encuesta.FechaCreacion</td>
+                        <td>@encuesta.TotalRespuestas</td>
+                        <td><span class="etiqueta-estado-admin @clase">@encuesta.Estado</span></td>
+                        <td>
+                            <div class="grupo-acciones-admin">
+                                <a asp-action="ResultadosEncuesta" asp-route-id="@encuesta.Id" class="boton-admin boton-admin-secundario">
+                                    <i class="bi bi-bar-chart-fill"></i>
+                                </a>
+                                <a asp-action="EditarEncuesta" asp-route-id="@encuesta.Id" class="boton-admin boton-admin-secundario">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                @if (encuesta.Estado == "Borrador")
+                                {
+                                    <form asp-action="PublicarEncuesta" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@encuesta.Id" />
+                                        <button type="submit" class="boton-admin boton-admin-exito"><i class="bi bi-broadcast"></i></button>
+                                    </form>
+                                }
+                                @if (encuesta.Estado == "Publicada")
+                                {
+                                    <form asp-action="CerrarEncuesta" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@encuesta.Id" />
+                                        <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-lock-fill"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</article>

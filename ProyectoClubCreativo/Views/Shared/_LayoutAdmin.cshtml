@@ -85,6 +85,39 @@
             <a asp-controller="Admin" asp-action="AsistenciaQr" class="@ClaseAdmin("AsistenciaQr")">
                 <i class="bi bi-qr-code-scan"></i> Asistencia QR
             </a>
+
+            <span class="titulo-grupo-menu">Contenido</span>
+
+            <a asp-controller="Admin" asp-action="Notificaciones" class="@ClaseAdmin("Notificaciones")">
+                <i class="bi bi-bell-fill"></i> Notificaciones
+            </a>
+            <a asp-controller="Admin" asp-action="Galerias" class="@ClaseAdmin("Galerias")">
+                <i class="bi bi-images"></i> Galerías
+            </a>
+            <a asp-controller="Admin" asp-action="Noticias" class="@ClaseAdmin("Noticias")">
+                <i class="bi bi-newspaper"></i> Noticias y anuncios
+            </a>
+            <a asp-controller="Admin" asp-action="Comentarios" class="@ClaseAdmin("Comentarios")">
+                <i class="bi bi-chat-square-text-fill"></i> Moderación de comentarios
+            </a>
+            <a asp-controller="Admin" asp-action="Categorias" class="@ClaseAdmin("Categorias")">
+                <i class="bi bi-tags-fill"></i> Categorías y etiquetas
+            </a>
+            <a asp-controller="Admin" asp-action="Promociones" class="@ClaseAdmin("Promociones")">
+                <i class="bi bi-megaphone-fill"></i> Promociones y campañas
+            </a>
+            <a asp-controller="Admin" asp-action="Encuestas" class="@ClaseAdmin("Encuestas")">
+                <i class="bi bi-clipboard2-check-fill"></i> Encuestas
+            </a>
+
+            <span class="titulo-grupo-menu">Análisis y seguridad</span>
+
+            <a asp-controller="Admin" asp-action="Reportes" class="@ClaseAdmin("Reportes")">
+                <i class="bi bi-graph-up-arrow"></i> Reportes y estadísticas
+            </a>
+            <a asp-controller="Admin" asp-action="Bitacora" class="@ClaseAdmin("Bitacora")">
+                <i class="bi bi-shield-lock-fill"></i> Seguridad y auditoría
+            </a>
         </nav>
      
         <a asp-controller="Admin" asp-action="CerrarSesion" class="cerrar-sesion-menu">
