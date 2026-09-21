@@ -12,6 +12,7 @@ namespace ProyectoClubCreativo.Models.ViewModels
         )]
         public string Nombre { get; set; } = string.Empty;
 
+
         [Required(ErrorMessage = "Los apellidos son obligatorios.")]
         [StringLength(
             100,
@@ -20,10 +21,12 @@ namespace ProyectoClubCreativo.Models.ViewModels
         )]
         public string Apellidos { get; set; } = string.Empty;
 
+
         [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
         [EmailAddress(ErrorMessage = "Ingrese un correo electrónico válido.")]
         [Display(Name = "Correo electrónico")]
         public string Correo { get; set; } = string.Empty;
+
 
         [Required(ErrorMessage = "El número de teléfono es obligatorio.")]
         [RegularExpression(
@@ -33,13 +36,17 @@ namespace ProyectoClubCreativo.Models.ViewModels
         [Display(Name = "Número de teléfono")]
         public string Telefono { get; set; } = string.Empty;
 
+
         [Required(ErrorMessage = "Seleccione una provincia.")]
-        public string Provincia { get; set; } = string.Empty;
+        [Display(Name = "Provincia")]
+        public int? IdProvincia { get; set; }
+
 
         [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
         [DataType(DataType.Date)]
         [Display(Name = "Fecha de nacimiento")]
         public DateTime? FechaNacimiento { get; set; }
+
 
         [Required(ErrorMessage = "La contraseña es obligatoria.")]
         [DataType(DataType.Password)]
@@ -50,6 +57,7 @@ namespace ProyectoClubCreativo.Models.ViewModels
         )]
         public string Contrasena { get; set; } = string.Empty;
 
+
         [Required(ErrorMessage = "Debe confirmar la contraseña.")]
         [DataType(DataType.Password)]
         [Compare(
@@ -58,6 +66,7 @@ namespace ProyectoClubCreativo.Models.ViewModels
         )]
         [Display(Name = "Confirmar contraseña")]
         public string ConfirmarContrasena { get; set; } = string.Empty;
+
 
         public bool AceptaTerminos { get; set; }
     }

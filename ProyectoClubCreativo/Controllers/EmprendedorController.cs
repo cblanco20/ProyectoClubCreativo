@@ -5,6 +5,25 @@ namespace ProyectoClubCreativo.Controllers
 {
     public class EmprendedorController : Controller
     {
+        public override void OnActionExecuting(
+        Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+            string? rolUsuario = HttpContext.Session.GetString("RolUsuario");
+
+            if (idUsuario is null || rolUsuario != "Emprendedor")
+            {
+                context.Result = RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+
+                return;
+            }
+
+            base.OnActionExecuting(context);
+        }
+
         public IActionResult Panel()
         {
             return View();
@@ -640,9 +659,11 @@ namespace ProyectoClubCreativo.Controllers
 
         public IActionResult CerrarSesion()
         {
+            HttpContext.Session.Clear();
+
             return RedirectToAction(
-                "Index",
-                "Home"
+                "IniciarSesion",
+                "Cuenta"
             );
         }
     }

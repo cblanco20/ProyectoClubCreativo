@@ -78,21 +78,21 @@
 
                 <div class="fila-formulario">
                     <div class="grupo-formulario">
-                        <label asp-for="Provincia"></label>
+                        <label asp-for="IdProvincia"></label>
 
-                        <select asp-for="Provincia"
+                        <select asp-for="IdProvincia"
                                 class="control-formulario">
                             <option value="">Seleccione una provincia</option>
-                            <option>San José</option>
-                            <option>Alajuela</option>
-                            <option>Cartago</option>
-                            <option>Heredia</option>
-                            <option>Guanacaste</option>
-                            <option>Puntarenas</option>
-                            <option>Limón</option>
+                            <option value="1">San José</option>
+                            <option value="2">Alajuela</option>
+                            <option value="3">Cartago</option>
+                            <option value="4">Heredia</option>
+                            <option value="5">Guanacaste</option>
+                            <option value="6">Puntarenas</option>
+                            <option value="7">Limón</option>
                         </select>
 
-                        <span asp-validation-for="Provincia"
+                        <span asp-validation-for="IdProvincia"
                               class="mensaje-validacion"></span>
                     </div>
 

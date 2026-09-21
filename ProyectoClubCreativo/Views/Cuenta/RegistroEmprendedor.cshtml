@@ -77,21 +77,15 @@
                 </div>
 
                 <div class="grupo-formulario">
-                    <label asp-for="Provincia"></label>
+                    <label asp-for="IdProvincia"></label>
 
-                    <select asp-for="Provincia"
+                    <select asp-for="IdProvincia"
+                            asp-items="Model.Provincias"
                             class="control-formulario">
                         <option value="">Seleccione una provincia</option>
-                        <option>San José</option>
-                        <option>Alajuela</option>
-                        <option>Cartago</option>
-                        <option>Heredia</option>
-                        <option>Guanacaste</option>
-                        <option>Puntarenas</option>
-                        <option>Limón</option>
                     </select>
 
-                    <span asp-validation-for="Provincia"
+                    <span asp-validation-for="IdProvincia"
                           class="mensaje-validacion"></span>
                 </div>
 
@@ -164,22 +158,15 @@
                 </div>
 
                 <div class="grupo-formulario">
-                    <label asp-for="Categoria"></label>
+                    <label asp-for="IdCategoria"></label>
 
-                    <select asp-for="Categoria"
+                    <select asp-for="IdCategoria"
+                            asp-items="Model.Categorias"
                             class="control-formulario">
                         <option value="">Seleccione una categoría</option>
-                        <option>Arte e ilustración</option>
-                        <option>Accesorios y joyería</option>
-                        <option>Moda y textiles</option>
-                        <option>Alimentos y bebidas</option>
-                        <option>Cuidado personal</option>
-                        <option>Decoración</option>
-                        <option>Servicios creativos</option>
-                        <option>Otro</option>
                     </select>
 
-                    <span asp-validation-for="Categoria"
+                    <span asp-validation-for="IdCategoria"
                           class="mensaje-validacion"></span>
                 </div>
 

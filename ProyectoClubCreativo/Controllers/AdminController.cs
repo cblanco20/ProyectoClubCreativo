@@ -5,6 +5,7 @@ namespace ProyectoClubCreativo.Controllers
 {
     public class AdminController : Controller
     {
+
         private readonly IWebHostEnvironment _entornoWeb;
 
         public AdminController(IWebHostEnvironment entornoWeb)
@@ -12,9 +13,33 @@ namespace ProyectoClubCreativo.Controllers
             _entornoWeb = entornoWeb;
         }
 
+        public override void OnActionExecuting(
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+            string? rolUsuario = HttpContext.Session.GetString("RolUsuario");
+
+            if (idUsuario is null || rolUsuario != "Administrador")
+            {
+                context.Result = RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+
+                return;
+            }
+
+            base.OnActionExecuting(context);
+        }
+
         public IActionResult CerrarSesion()
         {
-            return RedirectToAction("IniciarSesion", "Cuenta");
+            HttpContext.Session.Clear();
+
+            return RedirectToAction(
+                "IniciarSesion",
+                "Cuenta"
+            );
         }
 
         // ---------- DASHBOARD ----------

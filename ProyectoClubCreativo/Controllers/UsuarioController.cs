@@ -1,15 +1,53 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProyectoClubCreativo.Data;
+using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels;
 
 namespace ProyectoClubCreativo.Controllers
 {
     public class UsuarioController : Controller
     {
-        [HttpGet]
-        public IActionResult Panel()
+        private readonly ClubCreativoDbContext _context;
+
+        public UsuarioController(ClubCreativoDbContext context)
         {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Panel()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo"
+                );
+
+            if (usuario is null)
+            {
+                HttpContext.Session.Clear();
+
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
             PanelUsuarioViewModel modelo = CrearPanelDemostrativo();
+
+            modelo.NombreUsuario = usuario.Nombre;
+            modelo.Correo = usuario.Correo;
+            modelo.FotoPerfil = string.IsNullOrWhiteSpace(usuario.FotoPerfilUrl)
+                ? "/images/logo.jpg"
+                : usuario.FotoPerfilUrl;
 
             return View(modelo);
         }
@@ -101,7 +139,9 @@ namespace ProyectoClubCreativo.Controllers
 
         public IActionResult CerrarSesion()
         {
-            return RedirectToAction("Index", "Home");
+            HttpContext.Session.Clear();
+
+            return RedirectToAction("IniciarSesion", "Cuenta");
         }
 
         private static PanelUsuarioViewModel CrearPanelDemostrativo()

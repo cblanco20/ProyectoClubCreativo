@@ -5,6 +5,9 @@
     string accionActual =
         ViewContext.RouteData.Values["action"]?.ToString() ?? "";
 
+    string nombreUsuario =
+        Context.Session.GetString("NombreUsuario") ?? "Usuario";
+
     string ClaseUsuario(string accion)
     {
         return controladorActual == "Usuario" &&
@@ -87,7 +90,7 @@
             </div>
 
             <div>
-                <strong>Maria</strong>
+                <strong>@nombreUsuario</strong>
                 <span>Usuario creativo</span>
             </div>
 
@@ -311,7 +314,7 @@
                     </span>
 
                     <span class="nombre-encabezado">
-                        Maria
+                        @nombreUsuario
                     </span>
 
                 </a>
