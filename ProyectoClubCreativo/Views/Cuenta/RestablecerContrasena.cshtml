@@ -1,0 +1,127 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.RestablecerContrasenaViewModel
+
+@{
+    ViewData["Title"] = "Restablecer contraseña";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+}
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+        <div class="tarjeta-formulario-acceso">
+
+            <div class="encabezado-formulario-acceso">
+
+                <span class="etiqueta-formulario-acceso">
+                    Seguridad de tu cuenta
+                </span>
+
+                <h1 class="titulo-formulario-acceso">
+                    Crea una nueva contraseña
+                </h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Ingresa una nueva contraseña para recuperar
+                    el acceso a tu cuenta de Club Creativo.
+                </p>
+
+            </div>
+
+            <form asp-controller="Cuenta"
+                  asp-action="RestablecerContrasena"
+                  method="post"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+                <input asp-for="Token"
+                       type="hidden" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="mensaje-validacion">
+                </div>
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="NuevaContrasena">
+                        Nueva contraseña
+                    </label>
+
+                    <div class="contenedor-contrasena">
+                        <input asp-for="NuevaContrasena"
+                               class="control-formulario"
+                               placeholder="Ingresa tu nueva contraseña"
+                               autocomplete="new-password" />
+                    </div>
+
+                    <span asp-validation-for="NuevaContrasena"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+                <div class="grupo-formulario">
+
+                    <label asp-for="ConfirmarContrasena">
+                        Confirmar contraseña
+                    </label>
+
+                    <div class="contenedor-contrasena">
+                        <input asp-for="ConfirmarContrasena"
+                               class="control-formulario"
+                               placeholder="Confirma tu nueva contraseña"
+                               autocomplete="new-password" />
+                    </div>
+
+                    <span asp-validation-for="ConfirmarContrasena"
+                          class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+                <button type="submit"
+                        class="boton-formulario-acceso">
+                    Cambiar contraseña
+                </button>
+
+            </form>
+
+            <div class="separador-acceso">
+                Seguridad
+            </div>
+
+            <a asp-controller="Cuenta"
+               asp-action="IniciarSesion"
+               class="enlace-acceso">
+                Volver al inicio de sesión
+            </a>
+
+        </div>
+    </section>
+
+    <aside class="panel-visual-acceso panel-visual-recuperacion">
+
+        <div class="contenido-visual-acceso">
+
+            <img src="~/images/acceso-feria.jpg"
+                 alt="Comunidad Club Creativo"
+                 class="imagen-ovalada-acceso" />
+
+            <h2 class="titulo-visual-acceso">
+                Protege tu cuenta
+            </h2>
+
+            <p class="texto-visual-acceso">
+                Elige una nueva contraseña para continuar
+                disfrutando de Club Creativo de forma segura.
+            </p>
+
+        </div>
+
+    </aside>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

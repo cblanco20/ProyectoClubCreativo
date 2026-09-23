@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
+using ProyectoClubCreativo.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<CorreoService>();
 // Conexión a ClubCreativoDB mediante Entity Framework Core
 builder.Services.AddDbContext<ClubCreativoDbContext>(options =>
     options.UseSqlServer(

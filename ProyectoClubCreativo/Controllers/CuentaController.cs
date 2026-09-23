@@ -3,16 +3,23 @@ using ProyectoClubCreativo.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
+using System.Security.Cryptography;
+using System.Text;
+using ProyectoClubCreativo.Services;
 
 namespace ProyectoClubCreativo.Controllers
 {
     public class CuentaController : Controller
     {
         private readonly ClubCreativoDbContext _context;
+        private readonly CorreoService _correoService;
 
-        public CuentaController(ClubCreativoDbContext context)
+        public CuentaController(
+            ClubCreativoDbContext context,
+            CorreoService correoService)
         {
             _context = context;
+            _correoService = correoService;
         }
 
         [HttpGet]
@@ -514,19 +521,246 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RecuperarContrasena(
-            RecuperarContrasenaViewModel modelo
-        )
+        public async Task<IActionResult> RecuperarContrasena(
+    RecuperarContrasenaViewModel modelo)
         {
             if (!ModelState.IsValid)
             {
                 return View(modelo);
             }
 
+            string correoNormalizado = modelo.Correo
+                .Trim()
+                .ToLowerInvariant();
+
+            Usuario? usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u =>
+                    u.Correo.ToLower() == correoNormalizado);
+
+            // Por seguridad mostramos el mismo mensaje
+            // independientemente de si el correo existe o no.
+            if (usuario is not null)
+            {
+                // Invalidar tokens anteriores que todavía no hayan sido utilizados.
+                List<TokensRecuperacionContrasena> tokensAnteriores =
+                    await _context.TokensRecuperacionContrasenas
+                        .Where(t =>
+                            t.IdUsuario == usuario.IdUsuario &&
+                            !t.Utilizado)
+                        .ToListAsync();
+
+                foreach (TokensRecuperacionContrasena tokenAnterior
+                         in tokensAnteriores)
+                {
+                    tokenAnterior.Utilizado = true;
+                    tokenAnterior.FechaUso = DateTime.Now;
+                }
+
+                // Generar un token aleatorio y seguro.
+                string token = Convert.ToHexString(
+                    RandomNumberGenerator.GetBytes(32)
+                );
+
+                // En la BD no guardamos el token original.
+                // Solamente almacenamos su hash.
+                string tokenHash;
+
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    byte[] hashBytes = sha256.ComputeHash(
+                        Encoding.UTF8.GetBytes(token)
+                    );
+
+                    tokenHash = Convert.ToHexString(hashBytes);
+                }
+
+                TokensRecuperacionContrasena nuevoToken = new()
+                {
+                    IdUsuario = usuario.IdUsuario,
+                    TokenHash = tokenHash,
+                    FechaCreacion = DateTime.Now,
+                    FechaExpiracion = DateTime.Now.AddMinutes(30),
+                    Utilizado = false
+                };
+
+                await _context.TokensRecuperacionContrasenas
+                    .AddAsync(nuevoToken);
+
+                await _context.SaveChangesAsync();
+
+                // Crear la dirección que recibirá el usuario.
+                string enlaceRecuperacion = Url.Action(
+                    "RestablecerContrasena",
+                    "Cuenta",
+                    new { token },
+                    Request.Scheme
+                )!;
+
+                string asunto =
+                    "Recuperación de contraseña - Club Creativo";
+
+                string contenidoCorreo = $@"
+            <h2>Club Creativo</h2>
+
+            <p>Hola {usuario.Nombre},</p>
+
+            <p>
+                Recibimos una solicitud para restablecer
+                la contraseña de tu cuenta.
+            </p>
+
+            <p>
+                Haz clic en el siguiente enlace para crear
+                una nueva contraseña:
+            </p>
+
+            <p>
+                <a href=""{enlaceRecuperacion}"">
+                    Restablecer mi contraseña
+                </a>
+            </p>
+
+            <p>
+                Este enlace estará disponible durante
+                30 minutos.
+            </p>
+
+            <p>
+                Si no solicitaste este cambio,
+                puedes ignorar este correo.
+            </p>
+
+            <p>Club Creativo</p>
+        ";
+
+                try
+                {
+                    await _correoService.EnviarCorreoAsync(
+                        usuario.Correo,
+                        asunto,
+                        contenidoCorreo
+                    );
+                }
+                catch
+                {
+                    // No revelamos al usuario si ocurrió un problema
+                    // con el envío ni si el correo está registrado.
+                }
+            }
+
             TempData["MensajeExito"] =
-                "Se enviaría un enlace de recuperación al correo indicado.";
+                "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.";
 
             return RedirectToAction(nameof(RecuperarContrasena));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RestablecerContrasena(string? token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                TempData["MensajeError"] =
+                    "El enlace de recuperación no es válido.";
+
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+
+            string tokenHash;
+
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] hashBytes = sha256.ComputeHash(
+                    Encoding.UTF8.GetBytes(token)
+                );
+
+                tokenHash = Convert.ToHexString(hashBytes);
+            }
+
+            TokensRecuperacionContrasena? tokenRecuperacion =
+                await _context.TokensRecuperacionContrasenas
+                    .FirstOrDefaultAsync(t =>
+                        t.TokenHash == tokenHash);
+
+            if (tokenRecuperacion == null ||
+                tokenRecuperacion.Utilizado ||
+                tokenRecuperacion.FechaExpiracion < DateTime.Now)
+            {
+                TempData["MensajeError"] =
+                    "El enlace de recuperación no es válido o ha expirado.";
+
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+
+            RestablecerContrasenaViewModel modelo = new()
+            {
+                Token = token
+            };
+
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestablecerContrasena(
+    RestablecerContrasenaViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+
+            string tokenHash;
+
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] hashBytes = sha256.ComputeHash(
+                    Encoding.UTF8.GetBytes(modelo.Token)
+                );
+
+                tokenHash = Convert.ToHexString(hashBytes);
+            }
+
+            TokensRecuperacionContrasena? tokenRecuperacion =
+                await _context.TokensRecuperacionContrasenas
+                    .FirstOrDefaultAsync(t =>
+                        t.TokenHash == tokenHash);
+
+            if (tokenRecuperacion == null ||
+                tokenRecuperacion.Utilizado ||
+                tokenRecuperacion.FechaExpiracion < DateTime.Now)
+            {
+                TempData["MensajeError"] =
+                    "El enlace de recuperación no es válido o ha expirado.";
+
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == tokenRecuperacion.IdUsuario);
+
+            if (usuario == null)
+            {
+                TempData["MensajeError"] =
+                    "No fue posible restablecer la contraseña.";
+
+                return RedirectToAction(nameof(RecuperarContrasena));
+            }
+
+            // Guardar la nueva contraseña de forma segura.
+            usuario.ContrasenaHash =
+                BCrypt.Net.BCrypt.HashPassword(modelo.NuevaContrasena);
+
+            // El enlace solamente puede utilizarse una vez.
+            tokenRecuperacion.Utilizado = true;
+            tokenRecuperacion.FechaUso = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeExito"] =
+                "Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión.";
+
+            return RedirectToAction("IniciarSesion");
         }
 
         private async Task CargarDatosRegistroEmprendedorAsync(
