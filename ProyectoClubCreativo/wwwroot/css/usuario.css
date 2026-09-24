@@ -2078,3 +2078,231 @@
     font-size: 11px;
     font-weight: 700;
 }
+
+/* =========================================================
+   EDITAR PERFIL - USUARIO
+   ========================================================= */
+
+.encabezado-perfil-usuario {
+    margin-bottom: 24px;
+}
+
+    .encabezado-perfil-usuario h1 {
+        margin: 10px 0 8px;
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    .encabezado-perfil-usuario p {
+        margin: 0;
+        max-width: 720px;
+        color: #6c6c78;
+        line-height: 1.6;
+    }
+
+.contenedor-editar-perfil {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 0.8fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.tarjeta-editar-perfil,
+.tarjeta-seguridad-perfil {
+    background: #ffffff;
+    border-radius: 22px;
+    box-shadow: 0 8px 28px rgba(30, 20, 50, 0.08);
+}
+
+.tarjeta-editar-perfil {
+    padding: 30px;
+}
+
+.encabezado-tarjeta-perfil {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 22px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.icono-editar-perfil {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0e8ff;
+    font-size: 1.45rem;
+    color: #7045a5;
+    flex-shrink: 0;
+}
+
+.encabezado-tarjeta-perfil h2,
+.tarjeta-seguridad-perfil h2 {
+    margin: 0 0 5px;
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.encabezado-tarjeta-perfil p {
+    margin: 0;
+    color: #77717e;
+}
+
+.cuadricula-formulario-perfil {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.grupo-formulario-perfil {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+    .grupo-formulario-perfil label {
+        font-weight: 700;
+        color: #302b35;
+    }
+
+.control-formulario-perfil {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1px solid #dcd9df;
+    border-radius: 12px;
+    background: #ffffff;
+    font: inherit;
+    color: #302b35;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .control-formulario-perfil:focus {
+        outline: none;
+        border-color: #7952a8;
+        box-shadow: 0 0 0 3px rgba(121, 82, 168, 0.12);
+    }
+
+.mensaje-validacion {
+    color: #b42318;
+    font-size: 0.86rem;
+}
+
+.acciones-editar-perfil {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 22px;
+    border-top: 1px solid #eeeeee;
+}
+
+.boton-cancelar-perfil,
+.boton-guardar-perfil {
+    min-height: 46px;
+    padding: 0 20px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.boton-cancelar-perfil {
+    background: #f3f1f4;
+    color: #4e4853;
+    border: 1px solid #dedbe0;
+}
+
+.boton-guardar-perfil {
+    border: none;
+    background: #ef7c35;
+    color: #ffffff;
+}
+
+.boton-cancelar-perfil:hover {
+    background: #e9e6eb;
+    color: #302b35;
+}
+
+.boton-guardar-perfil:hover {
+    opacity: 0.92;
+}
+
+.tarjeta-seguridad-perfil {
+    padding: 28px;
+}
+
+.icono-seguridad-perfil {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    border-radius: 16px;
+    background: #f0e8ff;
+    color: #7045a5;
+    font-size: 1.5rem;
+}
+
+.tarjeta-seguridad-perfil > p {
+    color: #77717e;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.detalle-seguridad-perfil {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 17px;
+    color: #59525f;
+    line-height: 1.5;
+}
+
+    .detalle-seguridad-perfil i {
+        color: #7045a5;
+        margin-top: 2px;
+    }
+
+/* Responsive */
+
+@media (max-width: 900px) {
+
+    .contenedor-editar-perfil {
+        grid-template-columns: 1fr;
+    }
+
+    .tarjeta-seguridad-perfil {
+        order: -1;
+    }
+}
+
+@media (max-width: 650px) {
+
+    .cuadricula-formulario-perfil {
+        grid-template-columns: 1fr;
+    }
+
+    .tarjeta-editar-perfil,
+    .tarjeta-seguridad-perfil {
+        padding: 22px;
+    }
+
+    .acciones-editar-perfil {
+        flex-direction: column-reverse;
+    }
+
+    .boton-cancelar-perfil,
+    .boton-guardar-perfil {
+        width: 100%;
+    }
+}

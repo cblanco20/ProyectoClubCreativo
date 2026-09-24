@@ -194,26 +194,19 @@
 
                 <div class="grupo-formulario">
 
-                    <label asp-for="Provincia"></label>
+                    <label asp-for="IdProvincia"></label>
 
-                    <select asp-for="Provincia"
+                    <select asp-for="IdProvincia"
+                            asp-items="Model.Provincias"
                             class="control-formulario">
 
-                        <option value="">
+                        <option value="0">
                             Seleccione una provincia
                         </option>
 
-                        <option>San José</option>
-                        <option>Alajuela</option>
-                        <option>Cartago</option>
-                        <option>Heredia</option>
-                        <option>Guanacaste</option>
-                        <option>Puntarenas</option>
-                        <option>Limón</option>
-
                     </select>
 
-                    <span asp-validation-for="Provincia"
+                    <span asp-validation-for="IdProvincia"
                           class="mensaje-validacion">
                     </span>
 
@@ -228,6 +221,31 @@
 
                     <span asp-validation-for="FechaNacimiento"
                           class="mensaje-validacion">
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="seccion-formulario-perfil">
+
+                <h3>
+                    Tipo de cuenta
+                </h3>
+
+                <p>
+                    El tipo de cuenta no puede modificarse directamente
+                    desde el perfil.
+                </p>
+
+                <div class="aviso-tipo-cuenta">
+
+                    <i class="bi bi-info-circle-fill"></i>
+
+                    <span>
+                        Si deseas participar como emprendedor,
+                        debes realizar el proceso de registro y
+                        solicitud de emprendimiento correspondiente.
                     </span>
 
                 </div>
@@ -462,13 +480,26 @@
 
             </div>
 
-            <button type="submit"
-                    class="boton-guardar-perfil">
+            <div class="acciones-perfil">
 
-                <i class="bi bi-floppy-fill"></i>
-                Guardar cambios
+                <a asp-controller="Usuario"
+                   asp-action="Panel"
+                   class="boton-cancelar-perfil">
 
-            </button>
+                    <i class="bi bi-x-circle"></i>
+                    Cancelar
+
+                </a>
+
+                <button type="submit"
+                        class="boton-guardar-perfil">
+
+                    <i class="bi bi-floppy-fill"></i>
+                    Guardar cambios
+
+                </button>
+
+            </div>
 
         </form>
 

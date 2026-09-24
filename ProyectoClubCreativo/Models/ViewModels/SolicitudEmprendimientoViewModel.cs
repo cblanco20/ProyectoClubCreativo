@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ProyectoClubCreativo.Models.ViewModels
 {
@@ -21,6 +22,13 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         [Required(ErrorMessage = "Debe seleccionar una categoría.")]
         [Display(Name = "Categoría")]
+        public int? IdCategoria { get; set; }
+
+        public List<SelectListItem> Categorias { get; set; } = new();
+
+
+        // Se mantiene porque otras vistas del módulo
+        // todavía utilizan la categoría por nombre.
         public string Categoria { get; set; } = string.Empty;
 
 

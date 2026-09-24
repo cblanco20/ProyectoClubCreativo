@@ -1,10 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProyectoClubCreativo.Models.ViewModels;
+using Microsoft.EntityFrameworkCore;
+using ProyectoClubCreativo.Data;
+using ProyectoClubCreativo.Models.Entities;
 
 namespace ProyectoClubCreativo.Controllers
 {
     public class EmprendedorController : Controller
     {
+        private readonly ClubCreativoDbContext _context;
+
+        public EmprendedorController(
+            ClubCreativoDbContext context)
+        {
+            _context = context;
+        }
+
         public override void OnActionExecuting(
         Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
         {
@@ -28,37 +39,107 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View();
         }
-
         [HttpGet]
-        public IActionResult SolicitudEmprendimiento()
+        public async Task<IActionResult> SolicitudEmprendimiento(
+    int? idCategoria)
         {
-            var modelo = new SolicitudEmprendimientoViewModel
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
             {
-                NombreComercial = "Artesanías MiVo",
-                Descripcion =
-                    "Elaboramos productos artesanales hechos a mano para decoración, obsequios y pedidos personalizados.",
-                Categoria = "Arte e ilustración",
-                Cedula = "1-1234-5678",
-                Telefono = "88887777",
-                Correo = "valentin@gmail.com",
-                SitioWeb = "https://www.artesaniasmivo.com",
-                Instagram = "https://www.instagram.com/artesaniasmivo",
-                ParticipaClubCreativo = true,
-                InformacionParticipacion =
-                    "Deseo participar en ferias, talleres y actividades para promocionar mis productos artesanales."
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo"
+                );
+
+            if (usuario == null)
+            {
+                HttpContext.Session.Clear();
+
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            SolicitudEmprendimientoViewModel modelo = new()
+            {
+                NombreComercial = string.Empty,
+                Descripcion = string.Empty,
+
+                IdCategoria = idCategoria,
+
+                Cedula = string.Empty,
+
+                Telefono =
+                    usuario.Telefono ?? string.Empty,
+
+                Correo = usuario.Correo,
+
+                SitioWeb = null,
+                Instagram = null,
+                Facebook = null,
+
+                ParticipaClubCreativo = false,
+                ParticipaHechoEnCr = false,
+
+                InformacionParticipacion = string.Empty,
+                ConfirmaInformacion = false
             };
+
+            modelo.Categorias = await _context.Categorias
+                .Where(c =>
+                    c.Modulo == "Emprendimientos" &&
+                    c.Activa
+                )
+                .OrderBy(c => c.Nombre)
+                .Select(c =>
+                    new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = c.IdCategoria.ToString(),
+                        Text = c.Nombre
+                    })
+                .ToListAsync();
 
             return View(modelo);
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SolicitudEmprendimiento(
-        SolicitudEmprendimientoViewModel modelo)
+        public async Task<IActionResult> SolicitudEmprendimiento(
+            SolicitudEmprendimientoViewModel modelo)
         {
-            ValidarArchivosSolicitud(modelo);
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
 
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            // El usuario debe confirmar que la información
+            // suministrada es correcta.
+            if (!modelo.ConfirmaInformacion)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.ConfirmaInformacion),
+                    "Debe confirmar que la información suministrada es correcta."
+                );
+            }
+
+            // Debe seleccionar al menos una opción de participación.
             if (!modelo.ParticipaClubCreativo &&
                 !modelo.ParticipaHechoEnCr)
             {
@@ -68,109 +149,206 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            if (!modelo.ConfirmaInformacion)
+            // Comprobar que la categoría realmente existe.
+            if (modelo.IdCategoria.HasValue)
             {
-                ModelState.AddModelError(
-                    nameof(modelo.ConfirmaInformacion),
-                    "Debe confirmar que la información suministrada es correcta."
-                );
+                bool categoriaExiste =
+                    await _context.Categorias.AnyAsync(c =>
+                        c.IdCategoria == modelo.IdCategoria.Value &&
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa
+                    );
+
+                if (!categoriaExiste)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.IdCategoria),
+                        "La categoría seleccionada no es válida."
+                    );
+                }
             }
 
             if (!ModelState.IsValid)
             {
+                modelo.Categorias = await _context.Categorias
+                    .Where(c =>
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa
+                    )
+                    .OrderBy(c => c.Nombre)
+                    .Select(c =>
+                        new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                        {
+                            Value = c.IdCategoria.ToString(),
+                            Text = c.Nombre
+                        })
+                    .ToListAsync();
+
                 return View(modelo);
             }
 
-            TempData["MensajeSolicitud"] =
-                "La información de la solicitud fue actualizada correctamente.";
+            Usuario? usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo"
+                );
 
-            return RedirectToAction(nameof(EstadoSolicitud));
-        }
-
-
-        private void ValidarArchivosSolicitud(
-            SolicitudEmprendimientoViewModel modelo)
-        {
-            string[] extensionesPermitidas =
+            if (usuario == null)
             {
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".webp"
-    };
+                HttpContext.Session.Clear();
 
-            const long tamanoMaximo = 5 * 1024 * 1024;
-
-            if (modelo.Logo is not null &&
-                modelo.Logo.Length > 0)
-            {
-                string extension =
-                    Path.GetExtension(modelo.Logo.FileName).ToLowerInvariant();
-
-                if (!extensionesPermitidas.Contains(extension))
-                {
-                    ModelState.AddModelError(
-                        nameof(modelo.Logo),
-                        "El logo debe ser JPG, JPEG, PNG o WEBP."
-                    );
-                }
-
-                if (modelo.Logo.Length > tamanoMaximo)
-                {
-                    ModelState.AddModelError(
-                        nameof(modelo.Logo),
-                        "El logo no puede superar los 5 MB."
-                    );
-                }
-            }
-
-            if (modelo.Fotografias is null)
-            {
-                return;
-            }
-
-            if (modelo.Fotografias.Count > 5)
-            {
-                ModelState.AddModelError(
-                    nameof(modelo.Fotografias),
-                    "Puede seleccionar un máximo de 5 fotografías."
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
                 );
             }
 
-            foreach (IFormFile fotografia in modelo.Fotografias)
+            // Evita crear dos emprendimientos para
+            // el mismo propietario desde este proceso.
+            bool yaTieneEmprendimiento =
+                await _context.Emprendimientos.AnyAsync(e =>
+                    e.IdUsuarioPropietario == usuario.IdUsuario
+                );
+
+            if (yaTieneEmprendimiento)
             {
-                string extension =
-                    Path.GetExtension(fotografia.FileName).ToLowerInvariant();
+                TempData["MensajeError"] =
+                    "Ya existe una solicitud de emprendimiento asociada a tu cuenta.";
 
-                if (!extensionesPermitidas.Contains(extension))
+                return RedirectToAction(
+     "EstadoSolicitud",
+     "Emprendedor"
+ );
+            }
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                Emprendimiento emprendimiento = new()
                 {
-                    ModelState.AddModelError(
-                        nameof(modelo.Fotografias),
-                        "Todas las fotografías deben ser JPG, JPEG, PNG o WEBP."
-                    );
+                    IdUsuarioPropietario = usuario.IdUsuario,
+                    IdCategoria = modelo.IdCategoria,
 
-                    break;
-                }
+                    NombreComercial =
+                        modelo.NombreComercial.Trim(),
 
-                if (fotografia.Length > tamanoMaximo)
+                    Descripcion =
+                        modelo.Descripcion.Trim(),
+
+                    CedulaJuridica =
+                        modelo.Cedula.Trim(),
+
+                    Telefono =
+                        modelo.Telefono.Trim(),
+
+                    Correo =
+                        modelo.Correo.Trim().ToLowerInvariant(),
+
+                    SitioWeb =
+                        string.IsNullOrWhiteSpace(modelo.SitioWeb)
+                            ? null
+                            : modelo.SitioWeb.Trim(),
+
+                    Instagram =
+                        string.IsNullOrWhiteSpace(modelo.Instagram)
+                            ? null
+                            : modelo.Instagram.Trim(),
+
+                    Facebook =
+                        string.IsNullOrWhiteSpace(modelo.Facebook)
+                            ? null
+                            : modelo.Facebook.Trim(),
+
+                    LogoUrl = null,
+
+                    ParticipaClubCreativo =
+                        modelo.ParticipaClubCreativo,
+
+                    ParticipaHechoEnCr =
+                        modelo.ParticipaHechoEnCr,
+
+                    EstadoAprobacion = "Pendiente",
+                    Activo = true
+                };
+
+                await _context.Emprendimientos
+                    .AddAsync(emprendimiento);
+
+                await _context.SaveChangesAsync();
+
+                EmprendimientoRevisione revision = new()
                 {
-                    ModelState.AddModelError(
-                        nameof(modelo.Fotografias),
-                        "Cada fotografía puede pesar como máximo 5 MB."
-                    );
+                    IdEmprendimiento =
+                        emprendimiento.IdEmprendimiento,
 
-                    break;
-                }
+                    FechaSolicitud = DateTime.Now,
+                    FechaResolucion = null
+                };
+
+                await _context.EmprendimientoRevisiones
+                    .AddAsync(revision);
+
+                await _context.SaveChangesAsync();
+
+                await transaccion.CommitAsync();
+
+                TempData["MensajeSolicitud"] =
+                    "Tu solicitud de emprendimiento fue enviada correctamente y se encuentra pendiente de revisión.";
+
+                return RedirectToAction(
+    "EstadoSolicitud",
+    "Emprendedor"
+);
+            }
+            catch
+            {
+                await transaccion.RollbackAsync();
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Ocurrió un error al enviar la solicitud. Intente nuevamente."
+                );
+
+                modelo.Categorias = await _context.Categorias
+                    .Where(c =>
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa
+                    )
+                    .OrderBy(c => c.Nombre)
+                    .Select(c =>
+                        new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                        {
+                            Value = c.IdCategoria.ToString(),
+                            Text = c.Nombre
+                        })
+                    .ToListAsync();
+
+                return View(modelo);
             }
         }
 
+        [HttpGet]
         public IActionResult EstadoSolicitud()
         {
             return View();
         }
 
+        [HttpGet]
         public IActionResult PerfilEmprendimiento()
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
             return View();
         }
 
@@ -231,7 +409,86 @@ namespace ProyectoClubCreativo.Controllers
             TempData["MensajePerfil"] =
                 "La información del emprendimiento fue actualizada correctamente.";
 
-            return RedirectToAction(nameof(PerfilEmprendimiento));
+            return RedirectToAction(nameof(EditarEmprendimiento));
+        }
+
+        private void ValidarArchivosSolicitud(
+    SolicitudEmprendimientoViewModel modelo)
+        {
+            string[] extensionesPermitidas =
+            {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
+
+            const long tamanoMaximo =
+                5 * 1024 * 1024;
+
+            // Validar logo si el usuario seleccionó uno.
+            if (modelo.Logo is not null)
+            {
+                string extensionLogo =
+                    Path.GetExtension(modelo.Logo.FileName)
+                        .ToLowerInvariant();
+
+                if (!extensionesPermitidas.Contains(extensionLogo))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Logo),
+                        "El logo debe ser JPG, JPEG, PNG o WEBP."
+                    );
+                }
+
+                if (modelo.Logo.Length > tamanoMaximo)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Logo),
+                        "El logo puede pesar como máximo 5 MB."
+                    );
+                }
+            }
+
+            // Validar fotografías si fueron seleccionadas.
+            if (modelo.Fotografias is not null &&
+                modelo.Fotografias.Count > 0)
+            {
+                if (modelo.Fotografias.Count > 5)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Fotografias),
+                        "Puede seleccionar un máximo de cinco fotografías."
+                    );
+                }
+
+                foreach (IFormFile fotografia in modelo.Fotografias)
+                {
+                    string extension =
+                        Path.GetExtension(fotografia.FileName)
+                            .ToLowerInvariant();
+
+                    if (!extensionesPermitidas.Contains(extension))
+                    {
+                        ModelState.AddModelError(
+                            nameof(modelo.Fotografias),
+                            "Las fotografías deben ser JPG, JPEG, PNG o WEBP."
+                        );
+
+                        break;
+                    }
+
+                    if (fotografia.Length > tamanoMaximo)
+                    {
+                        ModelState.AddModelError(
+                            nameof(modelo.Fotografias),
+                            "Cada fotografía puede pesar como máximo 5 MB."
+                        );
+
+                        break;
+                    }
+                }
+            }
         }
 
         [HttpGet]

@@ -83,27 +83,19 @@
 
 
                 <div class="grupo-campo-emprendedor">
-                    <label asp-for="Categoria"></label>
+                    <label asp-for="IdCategoria"></label>
 
-                    <select asp-for="Categoria"
+                    <select asp-for="IdCategoria"
+                            asp-items="Model.Categorias"
                             class="control-emprendedor">
 
                         <option value="">
                             Seleccione una categoría
                         </option>
 
-                        <option>Arte e ilustración</option>
-                        <option>Accesorios y joyería</option>
-                        <option>Moda y textiles</option>
-                        <option>Alimentos y bebidas</option>
-                        <option>Cuidado personal</option>
-                        <option>Decoración</option>
-                        <option>Servicios creativos</option>
-                        <option>Otro</option>
-
                     </select>
 
-                    <span asp-validation-for="Categoria"
+                    <span asp-validation-for="IdCategoria"
                           class="mensaje-validacion-emprendedor"></span>
                 </div>
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ProyectoClubCreativo.Models.ViewModels
 {
@@ -36,8 +37,14 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public string Telefono { get; set; } = string.Empty;
 
         [Display(Name = "Provincia")]
-        [Required(ErrorMessage = "Seleccione una provincia.")]
-        public string Provincia { get; set; } = string.Empty;
+        [Range(
+     1,
+     int.MaxValue,
+     ErrorMessage = "Seleccione una provincia."
+ )]
+        public int IdProvincia { get; set; }
+
+        public List<SelectListItem> Provincias { get; set; } = new();
 
         [Display(Name = "Fecha de nacimiento")]
         [DataType(DataType.Date)]

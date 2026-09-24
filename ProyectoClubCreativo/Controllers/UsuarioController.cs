@@ -53,43 +53,119 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Perfil()
+        public async Task<IActionResult> Perfil()
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo"
+                );
+
+            if (usuario == null)
+            {
+                HttpContext.Session.Clear();
+
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            string apellidos = usuario.ApellidoPaterno;
+
+            if (!string.IsNullOrWhiteSpace(usuario.ApellidoMaterno))
+            {
+                apellidos += " " + usuario.ApellidoMaterno;
+            }
+
             PerfilUsuarioViewModel modelo = new()
             {
-                IdUsuario = 1,
-                Nombre = "Maria",
-                Apellidos = "Montero Cruz",
-                Correo = "maria@ejemplo.com",
-                Telefono = "88888888",
-                Provincia = "Alajuela",
-                FechaNacimiento = new DateTime(2002, 1, 15),
-                FotoActual = "/images/logo.jpg",
+                IdUsuario = usuario.IdUsuario,
+                Nombre = usuario.Nombre,
+                Apellidos = apellidos,
+                Correo = usuario.Correo,
+                Telefono = usuario.Telefono ?? string.Empty,
+                IdProvincia = usuario.IdProvincia ?? 0,
 
+                FechaNacimiento =
+                    usuario.FechaNacimiento.HasValue
+                        ? usuario.FechaNacimiento.Value
+                            .ToDateTime(TimeOnly.MinValue)
+                        : null,
+
+                FotoActual =
+                    string.IsNullOrWhiteSpace(usuario.FotoPerfilUrl)
+                        ? "/images/logo.jpg"
+                        : usuario.FotoPerfilUrl,
+
+                // Por ahora conservamos los valores visuales
+                // que ya utilizaba esta pantalla.
                 NotificacionesCompras = true,
                 NotificacionesEventos = true,
                 NotificacionesTalleres = true,
                 NotificacionesPromociones = false,
-
                 CanalCorreo = true,
                 CanalPlataforma = true
             };
+
+            await CargarProvinciasPerfilAsync(modelo);
 
             return View(modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Perfil(PerfilUsuarioViewModel modelo)
+        public async Task<IActionResult> Perfil(
+     PerfilUsuarioViewModel modelo)
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo"
+                );
+
+            if (usuario == null)
+            {
+                HttpContext.Session.Clear();
+
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            // Validar fotografía si el usuario seleccionó una.
             if (modelo.Fotografia is not null)
             {
                 string[] extensionesPermitidas =
                 [
                     ".jpg",
-                    ".jpeg",
-                    ".png",
-                    ".webp"
+            ".jpeg",
+            ".png",
+            ".webp"
                 ];
 
                 string extension = Path
@@ -104,7 +180,8 @@ namespace ProyectoClubCreativo.Controllers
                     );
                 }
 
-                const long tamanoMaximo = 3 * 1024 * 1024;
+                const long tamanoMaximo =
+                    3 * 1024 * 1024;
 
                 if (modelo.Fotografia.Length > tamanoMaximo)
                 {
@@ -115,6 +192,8 @@ namespace ProyectoClubCreativo.Controllers
                 }
             }
 
+            // Si escribe una contraseña nueva,
+            // también debe confirmarla.
             if (!string.IsNullOrWhiteSpace(modelo.NuevaContrasena) &&
                 string.IsNullOrWhiteSpace(modelo.ConfirmarContrasena))
             {
@@ -124,15 +203,111 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+            // Validar que el correo no pertenezca a otra cuenta.
+            string correoNormalizado =
+                modelo.Correo?.Trim().ToLowerInvariant()
+                ?? string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(correoNormalizado))
+            {
+                bool correoEnUso = await _context.Usuarios
+                    .AnyAsync(u =>
+                        u.Correo.ToLower() == correoNormalizado &&
+                        u.IdUsuario != usuario.IdUsuario
+                    );
+
+                if (correoEnUso)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Correo),
+                        "Ya existe otra cuenta registrada con este correo electrónico."
+                    );
+                }
+            }
+
+            // Validar que la provincia exista realmente.
+            bool provinciaExiste = await _context.Provincias
+                .AnyAsync(p =>
+                    p.IdProvincia == modelo.IdProvincia
+                );
+
+            if (!provinciaExiste)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdProvincia),
+                    "La provincia seleccionada no es válida."
+                );
+            }
+
             if (!ModelState.IsValid)
             {
-                modelo.FotoActual = "/images/logo.jpg";
+                modelo.FotoActual =
+                    string.IsNullOrWhiteSpace(usuario.FotoPerfilUrl)
+                        ? "/images/logo.jpg"
+                        : usuario.FotoPerfilUrl;
+
+                await CargarProvinciasPerfilAsync(modelo);
 
                 return View(modelo);
             }
 
+            // Separar los apellidos para guardarlos
+            // en las columnas correspondientes.
+            string[] apellidos = modelo.Apellidos
+                .Trim()
+                .Split(
+                    ' ',
+                    2,
+                    StringSplitOptions.RemoveEmptyEntries
+                );
+
+            string apellidoPaterno = apellidos[0];
+
+            string? apellidoMaterno =
+                apellidos.Length > 1
+                    ? apellidos[1]
+                    : null;
+
+            // Actualizar información personal.
+            usuario.Nombre = modelo.Nombre.Trim();
+            usuario.ApellidoPaterno = apellidoPaterno;
+            usuario.ApellidoMaterno = apellidoMaterno;
+            usuario.Correo = correoNormalizado;
+            usuario.Telefono = modelo.Telefono.Trim();
+            usuario.IdProvincia = modelo.IdProvincia;
+
+            usuario.FechaNacimiento =
+                modelo.FechaNacimiento.HasValue
+                    ? DateOnly.FromDateTime(
+                        modelo.FechaNacimiento.Value
+                    )
+                    : null;
+
+            // Si escribió una nueva contraseña,
+            // actualizarla de forma segura.
+            if (!string.IsNullOrWhiteSpace(modelo.NuevaContrasena))
+            {
+                usuario.ContrasenaHash =
+                    BCrypt.Net.BCrypt.HashPassword(
+                        modelo.NuevaContrasena
+                    );
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Mantener la sesión sincronizada con los nuevos datos.
+            HttpContext.Session.SetString(
+                "NombreUsuario",
+                usuario.Nombre
+            );
+
+            HttpContext.Session.SetString(
+                "CorreoUsuario",
+                usuario.Correo
+            );
+
             TempData["MensajePerfil"] =
-                "Los cambios del perfil se validaron correctamente.";
+                "Tus datos personales se actualizaron correctamente.";
 
             return RedirectToAction(nameof(Perfil));
         }
@@ -746,6 +921,20 @@ namespace ProyectoClubCreativo.Controllers
         public IActionResult MiQr()
         {
             return View();
+        }
+
+        private async Task CargarProvinciasPerfilAsync(
+    PerfilUsuarioViewModel modelo)
+        {
+            modelo.Provincias = await _context.Provincias
+                .OrderBy(p => p.Nombre)
+                .Select(p =>
+                    new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = p.IdProvincia.ToString(),
+                        Text = p.Nombre
+                    })
+                .ToListAsync();
         }
 
     }

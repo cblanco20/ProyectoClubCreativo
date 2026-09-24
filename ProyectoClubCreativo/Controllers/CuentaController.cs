@@ -296,12 +296,10 @@ namespace ProyectoClubCreativo.Controllers
 
             return View(modelo);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistroEmprendedor(
-    RegistroEmprendedorViewModel modelo
-)
+            RegistroEmprendedorViewModel modelo)
         {
             if (!modelo.AceptaTerminos)
             {
@@ -311,22 +309,20 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-
             if (!ModelState.IsValid)
             {
                 await CargarDatosRegistroEmprendedorAsync(modelo);
-
                 return View(modelo);
             }
-
 
             string correoNormalizado = modelo.Correo
                 .Trim()
                 .ToLowerInvariant();
 
-
             bool correoExiste = await _context.Usuarios
-                .AnyAsync(u => u.Correo.ToLower() == correoNormalizado);
+                .AnyAsync(u =>
+                    u.Correo.ToLower() == correoNormalizado
+                );
 
             if (correoExiste)
             {
@@ -340,9 +336,10 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-
             bool provinciaExiste = await _context.Provincias
-                .AnyAsync(p => p.IdProvincia == modelo.IdProvincia);
+                .AnyAsync(p =>
+                    p.IdProvincia == modelo.IdProvincia
+                );
 
             if (!provinciaExiste)
             {
@@ -355,7 +352,6 @@ namespace ProyectoClubCreativo.Controllers
 
                 return View(modelo);
             }
-
 
             bool categoriaExiste = await _context.Categorias
                 .AnyAsync(c =>
@@ -376,10 +372,10 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-
             Role? rolEmprendedor = await _context.Roles
-                .FirstOrDefaultAsync(
-                    r => r.Nombre == "Emprendedor" && r.Activo
+                .FirstOrDefaultAsync(r =>
+                    r.Nombre == "Emprendedor" &&
+                    r.Activo
                 );
 
             if (rolEmprendedor is null)
@@ -393,7 +389,6 @@ namespace ProyectoClubCreativo.Controllers
 
                 return View(modelo);
             }
-
 
             string[] apellidos = modelo.Apellidos
                 .Trim()
@@ -410,16 +405,17 @@ namespace ProyectoClubCreativo.Controllers
                     ? apellidos[1]
                     : null;
 
-
             string contrasenaHash =
-                BCrypt.Net.BCrypt.HashPassword(modelo.Contrasena);
-
+                BCrypt.Net.BCrypt.HashPassword(
+                    modelo.Contrasena
+                );
 
             await using var transaccion =
                 await _context.Database.BeginTransactionAsync();
 
             try
             {
+                // Crear únicamente la cuenta del usuario.
                 Usuario usuario = new()
                 {
                     Nombre = modelo.Nombre.Trim(),
@@ -434,12 +430,10 @@ namespace ProyectoClubCreativo.Controllers
                     FechaRegistro = DateTime.Now
                 };
 
-
                 await _context.Usuarios.AddAsync(usuario);
-
                 await _context.SaveChangesAsync();
 
-
+                // Asignar el tipo de cuenta seleccionado.
                 UsuarioRole usuarioRol = new()
                 {
                     IdUsuario = usuario.IdUsuario,
@@ -447,56 +441,44 @@ namespace ProyectoClubCreativo.Controllers
                     FechaAsignacion = DateTime.Now
                 };
 
-
                 await _context.UsuarioRoles.AddAsync(usuarioRol);
-
-
-                Emprendimiento emprendimiento = new()
-                {
-                    IdUsuarioPropietario = usuario.IdUsuario,
-                    IdCategoria = modelo.IdCategoria,
-                    NombreComercial = modelo.NombreEmprendimiento.Trim(),
-                    Descripcion = modelo.Descripcion.Trim(),
-                    Telefono = modelo.Telefono.Trim(),
-                    Correo = correoNormalizado,
-                    SitioWeb = string.IsNullOrWhiteSpace(modelo.SitioWeb)
-                        ? null
-                        : modelo.SitioWeb.Trim(),
-                    ParticipaClubCreativo = false,
-                    ParticipaHechoEnCr = false,
-                    EstadoAprobacion = "Pendiente",
-                    Activo = true
-                };
-
-
-                await _context.Emprendimientos.AddAsync(emprendimiento);
-
                 await _context.SaveChangesAsync();
-
-
-                EmprendimientoRevisione revision = new()
-                {
-                    IdEmprendimiento = emprendimiento.IdEmprendimiento,
-                    FechaSolicitud = DateTime.Now
-                };
-
-
-                await _context.EmprendimientoRevisiones.AddAsync(revision);
-
-                await _context.SaveChangesAsync();
-
 
                 await transaccion.CommitAsync();
 
-
-                TempData["MensajeEmprendedor"] =
-                    $"¡Bienvenido, {usuario.Nombre}! Tu solicitud de emprendimiento fue registrada correctamente.";
-
-
-                return RedirectToAction(
-                    "Panel",
-                    "Emprendedor"
+                // Iniciar la sesión del usuario recién registrado.
+                HttpContext.Session.SetInt32(
+                    "IdUsuario",
+                    usuario.IdUsuario
                 );
+
+                HttpContext.Session.SetString(
+                    "NombreUsuario",
+                    usuario.Nombre
+                );
+
+                HttpContext.Session.SetString(
+                    "CorreoUsuario",
+                    usuario.Correo
+                );
+
+                HttpContext.Session.SetString(
+                    "RolUsuario",
+                    rolEmprendedor.Nombre
+                );
+
+
+                TempData["MensajeSolicitud"] =
+                    "Tu cuenta fue creada correctamente. Ahora completa la solicitud de tu emprendimiento.";
+
+                // HU-5:
+                // después de crear la cuenta se continúa con
+                // el proceso de solicitud de emprendimiento.
+                return RedirectToAction(
+    "SolicitudEmprendimiento",
+    "Emprendedor",
+    new { idCategoria = modelo.IdCategoria }
+);
             }
             catch
             {
@@ -504,7 +486,7 @@ namespace ProyectoClubCreativo.Controllers
 
                 ModelState.AddModelError(
                     string.Empty,
-                    "Ocurrió un error al registrar el emprendimiento. Intente nuevamente."
+                    "Ocurrió un error al crear la cuenta. Intente nuevamente."
                 );
 
                 await CargarDatosRegistroEmprendedorAsync(modelo);
