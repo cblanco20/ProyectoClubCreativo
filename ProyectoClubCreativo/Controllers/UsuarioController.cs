@@ -110,8 +110,6 @@ namespace ProyectoClubCreativo.Controllers
                         ? "/images/logo.jpg"
                         : usuario.FotoPerfilUrl,
 
-                // Por ahora conservamos los valores visuales
-                // que ya utilizaba esta pantalla.
                 NotificacionesCompras = true,
                 NotificacionesEventos = true,
                 NotificacionesTalleres = true,
@@ -157,7 +155,6 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            // Validar fotografía si el usuario seleccionó una.
             if (modelo.Fotografia is not null)
             {
                 string[] extensionesPermitidas =
@@ -192,8 +189,6 @@ namespace ProyectoClubCreativo.Controllers
                 }
             }
 
-            // Si escribe una contraseña nueva,
-            // también debe confirmarla.
             if (!string.IsNullOrWhiteSpace(modelo.NuevaContrasena) &&
                 string.IsNullOrWhiteSpace(modelo.ConfirmarContrasena))
             {
@@ -203,7 +198,6 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            // Validar que el correo no pertenezca a otra cuenta.
             string correoNormalizado =
                 modelo.Correo?.Trim().ToLowerInvariant()
                 ?? string.Empty;
@@ -225,7 +219,6 @@ namespace ProyectoClubCreativo.Controllers
                 }
             }
 
-            // Validar que la provincia exista realmente.
             bool provinciaExiste = await _context.Provincias
                 .AnyAsync(p =>
                     p.IdProvincia == modelo.IdProvincia
@@ -251,8 +244,6 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            // Separar los apellidos para guardarlos
-            // en las columnas correspondientes.
             string[] apellidos = modelo.Apellidos
                 .Trim()
                 .Split(
@@ -268,7 +259,6 @@ namespace ProyectoClubCreativo.Controllers
                     ? apellidos[1]
                     : null;
 
-            // Actualizar información personal.
             usuario.Nombre = modelo.Nombre.Trim();
             usuario.ApellidoPaterno = apellidoPaterno;
             usuario.ApellidoMaterno = apellidoMaterno;
@@ -283,8 +273,6 @@ namespace ProyectoClubCreativo.Controllers
                     )
                     : null;
 
-            // Si escribió una nueva contraseña,
-            // actualizarla de forma segura.
             if (!string.IsNullOrWhiteSpace(modelo.NuevaContrasena))
             {
                 usuario.ContrasenaHash =
@@ -295,7 +283,6 @@ namespace ProyectoClubCreativo.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Mantener la sesión sincronizada con los nuevos datos.
             HttpContext.Session.SetString(
                 "NombreUsuario",
                 usuario.Nombre
@@ -933,6 +920,211 @@ namespace ProyectoClubCreativo.Controllers
                     {
                         Value = p.IdProvincia.ToString(),
                         Text = p.Nombre
+                    })
+                .ToListAsync();
+        }
+
+        // ---------- SOLICITUD PARA FORMAR PARTE DE CLUB CREATIVO ----------
+        [HttpGet]
+        public async Task<IActionResult> SolicitarEmprendimiento(int? idCategoria)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (usuario is null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool yaTieneEmprendimiento =
+                await _context.Emprendimientos.AnyAsync(e =>
+                    e.IdUsuarioPropietario == usuario.IdUsuario);
+
+            if (yaTieneEmprendimiento)
+            {
+                TempData["MensajePanel"] =
+                    "Ya existe una solicitud de emprendimiento asociada a tu cuenta.";
+
+                return RedirectToAction(nameof(Panel));
+            }
+
+            SolicitudEmprendimientoViewModel modelo = new()
+            {
+                NombreComercial = string.Empty,
+                Descripcion = string.Empty,
+                IdCategoria = idCategoria,
+                Cedula = string.Empty,
+                Telefono = usuario.Telefono ?? string.Empty,
+                Correo = usuario.Correo,
+                ParticipaClubCreativo = true,
+                ParticipaHechoEnCr = false,
+                InformacionParticipacion = string.Empty,
+                ConfirmaInformacion = false
+            };
+
+            modelo.Categorias = await CargarCategoriasEmprendimientoAsync();
+
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SolicitarEmprendimiento(
+            SolicitudEmprendimientoViewModel modelo)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            if (!modelo.ConfirmaInformacion)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.ConfirmaInformacion),
+                    "Debe confirmar que la información suministrada es correcta."
+                );
+            }
+
+            if (modelo.IdCategoria.HasValue)
+            {
+                bool categoriaExiste =
+                    await _context.Categorias.AnyAsync(c =>
+                        c.IdCategoria == modelo.IdCategoria.Value &&
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa
+                    );
+
+                if (!categoriaExiste)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.IdCategoria),
+                        "La categoría seleccionada no es válida."
+                    );
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                modelo.Categorias = await CargarCategoriasEmprendimientoAsync();
+                return View(modelo);
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (usuario is null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool yaTieneEmprendimiento =
+                await _context.Emprendimientos.AnyAsync(e =>
+                    e.IdUsuarioPropietario == usuario.IdUsuario);
+
+            if (yaTieneEmprendimiento)
+            {
+                TempData["MensajePanel"] =
+                    "Ya existe una solicitud de emprendimiento asociada a tu cuenta.";
+
+                return RedirectToAction(nameof(Panel));
+            }
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                Emprendimiento emprendimiento = new()
+                {
+                    IdUsuarioPropietario = usuario.IdUsuario,
+                    IdCategoria = modelo.IdCategoria,
+                    NombreComercial = modelo.NombreComercial.Trim(),
+                    Descripcion = modelo.Descripcion.Trim(),
+                    CedulaJuridica = modelo.Cedula.Trim(),
+                    Telefono = modelo.Telefono.Trim(),
+                    Correo = modelo.Correo.Trim().ToLowerInvariant(),
+                    SitioWeb = string.IsNullOrWhiteSpace(modelo.SitioWeb)
+                        ? null
+                        : modelo.SitioWeb.Trim(),
+                    Instagram = string.IsNullOrWhiteSpace(modelo.Instagram)
+                        ? null
+                        : modelo.Instagram.Trim(),
+                    Facebook = string.IsNullOrWhiteSpace(modelo.Facebook)
+                        ? null
+                        : modelo.Facebook.Trim(),
+                    LogoUrl = null,
+                    ParticipaClubCreativo = true,
+                    ParticipaHechoEnCr = false,
+
+                    EstadoAprobacion = "Pendiente",
+                    Activo = true
+                };
+
+                await _context.Emprendimientos.AddAsync(emprendimiento);
+                await _context.SaveChangesAsync();
+
+                EmprendimientoRevisione revision = new()
+                {
+                    IdEmprendimiento = emprendimiento.IdEmprendimiento,
+                    FechaSolicitud = DateTime.Now,
+                    FechaResolucion = null
+                };
+
+                await _context.EmprendimientoRevisiones.AddAsync(revision);
+                await _context.SaveChangesAsync();
+
+                await transaccion.CommitAsync();
+
+                TempData["MensajePanel"] =
+                    "Tu solicitud para formar parte de Club Creativo fue enviada correctamente y se encuentra pendiente de revisión.";
+
+                return RedirectToAction(nameof(Panel));
+            }
+            catch
+            {
+                await transaccion.RollbackAsync();
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Ocurrió un error al enviar la solicitud. Intente nuevamente."
+                );
+
+                modelo.Categorias = await CargarCategoriasEmprendimientoAsync();
+
+                return View(modelo);
+            }
+        }
+
+        private async Task<List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>>
+            CargarCategoriasEmprendimientoAsync()
+        {
+            return await _context.Categorias
+                .Where(c =>
+                    c.Modulo == "Emprendimientos" &&
+                    c.Activa
+                )
+                .OrderBy(c => c.Nombre)
+                .Select(c =>
+                    new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = c.IdCategoria.ToString(),
+                        Text = c.Nombre
                     })
                 .ToListAsync();
         }

@@ -1,0 +1,475 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.SolicitudEmprendimientoViewModel
+
+@{
+    ViewData["Title"] = "Solicitud de emprendimiento";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+@*
+    Esta vista reutiliza los estilos del formulario de emprendedor
+    (clases *-emprendedor). _LayoutUsuario.cshtml no carga
+    emprendedor.css, así que se incluye aquí puntualmente.
+*@
+<link rel="stylesheet" href="~/css/emprendedor.css" asp-append-version="true" />
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Registro comercial
+        </span>
+
+        <h1>Solicitud del emprendimiento</h1>
+
+        <p>
+            Completa la información de tu emprendimiento para
+            solicitar formar parte de Club Creativo como emprendedor.
+        </p>
+    </div>
+
+    <a asp-controller="Usuario"
+       asp-action="Panel"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-arrow-left"></i>
+        Volver a mi espacio
+
+    </a>
+
+</section>
+
+
+<form asp-controller="Usuario"
+      asp-action="SolicitarEmprendimiento"
+      method="post"
+      enctype="multipart/form-data"
+      class="formulario-solicitud-emprendedor"
+      novalidate>
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"
+         class="resumen-validacion-emprendedor">
+    </div>
+
+
+    <div class="grid-formulario-solicitud">
+
+        <div class="columna-formulario-solicitud">
+
+            <!-- INFORMACIÓN GENERAL -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-shop-window"></i>
+                    </span>
+
+                    <div>
+                        <h2>Información comercial</h2>
+
+                        <p>
+                            Datos principales que identificarán públicamente
+                            tu emprendimiento.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="NombreComercial"></label>
+
+                    <input asp-for="NombreComercial"
+                           class="control-emprendedor"
+                           placeholder="Ejemplo: Artesanías MiVo" />
+
+                    <span asp-validation-for="NombreComercial"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="IdCategoria"></label>
+
+                    <select asp-for="IdCategoria"
+                            asp-items="Model.Categorias"
+                            class="control-emprendedor">
+
+                        <option value="">
+                            Seleccione una categoría
+                        </option>
+
+                    </select>
+
+                    <span asp-validation-for="IdCategoria"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="Descripcion"></label>
+
+                    <textarea asp-for="Descripcion"
+                              class="control-emprendedor textarea-emprendedor"
+                              rows="6"
+                              maxlength="800"
+                              placeholder="Describe los productos o servicios que ofrece tu emprendimiento...">
+                    </textarea>
+
+                    <div class="ayuda-campo-emprendedor">
+                        Mínimo 30 y máximo 800 caracteres.
+                    </div>
+
+                    <span asp-validation-for="Descripcion"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+            </section>
+
+
+            <!-- CONTACTO -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-person-vcard-fill"></i>
+                    </span>
+
+                    <div>
+                        <h2>Identificación y contacto</h2>
+
+                        <p>
+                            Información necesaria para validar la solicitud.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="fila-campos-emprendedor">
+
+                    <div class="grupo-campo-emprendedor">
+                        <label asp-for="Cedula"></label>
+
+                        <input asp-for="Cedula"
+                               class="control-emprendedor"
+                               placeholder="1-1234-5678" />
+
+                        <span asp-validation-for="Cedula"
+                              class="mensaje-validacion-emprendedor"></span>
+                    </div>
+
+                    <div class="grupo-campo-emprendedor">
+                        <label asp-for="Telefono"></label>
+
+                        <input asp-for="Telefono"
+                               class="control-emprendedor"
+                               maxlength="8"
+                               inputmode="numeric"
+                               placeholder="88887777" />
+
+                        <span asp-validation-for="Telefono"
+                              class="mensaje-validacion-emprendedor"></span>
+                    </div>
+
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="Correo"></label>
+
+                    <input asp-for="Correo"
+                           class="control-emprendedor"
+                           placeholder="correo@ejemplo.com" />
+
+                    <span asp-validation-for="Correo"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+            </section>
+
+
+            <!-- REDES -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-globe2"></i>
+                    </span>
+
+                    <div>
+                        <h2>Sitio web y redes sociales</h2>
+
+                        <p>
+                            Estos campos son opcionales y ayudan a que
+                            las personas conozcan mejor tu marca.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="SitioWeb"></label>
+
+                    <input asp-for="SitioWeb"
+                           class="control-emprendedor"
+                           placeholder="https://www.tumarca.com" />
+
+                    <span asp-validation-for="SitioWeb"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+                <div class="fila-campos-emprendedor">
+
+                    <div class="grupo-campo-emprendedor">
+                        <label asp-for="Instagram"></label>
+
+                        <input asp-for="Instagram"
+                               class="control-emprendedor"
+                               placeholder="https://instagram.com/tumarca" />
+
+                        <span asp-validation-for="Instagram"
+                              class="mensaje-validacion-emprendedor"></span>
+                    </div>
+
+                    <div class="grupo-campo-emprendedor">
+                        <label asp-for="Facebook"></label>
+
+                        <input asp-for="Facebook"
+                               class="control-emprendedor"
+                               placeholder="https://facebook.com/tumarca" />
+
+                        <span asp-validation-for="Facebook"
+                              class="mensaje-validacion-emprendedor"></span>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        <aside class="columna-lateral-solicitud">
+
+            <!-- IMÁGENES -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-images"></i>
+                    </span>
+
+                    <div>
+                        <h2>Logo y fotografías</h2>
+
+                        <p>
+                            Agrega imágenes claras que representen tu marca.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="Logo"></label>
+
+                    <label class="selector-archivo-emprendedor"
+                           for="logoEmprendimiento">
+
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+
+                        <strong>Seleccionar logo</strong>
+
+                        <span>
+                            JPG, PNG o WEBP. Máximo 5 MB.
+                        </span>
+
+                    </label>
+
+                    <input asp-for="Logo"
+                           id="logoEmprendimiento"
+                           class="input-archivo-oculto"
+                           accept=".jpg,.jpeg,.png,.webp" />
+
+                    <span id="nombreLogoEmprendimiento"
+                          class="nombre-archivo-emprendedor">
+                        No se seleccionó ningún archivo.
+                    </span>
+
+                    <span asp-validation-for="Logo"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="Fotografias"></label>
+
+                    <label class="selector-archivo-emprendedor"
+                           for="fotosEmprendimiento">
+
+                        <i class="bi bi-card-image"></i>
+
+                        <strong>Seleccionar fotografías</strong>
+
+                        <span>
+                            Puedes elegir hasta 5 imágenes.
+                        </span>
+
+                    </label>
+
+                    <input asp-for="Fotografias"
+                           id="fotosEmprendimiento"
+                           class="input-archivo-oculto"
+                           accept=".jpg,.jpeg,.png,.webp"
+                           multiple />
+
+                    <span id="nombreFotosEmprendimiento"
+                          class="nombre-archivo-emprendedor">
+                        No se seleccionaron fotografías.
+                    </span>
+
+                    <span asp-validation-for="Fotografias"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+            </section>
+
+
+            <!-- PARTICIPACIÓN -->
+            <section class="bloque-formulario-emprendedor">
+
+                <div class="encabezado-formulario-emprendedor">
+
+                    <span class="icono-formulario-emprendedor">
+                        <i class="bi bi-calendar-heart-fill"></i>
+                    </span>
+
+                    <div>
+                        <h2>Participación en Club Creativo</h2>
+
+                        <p>
+                            Cuéntanos qué actividades te interesan como emprendedor.
+                        </p>
+                    </div>
+
+                </div>
+
+
+
+                <div class="grupo-campo-emprendedor">
+                    <label asp-for="InformacionParticipacion"></label>
+
+                    <textarea asp-for="InformacionParticipacion"
+                              class="control-emprendedor textarea-emprendedor"
+                              rows="5"
+                              maxlength="600"
+                              placeholder="Explica en qué actividades deseas participar...">
+                    </textarea>
+
+                    <span asp-validation-for="InformacionParticipacion"
+                          class="mensaje-validacion-emprendedor"></span>
+                </div>
+
+            </section>
+
+
+            <!-- CONFIRMACIÓN -->
+            <section class="bloque-confirmacion-solicitud">
+
+                <div class="aviso-confirmacion-solicitud">
+
+                    <i class="bi bi-info-circle-fill"></i>
+
+                    <p>
+                        La modificación de los datos puede requerir una
+                        nueva revisión por parte del equipo administrador.
+                    </p>
+
+                </div>
+
+                <label class="confirmacion-informacion-emprendedor">
+
+                    <input asp-for="ConfirmaInformacion" />
+
+                    <span>
+                        Confirmo que la información suministrada es
+                        correcta y puede ser revisada por Club Creativo.
+                    </span>
+
+                </label>
+
+                <span asp-validation-for="ConfirmaInformacion"
+                      class="mensaje-validacion-emprendedor"></span>
+
+            </section>
+
+        </aside>
+
+    </div>
+
+
+    <div class="acciones-formulario-emprendedor">
+
+        <a asp-controller="Usuario"
+           asp-action="Panel"
+           class="boton-cancelar-formulario-emprendedor">
+
+            Cancelar
+
+        </a>
+
+        <button type="submit"
+                class="boton-guardar-formulario-emprendedor">
+
+            <i class="bi bi-send-check-fill"></i>
+            Enviar solicitud
+
+        </button>
+
+    </div>
+
+</form>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const inputLogo =
+                document.getElementById("logoEmprendimiento");
+
+            const textoLogo =
+                document.getElementById("nombreLogoEmprendimiento");
+
+            const inputFotos =
+                document.getElementById("fotosEmprendimiento");
+
+            const textoFotos =
+                document.getElementById("nombreFotosEmprendimiento");
+
+            inputLogo?.addEventListener("change", () => {
+
+                textoLogo.textContent =
+                    inputLogo.files.length > 0
+                        ? inputLogo.files[0].name
+                        : "No se seleccionó ningún archivo.";
+            });
+
+            inputFotos?.addEventListener("change", () => {
+
+                const cantidad = inputFotos.files.length;
+
+                textoFotos.textContent =
+                    cantidad === 0
+                        ? "No se seleccionaron fotografías."
+                        : `${cantidad} fotografía(s) seleccionada(s).`;
+            });
+        });
+    </script>
+}

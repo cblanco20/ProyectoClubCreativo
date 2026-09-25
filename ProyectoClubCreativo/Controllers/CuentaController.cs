@@ -81,7 +81,6 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            // Guardar los datos principales del usuario en sesión
             HttpContext.Session.SetInt32(
                 "IdUsuario",
                 usuario.IdUsuario
@@ -102,12 +101,10 @@ namespace ProyectoClubCreativo.Controllers
                 rol.Nombre
             );
 
-            // Actualizar último acceso
             usuario.UltimoAcceso = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
-            // Redirigir según el rol
             switch (rol.Nombre)
             {
                 case "Administrador":
@@ -415,7 +412,6 @@ namespace ProyectoClubCreativo.Controllers
 
             try
             {
-                // Crear únicamente la cuenta del usuario.
                 Usuario usuario = new()
                 {
                     Nombre = modelo.Nombre.Trim(),
@@ -433,7 +429,6 @@ namespace ProyectoClubCreativo.Controllers
                 await _context.Usuarios.AddAsync(usuario);
                 await _context.SaveChangesAsync();
 
-                // Asignar el tipo de cuenta seleccionado.
                 UsuarioRole usuarioRol = new()
                 {
                     IdUsuario = usuario.IdUsuario,
@@ -446,7 +441,6 @@ namespace ProyectoClubCreativo.Controllers
 
                 await transaccion.CommitAsync();
 
-                // Iniciar la sesión del usuario recién registrado.
                 HttpContext.Session.SetInt32(
                     "IdUsuario",
                     usuario.IdUsuario
@@ -471,9 +465,6 @@ namespace ProyectoClubCreativo.Controllers
                 TempData["MensajeSolicitud"] =
                     "Tu cuenta fue creada correctamente. Ahora completa la solicitud de tu emprendimiento.";
 
-                // HU-5:
-                // después de crear la cuenta se continúa con
-                // el proceso de solicitud de emprendimiento.
                 return RedirectToAction(
     "SolicitudEmprendimiento",
     "Emprendedor",
@@ -519,11 +510,8 @@ namespace ProyectoClubCreativo.Controllers
                 .FirstOrDefaultAsync(u =>
                     u.Correo.ToLower() == correoNormalizado);
 
-            // Por seguridad mostramos el mismo mensaje
-            // independientemente de si el correo existe o no.
             if (usuario is not null)
             {
-                // Invalidar tokens anteriores que todavía no hayan sido utilizados.
                 List<TokensRecuperacionContrasena> tokensAnteriores =
                     await _context.TokensRecuperacionContrasenas
                         .Where(t =>
@@ -538,13 +526,10 @@ namespace ProyectoClubCreativo.Controllers
                     tokenAnterior.FechaUso = DateTime.Now;
                 }
 
-                // Generar un token aleatorio y seguro.
                 string token = Convert.ToHexString(
                     RandomNumberGenerator.GetBytes(32)
                 );
 
-                // En la BD no guardamos el token original.
-                // Solamente almacenamos su hash.
                 string tokenHash;
 
                 using (SHA256 sha256 = SHA256.Create())
@@ -570,7 +555,6 @@ namespace ProyectoClubCreativo.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Crear la dirección que recibirá el usuario.
                 string enlaceRecuperacion = Url.Action(
                     "RestablecerContrasena",
                     "Cuenta",
@@ -625,8 +609,7 @@ namespace ProyectoClubCreativo.Controllers
                 }
                 catch
                 {
-                    // No revelamos al usuario si ocurrió un problema
-                    // con el envío ni si el correo está registrado.
+                       
                 }
             }
 
@@ -729,11 +712,9 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(RecuperarContrasena));
             }
 
-            // Guardar la nueva contraseña de forma segura.
             usuario.ContrasenaHash =
                 BCrypt.Net.BCrypt.HashPassword(modelo.NuevaContrasena);
 
-            // El enlace solamente puede utilizarse una vez.
             tokenRecuperacion.Utilizado = true;
             tokenRecuperacion.FechaUso = DateTime.Now;
 

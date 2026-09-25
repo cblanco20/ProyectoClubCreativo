@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (evento.key === "Escape") cerrarMenu();
     });
 
-    // Alternar contraseña visible en el login de admin
     document.querySelectorAll("[data-toggle-password]").forEach((boton) => {
         boton.addEventListener("click", () => {
             const id = boton.getAttribute("data-toggle-password");

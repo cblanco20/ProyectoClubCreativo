@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProyectoClubCreativo.Data;
+using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels.Admin;
 
 namespace ProyectoClubCreativo.Controllers
@@ -7,10 +10,14 @@ namespace ProyectoClubCreativo.Controllers
     {
 
         private readonly IWebHostEnvironment _entornoWeb;
+        private readonly ClubCreativoDbContext _context;
 
-        public AdminController(IWebHostEnvironment entornoWeb)
+        public AdminController(
+            IWebHostEnvironment entornoWeb,
+            ClubCreativoDbContext context)
         {
             _entornoWeb = entornoWeb;
+            _context = context;
         }
 
         public override void OnActionExecuting(
@@ -195,9 +202,10 @@ namespace ProyectoClubCreativo.Controllers
 
         // ---------- EMPRENDIMIENTOS ----------
         [HttpGet]
-        public IActionResult Emprendimientos(string estado = "Pendiente")
+        public async Task<IActionResult> Emprendimientos(string estado = "Pendiente")
         {
-            List<SolicitudEmprendimientoAdminViewModel> solicitudes = ObtenerSolicitudesDemo();
+            List<SolicitudEmprendimientoAdminViewModel> solicitudes =
+                await ObtenerSolicitudesAsync();
 
             ListadoEmprendimientosAdminViewModel modelo = new()
             {
@@ -212,96 +220,207 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult DetalleSolicitud(int id = 1)
+        public async Task<IActionResult> DetalleSolicitud(int id = 1)
         {
-            SolicitudEmprendimientoAdminViewModel modelo =
-                ObtenerSolicitudesDemo().FirstOrDefault(s => s.Id == id)
-                ?? ObtenerSolicitudesDemo().First();
+            SolicitudEmprendimientoAdminViewModel? modelo =
+                await ObtenerSolicitudAsync(id);
+
+            if (modelo is null)
+            {
+                return RedirectToAction(nameof(Emprendimientos));
+            }
 
             return View(modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Aprobar(int id)
+        public async Task<IActionResult> Aprobar(int id)
         {
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .Include(e => e.EmprendimientoRevisione)
+                .FirstOrDefaultAsync(e =>
+                    e.IdEmprendimiento == id &&
+                    e.EstadoAprobacion == "Pendiente");
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeAdmin"] =
+                    "La solicitud no existe o ya fue resuelta.";
+
+                return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
+            }
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync();
+
+            emprendimiento.EstadoAprobacion = "Aprobado";
+
+            if (emprendimiento.EmprendimientoRevisione is not null)
+            {
+                emprendimiento.EmprendimientoRevisione.FechaResolucion = DateTime.Now;
+            }
+
+            await AsignarRolEmprendedorAsync(emprendimiento.IdUsuarioPropietario);
+
+            await _context.SaveChangesAsync();
+            await transaccion.CommitAsync();
+
             TempData["MensajeAdmin"] = "La solicitud fue aprobada correctamente.";
+
             return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Rechazar(RechazarSolicitudViewModel modelo)
+        public async Task<IActionResult> Rechazar(RechazarSolicitudViewModel modelo)
         {
             if (!ModelState.IsValid)
             {
-                SolicitudEmprendimientoAdminViewModel solicitud =
-                    ObtenerSolicitudesDemo().FirstOrDefault(s => s.Id == modelo.Id)
-                    ?? ObtenerSolicitudesDemo().First();
+                SolicitudEmprendimientoAdminViewModel? solicitud =
+                    await ObtenerSolicitudAsync(modelo.Id);
+
+                if (solicitud is null)
+                {
+                    return RedirectToAction(nameof(Emprendimientos));
+                }
 
                 solicitud.MotivoRechazo = modelo.Motivo;
 
                 return View(nameof(DetalleSolicitud), solicitud);
             }
 
-            TempData["MensajeAdmin"] = "La solicitud fue rechazada y se notificó el motivo al solicitante.";
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .Include(e => e.EmprendimientoRevisione)
+                .FirstOrDefaultAsync(e =>
+                    e.IdEmprendimiento == modelo.Id &&
+                    e.EstadoAprobacion == "Pendiente");
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeAdmin"] =
+                    "La solicitud no existe o ya fue resuelta.";
+
+                return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
+            }
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync();
+
+            emprendimiento.EstadoAprobacion = "Rechazado";
+
+            if (emprendimiento.EmprendimientoRevisione is not null)
+            {
+                emprendimiento.EmprendimientoRevisione.FechaResolucion = DateTime.Now;
+            }
+
+            _context.MotivosRechazos.Add(new MotivosRechazo
+            {
+                IdEmprendimiento = emprendimiento.IdEmprendimiento,
+                Motivo = modelo.Motivo.Trim(),
+                FechaRechazo = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+            await transaccion.CommitAsync();
+
+            TempData["MensajeAdmin"] =
+                "La solicitud fue rechazada y se notificó el motivo al solicitante.";
+
             return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
         }
 
-        private static List<SolicitudEmprendimientoAdminViewModel> ObtenerSolicitudesDemo()
+        private async Task AsignarRolEmprendedorAsync(int idUsuario)
         {
-            return
-            [
-                new()
-                {
-                    Id = 1,
-                    NombreComercial = "Artesanías MiVo",
-                    Solicitante = "Valentín Arce Mora",
-                    Categoria = "Arte e ilustración",
-                    Correo = "valentin@gmail.com",
-                    Telefono = "8888-7777",
-                    FechaSolicitud = "01/08/2026",
-                    Estado = "Pendiente",
-                    Descripcion = "Elaboramos productos artesanales hechos a mano para decoración, obsequios y pedidos personalizados."
-                },
-                new()
-                {
-                    Id = 2,
-                    NombreComercial = "Luz Natural",
-                    Solicitante = "Andrea Castro Vega",
-                    Categoria = "Velas y aromas",
-                    Correo = "andrea@ejemplo.com",
-                    Telefono = "8777-1234",
-                    FechaSolicitud = "29/07/2026",
-                    Estado = "Pendiente",
-                    Descripcion = "Velas artesanales elaboradas con cera de soya y aromas naturales."
-                },
-                new()
-                {
-                    Id = 3,
-                    NombreComercial = "Orquídea",
-                    Solicitante = "Sofía Jiménez",
-                    Categoria = "Accesorios",
-                    Correo = "sofia@ejemplo.com",
-                    Telefono = "8666-4321",
-                    FechaSolicitud = "10/07/2026",
-                    Estado = "Aprobado",
-                    Descripcion = "Aretes y accesorios tejidos a mano."
-                },
-                new()
-                {
-                    Id = 4,
-                    NombreComercial = "Trazo Libre",
-                    Solicitante = "Kevin Alvarado",
-                    Categoria = "Arte e ilustración",
-                    Correo = "kevin@ejemplo.com",
-                    Telefono = "8555-9988",
-                    FechaSolicitud = "02/07/2026",
-                    Estado = "Rechazado",
-                    Descripcion = "Ilustraciones digitales por encargo.",
-                    MotivoRechazo = "La información de contacto suministrada no pudo ser verificada."
-                }
-            ];
+            bool yaEsEmprendedor =
+                await _context.UsuarioRoles.AnyAsync(ur =>
+                    ur.IdUsuario == idUsuario &&
+                    ur.IdRolNavigation.Nombre == "Emprendedor");
+
+            if (yaEsEmprendedor)
+            {
+                return;
+            }
+
+            Role? rolEmprendedor = await _context.Roles
+                .FirstOrDefaultAsync(r =>
+                    r.Nombre == "Emprendedor" &&
+                    r.Activo);
+
+            if (rolEmprendedor is null)
+            {
+                throw new InvalidOperationException(
+                    "No se encontró el rol de emprendedor en el sistema.");
+            }
+
+            List<UsuarioRole> rolesUsuario = await _context.UsuarioRoles
+                .Where(ur =>
+                    ur.IdUsuario == idUsuario &&
+                    ur.IdRolNavigation.Nombre == "Usuario")
+                .ToListAsync();
+
+            _context.UsuarioRoles.RemoveRange(rolesUsuario);
+
+            await _context.UsuarioRoles.AddAsync(new UsuarioRole
+            {
+                IdUsuario = idUsuario,
+                IdRol = rolEmprendedor.IdRol,
+                FechaAsignacion = DateTime.Now
+            });
+        }
+
+        private async Task<List<SolicitudEmprendimientoAdminViewModel>> ObtenerSolicitudesAsync()
+        {
+            List<Emprendimiento> emprendimientos = await _context.Emprendimientos
+                .AsNoTracking()
+                .Include(e => e.IdUsuarioPropietarioNavigation)
+                .Include(e => e.IdCategoriaNavigation)
+                .Include(e => e.EmprendimientoRevisione)
+                .Include(e => e.MotivosRechazos)
+                .ToListAsync();
+
+            return emprendimientos
+                .OrderByDescending(e => e.EmprendimientoRevisione?.FechaSolicitud)
+                .Select(MapearSolicitud)
+                .ToList();
+        }
+
+        private async Task<SolicitudEmprendimientoAdminViewModel?> ObtenerSolicitudAsync(int id)
+        {
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .Include(e => e.IdUsuarioPropietarioNavigation)
+                .Include(e => e.IdCategoriaNavigation)
+                .Include(e => e.EmprendimientoRevisione)
+                .Include(e => e.MotivosRechazos)
+                .FirstOrDefaultAsync(e => e.IdEmprendimiento == id);
+
+            return emprendimiento is null ? null : MapearSolicitud(emprendimiento);
+        }
+
+        private static SolicitudEmprendimientoAdminViewModel MapearSolicitud(Emprendimiento e)
+        {
+            Usuario? propietario = e.IdUsuarioPropietarioNavigation;
+
+            return new SolicitudEmprendimientoAdminViewModel
+            {
+                Id = e.IdEmprendimiento,
+                NombreComercial = e.NombreComercial,
+                Solicitante = propietario is null
+                    ? string.Empty
+                    : $"{propietario.Nombre} {propietario.ApellidoPaterno} {propietario.ApellidoMaterno}".Trim(),
+                Categoria = e.IdCategoriaNavigation?.Nombre ?? "Sin categoría",
+                Correo = e.Correo,
+                Telefono = e.Telefono ?? string.Empty,
+                FechaSolicitud = e.EmprendimientoRevisione?.FechaSolicitud.ToString("dd/MM/yyyy")
+                    ?? string.Empty,
+                Estado = e.EstadoAprobacion,
+                Descripcion = e.Descripcion,
+                Logo = e.LogoUrl ?? "/images/logo.jpg",
+                MotivoRechazo = e.MotivosRechazos
+                    .OrderByDescending(m => m.FechaRechazo)
+                    .FirstOrDefault()?.Motivo
+            };
         }
 
         // ---------- SUSCRIPCIONES ----------
@@ -784,7 +903,6 @@ namespace ProyectoClubCreativo.Controllers
         [HttpGet]
         public IActionResult DescargarQrAsistencia(int id)
         {
-            // Demo: se sirve una imagen de ejemplo. Reemplazar por la generación real del QR.
             return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
         }
 

@@ -129,8 +129,6 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            // El usuario debe confirmar que la información
-            // suministrada es correcta.
             if (!modelo.ConfirmaInformacion)
             {
                 ModelState.AddModelError(
@@ -139,7 +137,6 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            // Debe seleccionar al menos una opción de participación.
             if (!modelo.ParticipaClubCreativo &&
                 !modelo.ParticipaHechoEnCr)
             {
@@ -149,7 +146,6 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            // Comprobar que la categoría realmente existe.
             if (modelo.IdCategoria.HasValue)
             {
                 bool categoriaExiste =
@@ -203,8 +199,6 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            // Evita crear dos emprendimientos para
-            // el mismo propietario desde este proceso.
             bool yaTieneEmprendimiento =
                 await _context.Emprendimientos.AnyAsync(e =>
                     e.IdUsuarioPropietario == usuario.IdUsuario
@@ -426,7 +420,6 @@ namespace ProyectoClubCreativo.Controllers
             const long tamanoMaximo =
                 5 * 1024 * 1024;
 
-            // Validar logo si el usuario seleccionó uno.
             if (modelo.Logo is not null)
             {
                 string extensionLogo =
@@ -450,7 +443,6 @@ namespace ProyectoClubCreativo.Controllers
                 }
             }
 
-            // Validar fotografías si fueron seleccionadas.
             if (modelo.Fotografias is not null &&
                 modelo.Fotografias.Count > 0)
             {
@@ -912,6 +904,84 @@ namespace ProyectoClubCreativo.Controllers
         public IActionResult Estadisticas()
         {
             return View();
+        }
+
+        // ---------- POSTULACIÓN A HECHO EN CR ----------
+        [HttpGet]
+        public async Task<IActionResult> PostularHechoEnCr()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            return View(CrearModeloPostulacion(emprendimiento));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PostularHechoEnCr(
+            PostulacionHechoEnCrViewModel modelo)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            PostulacionHechoEnCrViewModel vista =
+                CrearModeloPostulacion(emprendimiento);
+
+            vista.ConfirmaPostulacion = modelo.ConfirmaPostulacion;
+
+            if (!vista.EstaAprobado || vista.YaPostulado)
+            {
+                return View(vista);
+            }
+
+            if (!modelo.ConfirmaPostulacion)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.ConfirmaPostulacion),
+                    "Debe confirmar la postulación a Hecho en CR."
+                );
+
+                return View(vista);
+            }
+
+            emprendimiento!.ParticipaHechoEnCr = true;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajePostulacion"] =
+                $"«{emprendimiento.NombreComercial}» fue postulado a la iniciativa Hecho en CR correctamente.";
+
+            return RedirectToAction(nameof(PostularHechoEnCr));
+        }
+
+        private static PostulacionHechoEnCrViewModel CrearModeloPostulacion(
+            Emprendimiento? emprendimiento)
+        {
+            return new PostulacionHechoEnCrViewModel
+            {
+                NombreEmprendimiento = emprendimiento?.NombreComercial ?? string.Empty,
+                EstaAprobado = emprendimiento is not null &&
+                               emprendimiento.Activo &&
+                               emprendimiento.EstadoAprobacion == "Aprobado",
+                YaPostulado = emprendimiento?.ParticipaHechoEnCr ?? false
+            };
         }
 
         public IActionResult CerrarSesion()

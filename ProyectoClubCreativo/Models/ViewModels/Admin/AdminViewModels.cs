@@ -240,7 +240,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Emprendimiento { get; set; } = "";
         public string Fecha { get; set; } = "";
         public decimal Total { get; set; }
-        public string Estado { get; set; } = ""; // Pagada, Pendiente, Cancelada
+        public string Estado { get; set; } = ""; 
         public string MetodoPago { get; set; } = "";
         public List<ItemVentaAdminViewModel> Items { get; set; } = [];
         public string? MotivoCancelacion { get; set; }
@@ -259,7 +259,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     {
         public string Nombre { get; set; } = "";
         public string Emprendimiento { get; set; } = "";
-        public string Estado { get; set; } = ""; // Confirmado, Pendiente
+        public string Estado { get; set; } = "";
     }
     
     public class EventoAdminViewModel
@@ -271,7 +271,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Descripcion { get; set; } = "";
         public int CupoTotal { get; set; }
         public int Inscritos { get; set; }
-        public string Estado { get; set; } = "Programado"; // Programado, Cancelado, Finalizado
+        public string Estado { get; set; } = "Programado";
         public bool QrGenerado { get; set; }
         public List<string> EmprendimientosAsignados { get; set; } = [];
         public List<ParticipanteEventoAdminViewModel> Participantes { get; set; } = [];
@@ -286,7 +286,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     {
         public string Nombre { get; set; } = "";
         public string Correo { get; set; } = "";
-        public string Estado { get; set; } = ""; // Confirmado, Pendiente
+        public string Estado { get; set; } = "";
     }
 
     public class TallerAdminViewModel
@@ -297,7 +297,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Descripcion { get; set; } = "";
         public int CuposTotales { get; set; }
         public int CuposDisponibles { get; set; }
-        public string Estado { get; set; } = "Programado"; // Programado, Cancelado, Finalizado
+        public string Estado { get; set; } = "Programado";
         public bool QrGenerado { get; set; }
         public List<InscritoTallerAdminViewModel> Inscritos { get; set; } = [];
     }
@@ -320,7 +320,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     public class MovimientoPuntosAdminViewModel
     {
         public string Usuario { get; set; } = "";
-        public string Tipo { get; set; } = ""; // Ganados, Canjeados, Ajuste
+        public string Tipo { get; set; } = "";
         public int Puntos { get; set; }
         public string Motivo { get; set; } = "";
         public string Fecha { get; set; } = "";
@@ -328,7 +328,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
 
     public class PuntosRecompensasAdminViewModel
     {
-        public string Pestana { get; set; } = "Recompensas"; // Recompensas, Movimientos
+        public string Pestana { get; set; } = "Recompensas";
         public List<RecompensaAdminViewModel> Recompensas { get; set; } = [];
         public List<MovimientoPuntosAdminViewModel> Movimientos { get; set; } = [];
     }
@@ -350,7 +350,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     {
         public int Id { get; set; }
         public string Nombre { get; set; } = "";
-        public string Tipo { get; set; } = ""; // Evento, Taller
+        public string Tipo { get; set; } = "";
         public string Fecha { get; set; } = "";
         public bool QrGenerado { get; set; }
         public List<AsistenteQrAdminViewModel> Asistentes { get; set; } = [];

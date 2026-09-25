@@ -1,0 +1,179 @@
+@model ProyectoClubCreativo.Models.ViewModels.PostulacionHechoEnCrViewModel
+
+@{
+    ViewData["Title"] = "Postular a Hecho en CR";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+@if (TempData["MensajePostulacion"] is not null)
+{
+    <div class="mensaje-exito-emprendedor">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["MensajePostulacion"]
+    </div>
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Iniciativa Hecho en CR
+        </span>
+
+        <h1>Postular emprendimiento</h1>
+
+        <p>
+            Postula tu emprendimiento a la iniciativa Hecho en CR
+            para obtener visibilidad adicional dentro de la plataforma.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="Panel"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-arrow-left"></i>
+        Volver al panel
+
+    </a>
+
+</section>
+
+@if (!Model.EstaAprobado)
+{
+    <section class="bloque-formulario-emprendedor">
+
+        <div class="encabezado-formulario-emprendedor">
+
+            <span class="icono-formulario-emprendedor">
+                <i class="bi bi-hourglass-split"></i>
+            </span>
+
+            <div>
+                <h2>Postulación no disponible</h2>
+
+                <p>
+                    Solo los emprendimientos aprobados pueden postularse
+                    a Hecho en CR. Cuando tu solicitud sea aprobada podrás
+                    enviar tu postulación desde esta sección.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+}
+else if (Model.YaPostulado)
+{
+    <section class="bloque-formulario-emprendedor">
+
+        <div class="encabezado-formulario-emprendedor">
+
+            <span class="icono-formulario-emprendedor">
+                <i class="bi bi-check2-circle"></i>
+            </span>
+
+            <div>
+                <h2>Postulación enviada</h2>
+
+                <p>
+                    <strong>@Model.NombreEmprendimiento</strong> ya forma parte
+                    de la iniciativa Hecho en CR.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+}
+else
+{
+    <form asp-controller="Emprendedor"
+          asp-action="PostularHechoEnCr"
+          method="post"
+          class="formulario-solicitud-emprendedor"
+          novalidate>
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly"
+             class="resumen-validacion-emprendedor">
+        </div>
+
+        <section class="bloque-formulario-emprendedor">
+
+            <div class="encabezado-formulario-emprendedor">
+
+                <span class="icono-formulario-emprendedor">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </span>
+
+                <div>
+                    <h2>Confirmación de postulación</h2>
+
+                    <p>
+                        Tu emprendimiento será incluido en la iniciativa
+                        Hecho en CR.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="grupo-campo-emprendedor">
+                <span>Emprendimiento</span>
+                <strong>@Model.NombreEmprendimiento</strong>
+            </div>
+
+            <div class="aviso-confirmacion-solicitud">
+
+                <i class="bi bi-info-circle-fill"></i>
+
+                <p>
+                    Hecho en CR destaca emprendimientos con productos
+                    costarricenses dentro de la plataforma.
+                </p>
+
+            </div>
+
+            <label class="confirmacion-informacion-emprendedor">
+
+                <input asp-for="ConfirmaPostulacion" />
+
+                <span>
+                    Confirmo que deseo postular mi emprendimiento a la
+                    iniciativa Hecho en CR.
+                </span>
+
+            </label>
+
+            <span asp-validation-for="ConfirmaPostulacion"
+                  class="mensaje-validacion-emprendedor"></span>
+
+        </section>
+
+        <div class="acciones-formulario-emprendedor">
+
+            <a asp-controller="Emprendedor"
+               asp-action="Panel"
+               class="boton-cancelar-formulario-emprendedor">
+
+                Cancelar
+
+            </a>
+
+            <button type="submit"
+                    class="boton-guardar-formulario-emprendedor">
+
+                <i class="bi bi-send-check-fill"></i>
+                Enviar postulación
+
+            </button>
+
+        </div>
+
+    </form>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

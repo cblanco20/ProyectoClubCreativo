@@ -15,13 +15,13 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
 
         [Required(ErrorMessage = "Seleccione el tipo de destinatario.")]
         [Display(Name = "Destinatario")]
-        public string TipoDestinatario { get; set; } = "Todos"; // Individual, Grupo, Todos
+        public string TipoDestinatario { get; set; } = "Todos";
 
         [Display(Name = "Correo del usuario")]
         public string? UsuarioDestino { get; set; }
 
         [Display(Name = "Grupo")]
-        public string? GrupoDestino { get; set; } // Usuarios, Emprendedores, Administradores
+        public string? GrupoDestino { get; set; }
     }
 
     public class NotificacionEnviadaViewModel
@@ -36,7 +36,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
 
     public class NotificacionesAdminViewModel
     {
-        public string Pestana { get; set; } = "Enviar"; // Enviar, Historial
+        public string Pestana { get; set; } = "Enviar";
         public NotificacionFormViewModel Nueva { get; set; } = new();
         public List<NotificacionEnviadaViewModel> Historial { get; set; } = [];
     }
@@ -61,9 +61,9 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Descripcion { get; set; } = "";
 
         [Required(ErrorMessage = "Seleccione una categoría.")]
-        public string Categoria { get; set; } = "Eventos"; // Eventos, Talleres, Emprendimientos, General
+        public string Categoria { get; set; } = "Eventos";
 
-        public string Estado { get; set; } = "Publicada"; // Publicada, Oculta
+        public string Estado { get; set; } = "Publicada";
         public string Portada { get; set; } = "/images/logo.jpg";
         public string FechaCreacion { get; set; } = "";
         public List<ImagenGaleriaViewModel> Imagenes { get; set; } = [];
@@ -81,9 +81,9 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Contenido { get; set; } = "";
 
         [Required(ErrorMessage = "Seleccione una categoría.")]
-        public string Categoria { get; set; } = "Anuncio"; // Noticia, Anuncio
+        public string Categoria { get; set; } = "Anuncio";
 
-        public string Estado { get; set; } = "Borrador"; // Borrador, Publicada, Inactiva
+        public string Estado { get; set; } = "Borrador";
         public string Imagen { get; set; } = "/images/logo.jpg";
         public string Autor { get; set; } = "Jossete Sánchez";
         public string FechaPublicacion { get; set; } = "";
@@ -99,7 +99,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     public class FiltroReporteViewModel
     {
         [Display(Name = "Reporte")]
-        public string TipoReporte { get; set; } = "Ventas"; // Ventas, Usuarios, Emprendimientos, Productos, Eventos
+        public string TipoReporte { get; set; } = "Ventas";
 
         [Display(Name = "Desde")]
         [DataType(DataType.Date)]
@@ -137,10 +137,10 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public int Id { get; set; }
         public string Autor { get; set; } = "";
         public string Contenido { get; set; } = "";
-        public string Origen { get; set; } = ""; // Producto, Evento, Taller, Noticia
+        public string Origen { get; set; } = "";
         public string ElementoRelacionado { get; set; } = "";
         public string Fecha { get; set; } = "";
-        public string Estado { get; set; } = "Visible"; // Visible, Reportado, Eliminado
+        public string Estado { get; set; } = "Visible";
         public int Reportes { get; set; }
     }
 
@@ -163,10 +163,10 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Descripcion { get; set; } = "";
 
         [Required(ErrorMessage = "Seleccione el tipo.")]
-        public string Tipo { get; set; } = "Categoria"; // Categoria, Etiqueta
+        public string Tipo { get; set; } = "Categoria";
 
         [Required(ErrorMessage = "Seleccione el módulo.")]
-        public string Modulo { get; set; } = "Productos"; // Productos, Eventos, Talleres, Noticias
+        public string Modulo { get; set; } = "Productos";
 
         public int ElementosAsociados { get; set; }
     }
@@ -202,7 +202,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
 
         [Required(ErrorMessage = "Seleccione el tipo de descuento.")]
         [Display(Name = "Tipo de descuento")]
-        public string TipoDescuento { get; set; } = "Porcentaje"; // Porcentaje, Monto fijo
+        public string TipoDescuento { get; set; } = "Porcentaje";
 
         [Range(0, 1000000, ErrorMessage = "Ingrese un valor válido.")]
         [Display(Name = "Valor del descuento")]
@@ -218,7 +218,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         [Display(Name = "Fecha de fin")]
         public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(7);
 
-        public string Estado { get; set; } = "Programada"; // Programada, Activa, Finalizada, Desactivada
+        public string Estado { get; set; } = "Programada";
 
         [Display(Name = "Emprendimiento")]
         public string Emprendimiento { get; set; } = "Todos";
@@ -258,7 +258,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         [Display(Name = "Preguntas (una por línea)")]
         public string PreguntasTexto { get; set; } = "";
 
-        public string Estado { get; set; } = "Borrador"; // Borrador, Publicada, Cerrada
+        public string Estado { get; set; } = "Borrador";
         public string FechaCreacion { get; set; } = "";
         public int TotalRespuestas { get; set; }
         public List<PreguntaEncuestaViewModel> Preguntas { get; set; } = [];
@@ -280,7 +280,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Fecha { get; set; } = "";
         public string DireccionIp { get; set; } = "";
         public string Detalle { get; set; } = "";
-        public string Nivel { get; set; } = "informativa"; // informativa, advertencia, critica
+        public string Nivel { get; set; } = "informativa";
     }
 
     public class FiltroBitacoraViewModel
