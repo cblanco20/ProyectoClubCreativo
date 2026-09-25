@@ -143,6 +143,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Descripcion { get; set; } = string.Empty;
         public string Logo { get; set; } = "/images/logo.jpg";
         public string? MotivoRechazo { get; set; }
+        public bool Activo { get; set; } = true;
     }
 
     public class ListadoEmprendimientosAdminViewModel

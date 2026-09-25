@@ -15,6 +15,12 @@
         <div class="encabezado-bloque-admin">
             <h2><i class="bi bi-buildings-fill"></i> @Model.NombreComercial</h2>
             <span class="etiqueta-estado-admin estado-@Model.Estado.ToLower()">@Model.Estado</span>
+            @if (Model.Estado == "Aprobado")
+            {
+                <span class="etiqueta-estado-admin estado-@(Model.Activo ? "aprobado" : "rechazado")">
+                    @(Model.Activo ? "Activo" : "Inactivo")
+                </span>
+            }
         </div>
 
         <div class="item-lista-admin">
@@ -42,7 +48,12 @@
         {
             <div class="item-alerta-admin nivel-critica" style="margin-top:14px;">
                 <i class="bi bi-x-circle-fill"></i>
-                <div><p><strong>Motivo de rechazo:</strong> @Model.MotivoRechazo</p></div>
+                <div>
+                    <p>
+                        <strong>@(Model.Estado == "Rechazado" ? "Motivo de rechazo:" : "Motivo de desactivación:")</strong>
+                        @Model.MotivoRechazo
+                    </p>
+                </div>
             </div>
         }
     </article>
@@ -77,6 +88,32 @@
 
                 <button type="submit" class="boton-admin boton-admin-peligro" style="width:100%;justify-content:center;">
                     <i class="bi bi-x-circle-fill"></i> Rechazar solicitud
+                </button>
+            </form>
+        </article>
+    }
+    @if (Model.Estado == "Aprobado" && Model.Activo)
+    {
+        <article class="bloque-admin">
+            <div class="encabezado-bloque-admin">
+                <h2><i class="bi bi-slash-circle"></i> Desactivar emprendimiento</h2>
+            </div>
+
+            <form asp-controller="Admin" asp-action="Desactivar" method="post" class="formulario-admin">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <div class="grupo-formulario">
+                    <label>Motivo de la desactivación</label>
+                    <textarea name="Motivo" rows="4" placeholder="Explique por qué se desactiva este emprendimiento...">@Model.MotivoRechazo</textarea>
+                    @if (ViewData.ModelState["Motivo"]?.Errors.Count > 0)
+                    {
+                        <span class="mensaje-validacion">@ViewData.ModelState["Motivo"]!.Errors[0].ErrorMessage</span>
+                    }
+                </div>
+
+                <button type="submit" class="boton-admin boton-admin-peligro" style="width:100%;justify-content:center;">
+                    <i class="bi bi-slash-circle-fill"></i> Desactivar emprendimiento
                 </button>
             </form>
         </article>

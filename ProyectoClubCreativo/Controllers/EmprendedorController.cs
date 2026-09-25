@@ -9,11 +9,14 @@ namespace ProyectoClubCreativo.Controllers
     public class EmprendedorController : Controller
     {
         private readonly ClubCreativoDbContext _context;
+        private readonly IWebHostEnvironment _entornoWeb;
 
         public EmprendedorController(
-            ClubCreativoDbContext context)
+            ClubCreativoDbContext context,
+            IWebHostEnvironment entornoWeb)
         {
             _context = context;
+            _entornoWeb = entornoWeb;
         }
 
         public override void OnActionExecuting(
@@ -347,35 +350,110 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult EditarEmprendimiento()
+        public async Task<IActionResult> EditarEmprendimiento()
         {
-            var modelo = new SolicitudEmprendimientoViewModel
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
             {
-                NombreComercial = "Artesanías MiVo",
-                Descripcion =
-                    "Elaboramos productos artesanales hechos a mano para decoración, regalos y pedidos personalizados.",
-                Categoria = "Arte e ilustración",
-                Cedula = "1-1234-5678",
-                Telefono = "88887777",
-                Correo = "valentin@gmail.com",
-                SitioWeb = "https://www.artesaniasmivo.com",
-                Instagram = "https://www.instagram.com/artesaniasmivo",
-                Facebook = "https://www.facebook.com/artesaniasmivo",
-                ParticipaClubCreativo = true,
-                ParticipaHechoEnCr = false,
-                InformacionParticipacion =
-                    "Deseo participar en ferias, talleres y actividades para promocionar mis productos artesanales."
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                return RedirectToAction(
+                    "SolicitudEmprendimiento",
+                    "Emprendedor"
+                );
+            }
+
+            SolicitudEmprendimientoViewModel modelo = new()
+            {
+                NombreComercial = emprendimiento.NombreComercial,
+                Descripcion = emprendimiento.Descripcion,
+                IdCategoria = emprendimiento.IdCategoria,
+                Cedula = emprendimiento.CedulaJuridica ?? string.Empty,
+                Telefono = emprendimiento.Telefono ?? string.Empty,
+                Correo = emprendimiento.Correo,
+                SitioWeb = emprendimiento.SitioWeb,
+                Instagram = emprendimiento.Instagram,
+                Facebook = emprendimiento.Facebook,
+                ParticipaClubCreativo = emprendimiento.ParticipaClubCreativo,
+                ParticipaHechoEnCr = emprendimiento.ParticipaHechoEnCr,
+                InformacionParticipacion = string.Empty,
+                ConfirmaInformacion = false
             };
+
+            modelo.Categorias = await _context.Categorias
+                .Where(c =>
+                    c.Modulo == "Emprendimientos" &&
+                    c.Activa
+                )
+                .OrderBy(c => c.Nombre)
+                .Select(c =>
+                    new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = c.IdCategoria.ToString(),
+                        Text = c.Nombre
+                    })
+                .ToListAsync();
+
+            ViewBag.LogoActual =
+                string.IsNullOrWhiteSpace(emprendimiento.LogoUrl)
+                    ? "/images/logo.jpg"
+                    : emprendimiento.LogoUrl;
+
+            ViewBag.FotografiasActuales = await _context.Galerias
+                .AsNoTracking()
+                .Include(g => g.GaleriaImagene)
+                .Where(g =>
+                    g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    g.GaleriaImagene != null)
+                .OrderBy(g => g.FechaCreacion)
+                .Select(g => g.GaleriaImagene!.UrlImagen)
+                .ToListAsync();
 
             return View(modelo);
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarEmprendimiento(
-            SolicitudEmprendimientoViewModel modelo)
+        public async Task<IActionResult> EditarEmprendimiento(
+     SolicitudEmprendimientoViewModel modelo)
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .Include(e => e.EmprendimientoRevisione)
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                return RedirectToAction(
+                    "SolicitudEmprendimiento",
+                    "Emprendedor"
+                );
+            }
+
             ValidarArchivosSolicitud(modelo);
 
             if (!modelo.ParticipaClubCreativo &&
@@ -395,15 +473,226 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+            if (modelo.IdCategoria.HasValue)
+            {
+                bool categoriaExiste =
+                    await _context.Categorias.AnyAsync(c =>
+                        c.IdCategoria == modelo.IdCategoria.Value &&
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa
+                    );
+
+                if (!categoriaExiste)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.IdCategoria),
+                        "La categoría seleccionada no es válida."
+                    );
+                }
+            }
+
             if (!ModelState.IsValid)
             {
+                modelo.Categorias = await _context.Categorias
+                    .Where(c =>
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa
+                    )
+                    .OrderBy(c => c.Nombre)
+                    .Select(c =>
+                        new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                        {
+                            Value = c.IdCategoria.ToString(),
+                            Text = c.Nombre
+                        })
+                    .ToListAsync();
+
+                ViewBag.LogoActual =
+                    string.IsNullOrWhiteSpace(emprendimiento.LogoUrl)
+                        ? "/images/logo.jpg"
+                        : emprendimiento.LogoUrl;
+
+                ViewBag.FotografiasActuales = await _context.Galerias
+                    .AsNoTracking()
+                    .Include(g => g.GaleriaImagene)
+                    .Where(g =>
+                        g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        g.GaleriaImagene != null)
+                    .OrderBy(g => g.FechaCreacion)
+                    .Select(g => g.GaleriaImagene!.UrlImagen)
+                    .ToListAsync();
+
                 return View(modelo);
             }
 
-            TempData["MensajePerfil"] =
-                "La información del emprendimiento fue actualizada correctamente.";
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync();
 
-            return RedirectToAction(nameof(EditarEmprendimiento));
+            try
+            {
+                emprendimiento.NombreComercial = modelo.NombreComercial.Trim();
+                emprendimiento.Descripcion = modelo.Descripcion.Trim();
+                emprendimiento.IdCategoria = modelo.IdCategoria;
+                emprendimiento.CedulaJuridica = modelo.Cedula.Trim();
+                emprendimiento.Telefono = modelo.Telefono.Trim();
+                emprendimiento.Correo = modelo.Correo.Trim().ToLowerInvariant();
+
+                emprendimiento.SitioWeb =
+                    string.IsNullOrWhiteSpace(modelo.SitioWeb)
+                        ? null
+                        : modelo.SitioWeb.Trim();
+
+                emprendimiento.Instagram =
+                    string.IsNullOrWhiteSpace(modelo.Instagram)
+                        ? null
+                        : modelo.Instagram.Trim();
+
+                emprendimiento.Facebook =
+                    string.IsNullOrWhiteSpace(modelo.Facebook)
+                        ? null
+                        : modelo.Facebook.Trim();
+
+                emprendimiento.ParticipaClubCreativo = modelo.ParticipaClubCreativo;
+                emprendimiento.ParticipaHechoEnCr = modelo.ParticipaHechoEnCr;
+
+                emprendimiento.EstadoAprobacion = "Pendiente";
+
+                if (emprendimiento.EmprendimientoRevisione is not null)
+                {
+                    emprendimiento.EmprendimientoRevisione.FechaSolicitud = DateTime.Now;
+                    emprendimiento.EmprendimientoRevisione.FechaResolucion = null;
+                }
+                else
+                {
+                    await _context.EmprendimientoRevisiones.AddAsync(
+                        new EmprendimientoRevisione
+                        {
+                            IdEmprendimiento = emprendimiento.IdEmprendimiento,
+                            FechaSolicitud = DateTime.Now,
+                            FechaResolucion = null
+                        });
+                }
+
+                if (modelo.Logo is not null)
+                {
+                    string carpetaLogos = Path.Combine(
+                        _entornoWeb.WebRootPath, "uploads", "emprendimientos");
+
+                    Directory.CreateDirectory(carpetaLogos);
+
+                    string nombreArchivoLogo =
+                        $"{Guid.NewGuid()}{Path.GetExtension(modelo.Logo.FileName)}";
+
+                    string rutaLogo =
+                        Path.Combine(carpetaLogos, nombreArchivoLogo);
+
+                    using (var flujoLogo = new FileStream(rutaLogo, FileMode.Create))
+                    {
+                        await modelo.Logo.CopyToAsync(flujoLogo);
+                    }
+
+                    emprendimiento.LogoUrl =
+                        $"/uploads/emprendimientos/{nombreArchivoLogo}";
+                }
+
+                if (modelo.Fotografias is { Count: > 0 })
+                {
+                    string carpetaFotos = Path.Combine(
+                        _entornoWeb.WebRootPath, "uploads", "emprendimientos", "galeria");
+
+                    Directory.CreateDirectory(carpetaFotos);
+
+                    foreach (IFormFile fotografia in modelo.Fotografias)
+                    {
+                        if (fotografia.Length <= 0)
+                        {
+                            continue;
+                        }
+
+                        string nombreArchivoFoto =
+                            $"{Guid.NewGuid()}{Path.GetExtension(fotografia.FileName)}";
+
+                        string rutaFoto =
+                            Path.Combine(carpetaFotos, nombreArchivoFoto);
+
+                        using (var flujoFoto = new FileStream(rutaFoto, FileMode.Create))
+                        {
+                            await fotografia.CopyToAsync(flujoFoto);
+                        }
+
+                        Galeria galeria = new()
+                        {
+                            IdEmprendimiento = emprendimiento.IdEmprendimiento,
+                            Nombre = $"Foto de {emprendimiento.NombreComercial}",
+                            Estado = "Publicada",
+                            FechaCreacion = DateTime.Now
+                        };
+
+                        await _context.Galerias.AddAsync(galeria);
+                        await _context.SaveChangesAsync();
+
+                        await _context.GaleriaImagenes.AddAsync(new GaleriaImagene
+                        {
+                            IdGaleria = galeria.IdGaleria,
+                            UrlImagen = $"/uploads/emprendimientos/galeria/{nombreArchivoFoto}",
+                            NombreArchivo = fotografia.FileName,
+                            EsPortada = false,
+                            OrdenVisual = 1
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaccion.CommitAsync();
+
+                TempData["MensajePerfil"] =
+                    "La información del emprendimiento fue actualizada correctamente y se envió a revisión.";
+
+                return RedirectToAction(
+                    "PerfilEmprendimiento",
+                    "Emprendedor"
+                );
+            }
+            catch
+            {
+                await transaccion.RollbackAsync();
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Ocurrió un error al actualizar la información. Intente nuevamente."
+                );
+
+                modelo.Categorias = await _context.Categorias
+                    .Where(c =>
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa
+                    )
+                    .OrderBy(c => c.Nombre)
+                    .Select(c =>
+                        new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                        {
+                            Value = c.IdCategoria.ToString(),
+                            Text = c.Nombre
+                        })
+                    .ToListAsync();
+
+                ViewBag.LogoActual =
+                    string.IsNullOrWhiteSpace(emprendimiento.LogoUrl)
+                        ? "/images/logo.jpg"
+                        : emprendimiento.LogoUrl;
+
+                ViewBag.FotografiasActuales = await _context.Galerias
+                    .AsNoTracking()
+                    .Include(g => g.GaleriaImagene)
+                    .Where(g =>
+                        g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        g.GaleriaImagene != null)
+                    .OrderBy(g => g.FechaCreacion)
+                    .Select(g => g.GaleriaImagene!.UrlImagen)
+                    .ToListAsync();
+
+                return View(modelo);
+            }
         }
 
         private void ValidarArchivosSolicitud(

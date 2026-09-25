@@ -329,7 +329,59 @@ namespace ProyectoClubCreativo.Controllers
 
             return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Desactivar(RechazarSolicitudViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                SolicitudEmprendimientoAdminViewModel? solicitud =
+                    await ObtenerSolicitudAsync(modelo.Id);
 
+                if (solicitud is null)
+                {
+                    return RedirectToAction(nameof(Emprendimientos));
+                }
+
+                solicitud.MotivoRechazo = modelo.Motivo;
+
+                return View(nameof(DetalleSolicitud), solicitud);
+            }
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .FirstOrDefaultAsync(e =>
+                    e.IdEmprendimiento == modelo.Id &&
+                    e.EstadoAprobacion == "Aprobado" &&
+                    e.Activo);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeAdmin"] =
+                    "El emprendimiento no existe o ya se encuentra inactivo.";
+
+                return RedirectToAction(nameof(Emprendimientos), new { estado = "Aprobado" });
+            }
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync();
+
+            emprendimiento.Activo = false;
+
+            _context.MotivosRechazos.Add(new MotivosRechazo
+            {
+                IdEmprendimiento = emprendimiento.IdEmprendimiento,
+                Motivo = modelo.Motivo.Trim(),
+                FechaRechazo = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+            await transaccion.CommitAsync();
+
+            TempData["MensajeAdmin"] =
+                "El emprendimiento fue desactivado y se notificó el motivo al propietario.";
+
+            return RedirectToAction(nameof(Emprendimientos), new { estado = "Aprobado" });
+        }
         private async Task AsignarRolEmprendedorAsync(int idUsuario)
         {
             bool yaEsEmprendedor =
@@ -368,7 +420,6 @@ namespace ProyectoClubCreativo.Controllers
                 FechaAsignacion = DateTime.Now
             });
         }
-
         private async Task<List<SolicitudEmprendimientoAdminViewModel>> ObtenerSolicitudesAsync()
         {
             List<Emprendimiento> emprendimientos = await _context.Emprendimientos
@@ -407,19 +458,20 @@ namespace ProyectoClubCreativo.Controllers
                 Id = e.IdEmprendimiento,
                 NombreComercial = e.NombreComercial,
                 Solicitante = propietario is null
-                    ? string.Empty
-                    : $"{propietario.Nombre} {propietario.ApellidoPaterno} {propietario.ApellidoMaterno}".Trim(),
+        ? string.Empty
+        : $"{propietario.Nombre} {propietario.ApellidoPaterno} {propietario.ApellidoMaterno}".Trim(),
                 Categoria = e.IdCategoriaNavigation?.Nombre ?? "Sin categoría",
                 Correo = e.Correo,
                 Telefono = e.Telefono ?? string.Empty,
                 FechaSolicitud = e.EmprendimientoRevisione?.FechaSolicitud.ToString("dd/MM/yyyy")
-                    ?? string.Empty,
+        ?? string.Empty,
                 Estado = e.EstadoAprobacion,
                 Descripcion = e.Descripcion,
                 Logo = e.LogoUrl ?? "/images/logo.jpg",
+                Activo = e.Activo,
                 MotivoRechazo = e.MotivosRechazos
-                    .OrderByDescending(m => m.FechaRechazo)
-                    .FirstOrDefault()?.Motivo
+        .OrderByDescending(m => m.FechaRechazo)
+        .FirstOrDefault()?.Motivo
             };
         }
 

@@ -103,27 +103,19 @@
 
                 <div class="grupo-campo-emprendedor">
 
-                    <label asp-for="Categoria"></label>
+                    <label asp-for="IdCategoria"></label>
 
-                    <select asp-for="Categoria"
+                    <select asp-for="IdCategoria"
+                            asp-items="Model.Categorias"
                             class="control-emprendedor">
 
                         <option value="">
                             Seleccione una categoría
                         </option>
 
-                        <option>Arte e ilustración</option>
-                        <option>Accesorios y joyería</option>
-                        <option>Moda y textiles</option>
-                        <option>Alimentos y bebidas</option>
-                        <option>Cuidado personal</option>
-                        <option>Decoración</option>
-                        <option>Servicios creativos</option>
-                        <option>Otro</option>
-
                     </select>
 
-                    <span asp-validation-for="Categoria"
+                    <span asp-validation-for="IdCategoria"
                           class="mensaje-validacion-emprendedor">
                     </span>
 
@@ -323,7 +315,7 @@
                     <span>Logo actual</span>
 
                     <div class="logo-actual-edicion">
-                        <img src="~/images/logo.jpg"
+                        <img src="@ViewBag.LogoActual"
                              alt="Logo actual del emprendimiento" />
                     </div>
 
@@ -370,14 +362,20 @@
 
                     <div class="miniaturas-galeria-edicion">
 
-                        <img src="~/images/noticia-emprendimiento.jpg"
-                             alt="Fotografía del emprendimiento" />
-
-                        <img src="~/images/registro-emprendedor.jpg"
-                             alt="Fotografía del emprendimiento" />
-
-                        <img src="~/images/noticia-feria.jpg"
-                             alt="Fotografía del emprendimiento" />
+                        @if (((List<string>)ViewBag.FotografiasActuales).Any())
+                        {
+                            @foreach (string urlFoto in (List<string>)ViewBag.FotografiasActuales)
+                            {
+                                <img src="@urlFoto"
+                                     alt="Fotografía del emprendimiento" />
+                            }
+                        }
+                        else
+                        {
+                            <span class="nombre-archivo-emprendedor">
+                                Todavía no has agregado fotografías.
+                            </span>
+                        }
 
                     </div>
 

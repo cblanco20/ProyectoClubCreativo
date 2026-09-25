@@ -41,6 +41,10 @@
                             <div class="celda-usuario-admin">
                                 <img src="@solicitud.Logo" class="foto-tabla-admin" alt="@solicitud.NombreComercial" />
                                 @solicitud.NombreComercial
+                                @if (!solicitud.Activo)
+                                {
+                                    <span class="etiqueta-estado-admin estado-rechazado" style="margin-left:8px;">Inactivo</span>
+                                }
                             </div>
                         </td>
                         <td>@solicitud.Solicitante</td>
