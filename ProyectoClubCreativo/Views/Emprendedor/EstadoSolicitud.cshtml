@@ -1,7 +1,34 @@
-﻿@{
+@model ProyectoClubCreativo.Models.ViewModels.EstadoSolicitudViewModel
+
+@{
     ViewData["Title"] = "Estado de la solicitud";
     Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+
+    (string claseEstado, string iconoEstado, string tituloEstado, string descripcionEstado) = Model.Estado switch
+    {
+        "Aprobado" => (
+            "aprobado",
+            "bi-check-circle-fill",
+            "Solicitud aprobada",
+            "¡Felicidades! Tu emprendimiento fue aprobado y ya forma parte de Club Creativo MiVo."
+        ),
+        "Rechazado" => (
+            "rechazado",
+            "bi-x-circle-fill",
+            "Solicitud rechazada",
+            "Tu solicitud no fue aprobada. Revisa el motivo indicado y corrige la información para volver a enviarla."
+        ),
+        _ => (
+            "pendiente",
+            "bi-hourglass-split",
+            "Pendiente de revisión",
+            "Tu solicitud fue recibida correctamente. El equipo de Club Creativo MiVo está revisando la información enviada."
+        )
+    };
+
+    bool solicitudResuelta = Model.Estado is "Aprobado" or "Rechazado";
 }
+
 @if (TempData["MensajeSolicitud"] is not null)
 {
     <div class="mensaje-exito-emprendedor">
@@ -41,8 +68,8 @@
 
     <article class="tarjeta-estado-principal">
 
-        <div class="icono-estado-principal estado-pendiente">
-            <i class="bi bi-hourglass-split"></i>
+        <div class="icono-estado-principal estado-@claseEstado">
+            <i class="bi @iconoEstado"></i>
         </div>
 
         <div class="contenido-estado-principal">
@@ -51,27 +78,54 @@
                 Estado actual
             </span>
 
-            <h2>Pendiente de revisión</h2>
+            <h2>@tituloEstado</h2>
 
             <p>
-                Tu solicitud fue recibida correctamente. El equipo de
-                Club Creativo MiVo está revisando la información enviada.
+                @descripcionEstado
             </p>
 
-            <div class="fecha-estado-solicitud">
-                <i class="bi bi-calendar-check"></i>
-                Solicitud enviada el 4 de agosto de 2026
-            </div>
+            @if (Model.FechaSolicitud.HasValue)
+            {
+                <div class="fecha-estado-solicitud">
+                    <i class="bi bi-calendar-check"></i>
+                    Solicitud enviada el @Model.FechaSolicitud.Value.ToString("d 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-CR"))
+                </div>
+            }
+
+            @if (solicitudResuelta && Model.FechaResolucion.HasValue)
+            {
+                <div class="fecha-estado-solicitud">
+                    <i class="bi bi-calendar-event"></i>
+                    Resuelta el @Model.FechaResolucion.Value.ToString("d 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-CR"))
+                </div>
+            }
 
         </div>
 
-        <span class="insignia-estado-solicitud pendiente">
-            Pendiente
+        <span class="insignia-estado-solicitud @claseEstado">
+            @Model.Estado
         </span>
 
     </article>
 
 </section>
+
+
+@if (Model.Estado == "Rechazado" && !string.IsNullOrWhiteSpace(Model.MotivoRechazo))
+{
+    <section class="aviso-edicion-emprendimiento">
+
+        <span class="icono-aviso-edicion">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </span>
+
+        <div>
+            <strong>Motivo del rechazo</strong>
+            <p>@Model.MotivoRechazo</p>
+        </div>
+
+    </section>
+}
 
 
 <section class="grid-estado-solicitud">
@@ -107,12 +161,16 @@
                             La información fue recibida correctamente.
                         </p>
 
-                        <span>4 de agosto de 2026</span>
+                        <span>
+                            @(Model.FechaSolicitud.HasValue
+                                ? Model.FechaSolicitud.Value.ToString("d 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-CR"))
+                                : "—")
+                        </span>
                     </div>
 
                 </div>
 
-                <div class="paso-solicitud activo">
+                <div class="paso-solicitud @(solicitudResuelta ? "completado" : "activo")">
 
                     <span class="circulo-paso-solicitud">
                         <i class="bi bi-search"></i>
@@ -125,12 +183,12 @@
                             El equipo está validando los datos del emprendimiento.
                         </p>
 
-                        <span>En proceso</span>
+                        <span>@(solicitudResuelta ? "Completado" : "En proceso")</span>
                     </div>
 
                 </div>
 
-                <div class="paso-solicitud">
+                <div class="paso-solicitud @(solicitudResuelta ? "completado" : "")">
 
                     <span class="circulo-paso-solicitud">
                         <i class="bi bi-file-earmark-check"></i>
@@ -140,15 +198,17 @@
                         <strong>Resultado de la solicitud</strong>
 
                         <p>
-                            Recibirás una notificación cuando finalice la revisión.
+                            @(solicitudResuelta
+                                ? $"Tu solicitud fue {Model.Estado.ToLowerInvariant()}."
+                                : "Recibirás una notificación por correo cuando finalice la revisión.")
                         </p>
 
-                        <span>Pendiente</span>
+                        <span>@(solicitudResuelta ? Model.Estado : "Pendiente")</span>
                     </div>
 
                 </div>
 
-                <div class="paso-solicitud">
+                <div class="paso-solicitud @(Model.Estado == "Aprobado" ? "completado" : "")">
 
                     <span class="circulo-paso-solicitud">
                         <i class="bi bi-shop-window"></i>
@@ -158,10 +218,12 @@
                         <strong>Publicación del emprendimiento</strong>
 
                         <p>
-                            El perfil será publicado después de su aprobación.
+                            @(Model.Estado == "Aprobado"
+                                ? "Tu perfil ya está publicado en la plataforma."
+                                : "El perfil será publicado después de su aprobación.")
                         </p>
 
-                        <span>Pendiente</span>
+                        <span>@(Model.Estado == "Aprobado" ? "Publicado" : "Pendiente")</span>
                     </div>
 
                 </div>
@@ -184,7 +246,7 @@
                 </div>
 
                 <a asp-controller="Emprendedor"
-                   asp-action="SolicitudEmprendimiento"
+                   asp-action="EditarEmprendimiento"
                    class="enlace-editar-solicitud">
 
                     <i class="bi bi-pencil-square"></i>
@@ -198,29 +260,29 @@
 
                 <div class="dato-solicitud">
                     <span>Nombre comercial</span>
-                    <strong>Artesanías MiVo</strong>
+                    <strong>@Model.NombreComercial</strong>
                 </div>
 
                 <div class="dato-solicitud">
                     <span>Categoría</span>
-                    <strong>Arte e ilustración</strong>
+                    <strong>@Model.Categoria</strong>
                 </div>
 
                 <div class="dato-solicitud">
                     <span>Correo</span>
-                    <strong>valentin@gmail.com</strong>
+                    <strong>@Model.Correo</strong>
                 </div>
 
                 <div class="dato-solicitud">
                     <span>Teléfono</span>
-                    <strong>8888-7777</strong>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.Telefono) ? "—" : Model.Telefono)</strong>
                 </div>
 
                 <div class="dato-solicitud dato-solicitud-amplio">
                     <span>Sitio web o red social</span>
 
                     <strong>
-                        instagram.com/artesaniasmivo
+                        @(string.IsNullOrWhiteSpace(Model.SitioWeb) ? "No indicado" : Model.SitioWeb)
                     </strong>
                 </div>
 
@@ -228,8 +290,7 @@
                     <span>Descripción</span>
 
                     <strong>
-                        Elaboramos productos artesanales hechos a mano
-                        para decoración y regalos personalizados.
+                        @Model.Descripcion
                     </strong>
                 </div>
 
@@ -252,7 +313,7 @@
 
             <p>
                 La revisión puede tardar algunos días. Recibirás una
-                notificación cuando exista un cambio en el estado.
+                notificación por correo cuando exista un cambio en el estado.
             </p>
 
             <ul>
@@ -381,15 +442,15 @@
         <h2>Mantén actualizada tu información</h2>
 
         <p>
-            Puedes revisar o corregir los datos mientras la solicitud
-            todavía se encuentre pendiente.
+            Puedes revisar o corregir los datos de tu emprendimiento
+            cuando lo necesites.
         </p>
     </div>
 
     <div class="botones-estado-solicitud">
 
         <a asp-controller="Emprendedor"
-           asp-action="SolicitudEmprendimiento"
+           asp-action="EditarEmprendimiento"
            class="boton-secundario-estado">
 
             <i class="bi bi-pencil-square"></i>

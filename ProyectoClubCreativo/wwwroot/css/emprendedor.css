@@ -1334,6 +1334,16 @@ body.menu-emprendedor-abierto {
         color: #cc8415;
     }
 
+    .icono-estado-principal.estado-aprobado {
+        background: #e4f8ed;
+        color: var(--emprendedor-verde);
+    }
+
+    .icono-estado-principal.estado-rechazado {
+        background: #ffe5e9;
+        color: var(--emprendedor-rojo);
+    }
+
 .contenido-estado-principal {
     min-width: 0;
 }
@@ -1381,6 +1391,16 @@ body.menu-emprendedor-abierto {
     .insignia-estado-solicitud.pendiente {
         background: #ffe4a2;
         color: #ad7012;
+    }
+
+    .insignia-estado-solicitud.aprobado {
+        background: #d3f3e0;
+        color: var(--emprendedor-verde);
+    }
+
+    .insignia-estado-solicitud.rechazado {
+        background: #ffd6dc;
+        color: var(--emprendedor-rojo);
     }
 
 .grid-estado-solicitud {

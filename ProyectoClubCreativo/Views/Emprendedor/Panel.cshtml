@@ -1,6 +1,9 @@
 ﻿@{
     ViewData["Title"] = "Panel del emprendedor";
     Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+
+    string estadoEmprendimientoPanel =
+        ViewBag.EstadoEmprendimiento as string ?? "Pendiente";
 }
 
 @if (TempData["MensajeEmprendedor"] is not null)
@@ -52,7 +55,7 @@
         </span>
 
         <div>
-            <strong>Pendiente</strong>
+            <strong>@estadoEmprendimientoPanel</strong>
             <span>Estado del emprendimiento</span>
         </div>
     </article>

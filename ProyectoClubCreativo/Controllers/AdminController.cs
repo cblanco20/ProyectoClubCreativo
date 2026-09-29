@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels.Admin;
+using ProyectoClubCreativo.Services;
 
 namespace ProyectoClubCreativo.Controllers
 {
@@ -11,13 +12,16 @@ namespace ProyectoClubCreativo.Controllers
 
         private readonly IWebHostEnvironment _entornoWeb;
         private readonly ClubCreativoDbContext _context;
+        private readonly CorreoService _correoService;
 
         public AdminController(
             IWebHostEnvironment entornoWeb,
-            ClubCreativoDbContext context)
+            ClubCreativoDbContext context,
+            CorreoService correoService)
         {
             _entornoWeb = entornoWeb;
             _context = context;
+            _correoService = correoService;
         }
 
         public override void OnActionExecuting(
@@ -49,7 +53,6 @@ namespace ProyectoClubCreativo.Controllers
             );
         }
 
-        // ---------- DASHBOARD ----------
         [HttpGet]
         public IActionResult Panel(FiltroDashboardViewModel filtro)
         {
@@ -116,7 +119,6 @@ namespace ProyectoClubCreativo.Controllers
             return View(modelo);
         }
 
-        // ---------- USUARIOS ----------
         [HttpGet]
         public IActionResult Usuarios(string? busqueda, string? rol)
         {
@@ -200,7 +202,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- EMPRENDIMIENTOS ----------
         [HttpGet]
         public async Task<IActionResult> Emprendimientos(string estado = "Pendiente")
         {
@@ -239,6 +240,7 @@ namespace ProyectoClubCreativo.Controllers
         {
             Emprendimiento? emprendimiento = await _context.Emprendimientos
                 .Include(e => e.EmprendimientoRevisione)
+                .Include(e => e.IdUsuarioPropietarioNavigation)
                 .FirstOrDefaultAsync(e =>
                     e.IdEmprendimiento == id &&
                     e.EstadoAprobacion == "Pendiente");
@@ -266,6 +268,11 @@ namespace ProyectoClubCreativo.Controllers
             await _context.SaveChangesAsync();
             await transaccion.CommitAsync();
 
+            await NotificarResolucionSolicitudAsync(
+                emprendimiento,
+                aprobada: true,
+                motivo: null);
+
             TempData["MensajeAdmin"] = "La solicitud fue aprobada correctamente.";
 
             return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
@@ -292,6 +299,7 @@ namespace ProyectoClubCreativo.Controllers
 
             Emprendimiento? emprendimiento = await _context.Emprendimientos
                 .Include(e => e.EmprendimientoRevisione)
+                .Include(e => e.IdUsuarioPropietarioNavigation)
                 .FirstOrDefaultAsync(e =>
                     e.IdEmprendimiento == modelo.Id &&
                     e.EstadoAprobacion == "Pendiente");
@@ -303,6 +311,8 @@ namespace ProyectoClubCreativo.Controllers
 
                 return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
             }
+
+            string motivoRechazo = modelo.Motivo.Trim();
 
             await using var transaccion =
                 await _context.Database.BeginTransactionAsync();
@@ -317,18 +327,103 @@ namespace ProyectoClubCreativo.Controllers
             _context.MotivosRechazos.Add(new MotivosRechazo
             {
                 IdEmprendimiento = emprendimiento.IdEmprendimiento,
-                Motivo = modelo.Motivo.Trim(),
+                Motivo = motivoRechazo,
                 FechaRechazo = DateTime.Now
             });
 
             await _context.SaveChangesAsync();
             await transaccion.CommitAsync();
 
+            await NotificarResolucionSolicitudAsync(
+                emprendimiento,
+                aprobada: false,
+                motivo: motivoRechazo);
+
             TempData["MensajeAdmin"] =
                 "La solicitud fue rechazada y se notificó el motivo al solicitante.";
 
             return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
         }
+
+        private async Task NotificarResolucionSolicitudAsync(
+            Emprendimiento emprendimiento,
+            bool aprobada,
+            string? motivo)
+        {
+            string? correoDestino =
+                emprendimiento.IdUsuarioPropietarioNavigation?.Correo;
+
+            if (string.IsNullOrWhiteSpace(correoDestino))
+            {
+                return;
+            }
+
+            string nombreDestinatario =
+                emprendimiento.IdUsuarioPropietarioNavigation?.Nombre
+                    ?? "emprendedor";
+
+            string asunto = aprobada
+                ? "Tu solicitud de emprendimiento fue aprobada - Club Creativo"
+                : "Resultado de tu solicitud de emprendimiento - Club Creativo";
+
+            string contenidoCorreo = aprobada
+                ? $@"
+            <h2>Club Creativo</h2>
+
+            <p>Hola {nombreDestinatario},</p>
+
+            <p>
+                ¡Buenas noticias! Tu solicitud para incorporar
+                «{emprendimiento.NombreComercial}» a Club Creativo
+                fue <strong>aprobada</strong>.
+            </p>
+
+            <p>
+                Ya puedes iniciar sesión con tu cuenta de emprendedor
+                para administrar tu perfil, productos y participación
+                en la plataforma.
+            </p>
+
+            <p>Club Creativo</p>
+        "
+                : $@"
+            <h2>Club Creativo</h2>
+
+            <p>Hola {nombreDestinatario},</p>
+
+            <p>
+                Tu solicitud para incorporar «{emprendimiento.NombreComercial}»
+                a Club Creativo fue <strong>rechazada</strong>.
+            </p>
+
+            <p>
+                Motivo indicado por el equipo revisor:
+            </p>
+
+            <p>«{motivo}»</p>
+
+            <p>
+                Puedes iniciar sesión, corregir la información de tu
+                emprendimiento y volver a enviarla para revisión.
+            </p>
+
+            <p>Club Creativo</p>
+        ";
+
+            try
+            {
+                await _correoService.EnviarCorreoAsync(
+                    correoDestino,
+                    asunto,
+                    contenidoCorreo
+                );
+            }
+            catch
+            {
+
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Desactivar(RechazarSolicitudViewModel modelo)
@@ -475,7 +570,6 @@ namespace ProyectoClubCreativo.Controllers
             };
         }
 
-        // ---------- SUSCRIPCIONES ----------
         [HttpGet]
         public IActionResult Suscripciones()
         {
@@ -554,7 +648,6 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(Suscripciones));
         }
 
-        // ---------- PRODUCTOS ----------
         [HttpGet]
         public IActionResult Productos(string? busqueda, string? categoria, string? estado)
         {
@@ -979,7 +1072,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- NOTIFICACIONES ----------
         [HttpGet]
         public IActionResult Notificaciones(string pestana = "Enviar")
         {
@@ -1025,7 +1117,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- GALERÍAS ----------
         [HttpGet]
         public IActionResult Galerias()
         {
@@ -1122,7 +1213,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- NOTICIAS Y ANUNCIOS ----------
         [HttpGet]
         public IActionResult Noticias(string estado = "Todas")
         {
@@ -1204,7 +1294,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- REPORTES Y ESTADÍSTICAS ----------
         [HttpGet]
         public IActionResult Reportes(FiltroReporteViewModel filtro)
         {
@@ -1296,7 +1385,6 @@ namespace ProyectoClubCreativo.Controllers
             };
         }
 
-        // ---------- MODERACIÓN DE COMENTARIOS ----------
         [HttpGet]
         public IActionResult Comentarios(string? busqueda, string estado = "Todos", string origen = "Todos")
         {
@@ -1348,7 +1436,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- CATEGORÍAS Y ETIQUETAS ----------
         [HttpGet]
         public IActionResult Categorias(string tipo = "Categoria")
         {
@@ -1444,7 +1531,6 @@ namespace ProyectoClubCreativo.Controllers
             };
         }
 
-        // ---------- PROMOCIONES Y CAMPAÑAS ----------
         [HttpGet]
         public IActionResult Promociones(string estado = "Todas")
         {
@@ -1517,7 +1603,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- ENCUESTAS ----------
         [HttpGet]
         public IActionResult Encuestas(string estado = "Todas")
         {
@@ -1608,7 +1693,6 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
 
-        // ---------- SEGURIDAD Y AUDITORÍA ----------
         [HttpGet]
         public IActionResult Bitacora(FiltroBitacoraViewModel filtro)
         {

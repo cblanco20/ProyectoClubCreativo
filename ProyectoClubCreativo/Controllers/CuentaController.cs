@@ -439,6 +439,36 @@ namespace ProyectoClubCreativo.Controllers
                 await _context.UsuarioRoles.AddAsync(usuarioRol);
                 await _context.SaveChangesAsync();
 
+                Emprendimiento emprendimiento = new()
+                {
+                    IdUsuarioPropietario = usuario.IdUsuario,
+                    IdCategoria = modelo.IdCategoria,
+                    NombreComercial = modelo.NombreEmprendimiento.Trim(),
+                    Descripcion = modelo.Descripcion.Trim(),
+                    Telefono = modelo.Telefono.Trim(),
+                    Correo = correoNormalizado,
+                    SitioWeb = string.IsNullOrWhiteSpace(modelo.SitioWeb)
+                        ? null
+                        : modelo.SitioWeb.Trim(),
+                    ParticipaClubCreativo = true,
+                    ParticipaHechoEnCr = false,
+                    EstadoAprobacion = "Pendiente",
+                    Activo = true
+                };
+
+                await _context.Emprendimientos.AddAsync(emprendimiento);
+                await _context.SaveChangesAsync();
+
+                EmprendimientoRevisione revision = new()
+                {
+                    IdEmprendimiento = emprendimiento.IdEmprendimiento,
+                    FechaSolicitud = DateTime.Now,
+                    FechaResolucion = null
+                };
+
+                await _context.EmprendimientoRevisiones.AddAsync(revision);
+                await _context.SaveChangesAsync();
+
                 await transaccion.CommitAsync();
 
                 HttpContext.Session.SetInt32(
@@ -463,13 +493,12 @@ namespace ProyectoClubCreativo.Controllers
 
 
                 TempData["MensajeSolicitud"] =
-                    "Tu cuenta fue creada correctamente. Ahora completa la solicitud de tu emprendimiento.";
+                    "Tu cuenta fue creada correctamente y tu solicitud de emprendimiento ya fue enviada. Te notificaremos por correo cuando sea resuelta.";
 
                 return RedirectToAction(
-    "SolicitudEmprendimiento",
-    "Emprendedor",
-    new { idCategoria = modelo.IdCategoria }
-);
+                    "EstadoSolicitud",
+                    "Emprendedor"
+                );
             }
             catch
             {

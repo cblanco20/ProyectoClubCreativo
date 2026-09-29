@@ -15,6 +15,16 @@
             ? "enlace-emprendedor activo"
             : "enlace-emprendedor";
     }
+
+    string estadoEmprendimiento =
+        ViewBag.EstadoEmprendimiento as string ?? "Pendiente";
+
+    (string icono, string texto) = estadoEmprendimiento switch
+    {
+        "Aprobado" => ("bi-check-circle-fill", "Emprendimiento aprobado"),
+        "Rechazado" => ("bi-x-circle-fill", "Solicitud rechazada"),
+        _ => ("bi-hourglass-split", "Solicitud pendiente")
+    };
 }
 
 <!DOCTYPE html>
@@ -52,14 +62,10 @@
 
 <body class="pagina-emprendedor">
 
-    <!-- Fondo oscuro para celular -->
     <div id="fondoMenuEmprendedor"
          class="fondo-menu-emprendedor">
     </div>
 
-    <!-- =========================================
-                 MENÚ LATERAL
-    ========================================== -->
     <aside id="menuEmprendedor"
            class="menu-emprendedor">
 
@@ -90,7 +96,6 @@
 
         </div>
 
-        <!-- Información del emprendimiento -->
         <div class="resumen-menu-emprendedor">
 
             <div class="avatar-menu-emprendedor">
@@ -105,15 +110,14 @@
                 <strong>Mi emprendimiento</strong>
 
                 <span>
-                    <i class="bi bi-hourglass-split"></i>
-                    Solicitud pendiente
+                    <i class="bi @icono"></i>
+                    @texto
                 </span>
 
             </div>
 
         </div>
 
-        <!-- Navegación -->
         <nav class="navegacion-emprendedor">
 
             <span class="titulo-grupo-emprendedor">
@@ -279,12 +283,8 @@
 
     </aside>
 
-    <!-- =========================================
-             ESTRUCTURA PRINCIPAL
-    ========================================== -->
     <div class="estructura-emprendedor">
 
-        <!-- Encabezado -->
         <header class="encabezado-emprendedor">
 
             <button id="abrirMenuEmprendedor"
@@ -312,7 +312,6 @@
 
             </a>
 
-            <!-- Navegación pública -->
             <nav class="menu-publico-emprendedor">
 
                 <a asp-controller="Home"
@@ -347,7 +346,6 @@
 
             </nav>
 
-            <!-- Acciones -->
             <div class="acciones-emprendedor">
 
                 <a asp-controller="Emprendedor"
@@ -401,14 +399,12 @@
 
         </header>
 
-        <!-- Contenido de cada vista -->
         <main class="contenido-principal-emprendedor">
 
             @RenderBody()
 
         </main>
 
-        <!-- Footer -->
         <footer class="footer-emprendedor">
 
             <div class="informacion-footer-emprendedor">

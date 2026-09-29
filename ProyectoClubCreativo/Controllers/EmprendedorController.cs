@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using ProyectoClubCreativo.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
@@ -19,8 +20,9 @@ namespace ProyectoClubCreativo.Controllers
             _entornoWeb = entornoWeb;
         }
 
-        public override void OnActionExecuting(
-        Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
+        public override async Task OnActionExecutionAsync(
+            ActionExecutingContext context,
+            ActionExecutionDelegate next)
         {
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
             string? rolUsuario = HttpContext.Session.GetString("RolUsuario");
@@ -35,7 +37,17 @@ namespace ProyectoClubCreativo.Controllers
                 return;
             }
 
-            base.OnActionExecuting(context);
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            ViewBag.EstadoEmprendimiento =
+                emprendimiento?.EstadoAprobacion ?? "Pendiente";
+
+            ViewBag.TieneEmprendimiento = emprendimiento is not null;
+
+            await next();
         }
 
         public IActionResult Panel()
@@ -327,9 +339,46 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult EstadoSolicitud()
+        public async Task<IActionResult> EstadoSolicitud()
         {
-            return View();
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .Include(e => e.IdCategoriaNavigation)
+                .Include(e => e.EmprendimientoRevisione)
+                .Include(e => e.MotivosRechazos)
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                return RedirectToAction(nameof(SolicitudEmprendimiento));
+            }
+
+            EstadoSolicitudViewModel modelo = new()
+            {
+                NombreComercial = emprendimiento.NombreComercial,
+                Categoria = emprendimiento.IdCategoriaNavigation?.Nombre
+                    ?? "Sin categoría",
+                Correo = emprendimiento.Correo,
+                Telefono = emprendimiento.Telefono ?? string.Empty,
+                SitioWeb = emprendimiento.SitioWeb,
+                Descripcion = emprendimiento.Descripcion,
+                Estado = emprendimiento.EstadoAprobacion,
+                FechaSolicitud = emprendimiento.EmprendimientoRevisione?.FechaSolicitud,
+                FechaResolucion = emprendimiento.EmprendimientoRevisione?.FechaResolucion,
+                MotivoRechazo = emprendimiento.MotivosRechazos
+                    .OrderByDescending(m => m.FechaRechazo)
+                    .FirstOrDefault()?.Motivo
+            };
+
+            return View(modelo);
         }
 
         [HttpGet]
@@ -1195,7 +1244,6 @@ namespace ProyectoClubCreativo.Controllers
             return View();
         }
 
-        // ---------- POSTULACIÓN A HECHO EN CR ----------
         [HttpGet]
         public async Task<IActionResult> PostularHechoEnCr()
         {
