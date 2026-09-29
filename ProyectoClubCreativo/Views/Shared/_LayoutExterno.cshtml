@@ -1,4 +1,15 @@
-﻿<!DOCTYPE html>
+﻿@{
+    int? idUsuarioSesion = Context.Session.GetInt32("IdUsuario");
+    string? rolUsuarioSesion = Context.Session.GetString("RolUsuario");
+    string nombreUsuarioSesion =
+        Context.Session.GetString("NombreUsuario") ?? "Mi cuenta";
+
+    bool haySesion =
+        idUsuarioSesion.HasValue &&
+        !string.IsNullOrWhiteSpace(rolUsuarioSesion);
+}
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
@@ -135,20 +146,24 @@
             </ul>
         </nav>
 
-        <div class="bloque-menu-registro">
-            <h3>¿Quieres formar parte?</h3>
+        @if (!haySesion)
+        {
+            <div class="bloque-menu-registro">
+                <h3>¿Quieres formar parte?</h3>
 
-            <p>
-                Regístrate como usuario o solicita incorporar
-                tu emprendimiento a la comunidad creativa.
-            </p>
+                <p>
+                    Regístrate como usuario o solicita incorporar
+                    tu emprendimiento a la comunidad creativa.
+                </p>
 
-            <a asp-controller="Cuenta"
-               asp-action="SeleccionarRegistro"
-               class="boton-menu-registro">
-                Crear una cuenta
-            </a>
-        </div>
+                <a asp-controller="Cuenta"
+                   asp-action="SeleccionarRegistro"
+                   class="boton-menu-registro">
+                    Crear una cuenta
+                </a>
+            </div>
+        }
+        
     </aside>
 
     <!-- Encabezado público -->
@@ -289,11 +304,30 @@
                     <span>⌕</span>
                 </button>
 
-                <a asp-controller="Cuenta"
-                   asp-action="IniciarSesion"
-                   class="boton-iniciar-sesion">
-                    Iniciar sesión
-                </a>
+                @if (haySesion && rolUsuarioSesion == "Usuario")
+                {
+                    <a asp-controller="Usuario"
+                       asp-action="Panel"
+                       class="boton-iniciar-sesion">
+                        @nombreUsuarioSesion
+                    </a>
+                }
+                else if (haySesion && rolUsuarioSesion == "Emprendedor")
+                {
+                    <a asp-controller="Emprendedor"
+                       asp-action="Panel"
+                       class="boton-iniciar-sesion">
+                        @nombreUsuarioSesion
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Cuenta"
+                       asp-action="IniciarSesion"
+                       class="boton-iniciar-sesion">
+                        Iniciar sesión
+                    </a>
+                }
 
             </div>
 
