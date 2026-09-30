@@ -382,7 +382,7 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult PerfilEmprendimiento()
+        public async Task<IActionResult> PerfilEmprendimiento()
         {
             int? idUsuario =
                 HttpContext.Session.GetInt32("IdUsuario");
@@ -395,9 +395,95 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            return View();
-        }
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .Include(e => e.IdCategoriaNavigation)
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
 
+            if (emprendimiento is null)
+            {
+                return RedirectToAction(nameof(SolicitudEmprendimiento));
+            }
+
+            PerfilEmprendimientoViewModel modelo = new()
+            {
+                NombreComercial = emprendimiento.NombreComercial,
+                Descripcion = emprendimiento.Descripcion,
+                Categoria = emprendimiento.IdCategoriaNavigation?.Nombre ?? "Sin categoría",
+                Cedula = emprendimiento.CedulaJuridica ?? string.Empty,
+                EstadoAprobacion = emprendimiento.EstadoAprobacion,
+                Activo = emprendimiento.Activo,
+                LogoUrl = emprendimiento.LogoUrl,
+                Correo = emprendimiento.Correo,
+                Telefono = emprendimiento.Telefono ?? string.Empty,
+                SitioWeb = emprendimiento.SitioWeb,
+                Instagram = emprendimiento.Instagram,
+                Facebook = emprendimiento.Facebook,
+                ParticipaClubCreativo = emprendimiento.ParticipaClubCreativo,
+                ParticipaHechoEnCr = emprendimiento.ParticipaHechoEnCr
+            };
+
+            modelo.Fotografias = await _context.Galerias
+                .AsNoTracking()
+                .Include(g => g.GaleriaImagene)
+                .Where(g =>
+                    g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    g.GaleriaImagene != null)
+                .OrderBy(g => g.FechaCreacion)
+                .Select(g => g.GaleriaImagene!.UrlImagen)
+                .ToListAsync();
+
+            List<Producto> productosDestacados = await _context.Productos
+     .AsNoTracking()
+     .Include(p => p.IdCategoriaNavigation)
+     .Include(p => p.ProductoImagene)
+     .Where(p =>
+         p.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+         p.EsDestacado)
+     .ToListAsync();
+
+            modelo.ProductosDestacados = productosDestacados
+                .Select(p => new ProductoPerfilViewModel
+                {
+                    Nombre = p.Nombre,
+                    Categoria = p.IdCategoriaNavigation?.Nombre ?? "Sin categoría",
+                    Precio = p.Precio,
+                    Estado = p.Estado,
+                    ImagenUrl = p.ProductoImagene?.UrlImagen
+                })
+                .ToList();
+
+            modelo.ProductosPublicados = await _context.Productos
+                .CountAsync(p =>
+                    p.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    p.Estado == "Activo");
+
+            modelo.VentasRealizadas = await _context.VentaDetalles
+                .CountAsync(vd =>
+                    vd.IdProductoNavigation.IdEmprendimiento == emprendimiento.IdEmprendimiento);
+
+            modelo.Favoritos = await _context.Favoritos
+                .CountAsync(f =>
+                    f.IdEmprendimiento == emprendimiento.IdEmprendimiento ||
+                    (f.IdProducto != null &&
+                     f.IdProductoNavigation!.IdEmprendimiento == emprendimiento.IdEmprendimiento));
+
+            List<byte?> valoraciones = await _context.ComentariosResenas
+                .Where(c =>
+                    (c.IdEmprendimiento == emprendimiento.IdEmprendimiento ||
+                     (c.IdProducto != null &&
+                      c.IdProductoNavigation!.IdEmprendimiento == emprendimiento.IdEmprendimiento)) &&
+                    c.Valoracion != null)
+                .Select(c => c.Valoracion)
+                .ToListAsync();
+
+            modelo.ValoracionPromedio = valoraciones.Count > 0
+                ? Math.Round(valoraciones.Average(v => v!.Value), 1)
+                : null;
+
+            return View(modelo);
+        }
         [HttpGet]
         public async Task<IActionResult> EditarEmprendimiento()
         {
