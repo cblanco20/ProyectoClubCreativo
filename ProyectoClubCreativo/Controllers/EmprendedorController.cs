@@ -4,6 +4,7 @@ using ProyectoClubCreativo.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
+using ProyectoClubCreativo.Services;
 
 namespace ProyectoClubCreativo.Controllers
 {
@@ -11,13 +12,16 @@ namespace ProyectoClubCreativo.Controllers
     {
         private readonly ClubCreativoDbContext _context;
         private readonly IWebHostEnvironment _entornoWeb;
+        private readonly PagoService _pagoService;
 
         public EmprendedorController(
-            ClubCreativoDbContext context,
-            IWebHostEnvironment entornoWeb)
+    ClubCreativoDbContext context,
+    IWebHostEnvironment entornoWeb,
+    PagoService pagoService)
         {
             _context = context;
             _entornoWeb = entornoWeb;
+            _pagoService = pagoService;
         }
 
         public override async Task OnActionExecutionAsync(
@@ -908,16 +912,36 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult PlanesSuscripcion()
+        public async Task<IActionResult> PlanesSuscripcion()
         {
-            return View(new SeleccionPlanViewModel());
+            List<PlanDisponibleViewModel> planes = await _context.PlanesSuscripcions
+                .AsNoTracking()
+                .Where(p => p.Activo)
+                .OrderBy(p => p.Precio)
+                .Select(p => new PlanDisponibleViewModel
+                {
+                    IdPlan = p.IdPlan,
+                    Nombre = p.Nombre,
+                    Descripcion = p.Descripcion ?? string.Empty,
+                    Precio = p.Precio,
+                    Periodicidad = p.Periodicidad,
+                    Beneficios = p.Beneficios ?? string.Empty
+                })
+                .ToListAsync();
+
+            SeleccionPlanViewModel modelo = new()
+            {
+                Planes = planes
+            };
+
+            return View(modelo);
         }
 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult PlanesSuscripcion(
-            SeleccionPlanViewModel modelo)
+        public async Task<IActionResult> PlanesSuscripcion(
+    SeleccionPlanViewModel modelo)
         {
             if (!modelo.ConfirmaSeleccion)
             {
@@ -927,21 +951,515 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+
+            if (!ModelState.IsValid)
+            {
+                modelo.Planes = await _context.PlanesSuscripcions
+                    .AsNoTracking()
+                    .Where(p => p.Activo)
+                    .OrderBy(p => p.Precio)
+                    .Select(p => new PlanDisponibleViewModel
+                    {
+                        IdPlan = p.IdPlan,
+                        Nombre = p.Nombre,
+                        Descripcion = p.Descripcion ?? string.Empty,
+                        Precio = p.Precio,
+                        Periodicidad = p.Periodicidad,
+                        Beneficios = p.Beneficios ?? string.Empty
+                    })
+                    .ToListAsync();
+
+                return View(modelo);
+            }
+
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null ||
+                !emprendimiento.Activo ||
+                emprendimiento.EstadoAprobacion != "Aprobado")
+            {
+                TempData["MensajeError"] =
+                    "Debe tener un emprendimiento activo y aprobado para adquirir un plan.";
+
+                return RedirectToAction(nameof(PlanesSuscripcion));
+            }
+
+            PlanesSuscripcion? plan =
+                await _context.PlanesSuscripcions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p =>
+                        p.IdPlan == modelo.IdPlanSeleccionado &&
+                        p.Activo);
+
+            if (plan is null)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdPlanSeleccionado),
+                    "El plan seleccionado no está disponible."
+                );
+
+                modelo.Planes = await _context.PlanesSuscripcions
+                    .AsNoTracking()
+                    .Where(p => p.Activo)
+                    .OrderBy(p => p.Precio)
+                    .Select(p => new PlanDisponibleViewModel
+                    {
+                        IdPlan = p.IdPlan,
+                        Nombre = p.Nombre,
+                        Descripcion = p.Descripcion ?? string.Empty,
+                        Precio = p.Precio,
+                        Periodicidad = p.Periodicidad,
+                        Beneficios = p.Beneficios ?? string.Empty
+                    })
+                    .ToListAsync();
+
+                return View(modelo);
+            }
+
+            return RedirectToAction(
+                nameof(PagoSuscripcion),
+                new
+                {
+                     idPlan = plan.IdPlan
+                }
+            );
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PagoSuscripcion(int idPlan)
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null ||
+                !emprendimiento.Activo ||
+                emprendimiento.EstadoAprobacion != "Aprobado")
+            {
+                TempData["MensajeError"] =
+                    "Debe tener un emprendimiento activo y aprobado para adquirir un plan.";
+
+                return RedirectToAction(nameof(PlanesSuscripcion));
+            }
+
+            PlanesSuscripcion? plan =
+                await _context.PlanesSuscripcions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p =>
+                        p.IdPlan == idPlan &&
+                        p.Activo);
+
+            if (plan is null)
+            {
+                TempData["MensajeError"] =
+                    "El plan seleccionado ya no se encuentra disponible.";
+
+                return RedirectToAction(nameof(PlanesSuscripcion));
+            }
+
+            Suscripcione? suscripcionActual =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .Include(s => s.IdPlanNavigation)
+                    .Where(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa")
+                    .OrderByDescending(s => s.FechaInicio)
+                    .FirstOrDefaultAsync();
+
+            PagoSuscripcionViewModel modelo = new()
+            {
+                IdPlan = plan.IdPlan,
+                NombrePlan = plan.Nombre,
+                Precio = plan.Precio,
+                Periodicidad = plan.Periodicidad,
+                TotalPagar = plan.Precio
+            };
+
+            if (suscripcionActual != null)
+            {
+                // Si seleccionó exactamente el mismo plan que ya posee,
+                // no es necesario realizar otro pago.
+                if (suscripcionActual.IdPlan == plan.IdPlan)
+                {
+                    TempData["MensajeError"] =
+                        "Este es el plan que actualmente tiene activo.";
+
+                    return RedirectToAction(nameof(MiSuscripcion));
+                }
+
+                modelo.EsCambioPlan = true;
+                modelo.NombrePlanActual =
+                    suscripcionActual.IdPlanNavigation.Nombre;
+
+                modelo.PrecioPlanActual =
+                    suscripcionActual.IdPlanNavigation.Precio;
+
+                DateOnly hoy =
+                    DateOnly.FromDateTime(DateTime.Today);
+
+                int diasTotales =
+                    suscripcionActual.FechaFin.DayNumber -
+                    suscripcionActual.FechaInicio.DayNumber;
+
+                int diasRestantes =
+                    suscripcionActual.FechaFin.DayNumber -
+                    hoy.DayNumber;
+
+                diasRestantes = Math.Max(
+                    0,
+                    Math.Min(diasRestantes, diasTotales)
+                );
+
+                decimal creditoProporcional = 0;
+
+                if (diasTotales > 0)
+                {
+                    creditoProporcional =
+                        suscripcionActual.IdPlanNavigation.Precio *
+                        diasRestantes /
+                        diasTotales;
+                }
+
+                creditoProporcional =
+                    Math.Round(creditoProporcional, 2);
+
+                modelo.CreditoProporcional =
+                    creditoProporcional;
+
+                modelo.TotalPagar =
+                    Math.Max(
+                        0,
+                        plan.Precio - creditoProporcional
+                    );
+            }
+
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PagoSuscripcion(
+    PagoSuscripcionViewModel modelo)
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            // Consultar nuevamente el plan seleccionado.
+            PlanesSuscripcion? plan =
+                await _context.PlanesSuscripcions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p =>
+                        p.IdPlan == modelo.IdPlan &&
+                        p.Activo);
+
+            if (plan is null)
+            {
+                TempData["MensajeError"] =
+                    "El plan seleccionado ya no se encuentra disponible.";
+
+                return RedirectToAction(nameof(PlanesSuscripcion));
+            }
+
+            // Comprobar nuevamente el emprendimiento.
+            Emprendimiento? emprendimiento =
+    await _context.Emprendimientos
+        .AsNoTracking()
+        .FirstOrDefaultAsync(e =>
+            e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null ||
+                !emprendimiento.Activo ||
+                emprendimiento.EstadoAprobacion != "Aprobado")
+            {
+                TempData["MensajeError"] =
+                    "Debe tener un emprendimiento activo y aprobado para adquirir un plan.";
+
+                return RedirectToAction(nameof(PlanesSuscripcion));
+            }
+
+            // Buscar la suscripción activa actual.
+            Suscripcione? suscripcionActual =
+                await _context.Suscripciones
+                    .Include(s => s.IdPlanNavigation)
+                    .Where(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa")
+                    .OrderByDescending(s => s.FechaInicio)
+                    .FirstOrDefaultAsync();
+
+            // Los datos visibles siempre se vuelven a obtener desde la BD.
+            modelo.NombrePlan = plan.Nombre;
+            modelo.Precio = plan.Precio;
+            modelo.Periodicidad = plan.Periodicidad;
+            modelo.TotalPagar = plan.Precio;
+
+            // Si existe una suscripción activa, estamos ante un cambio de plan.
+            if (suscripcionActual != null)
+            {
+                if (suscripcionActual.IdPlan == plan.IdPlan)
+                {
+                    TempData["MensajeError"] =
+                        "Este es el plan que actualmente tiene activo.";
+
+                    return RedirectToAction(nameof(MiSuscripcion));
+                }
+
+                modelo.EsCambioPlan = true;
+
+                modelo.NombrePlanActual =
+                    suscripcionActual.IdPlanNavigation.Nombre;
+
+                modelo.PrecioPlanActual =
+                    suscripcionActual.IdPlanNavigation.Precio;
+
+                DateOnly hoy =
+                    DateOnly.FromDateTime(DateTime.Today);
+
+                int diasTotales =
+                    suscripcionActual.FechaFin.DayNumber -
+                    suscripcionActual.FechaInicio.DayNumber;
+
+                int diasRestantes =
+                    suscripcionActual.FechaFin.DayNumber -
+                    hoy.DayNumber;
+
+                diasRestantes = Math.Max(
+                    0,
+                    Math.Min(diasRestantes, diasTotales)
+                );
+
+                decimal creditoProporcional = 0;
+
+                if (diasTotales > 0)
+                {
+                    creditoProporcional =
+                        suscripcionActual.IdPlanNavigation.Precio *
+                        diasRestantes /
+                        diasTotales;
+                }
+
+                creditoProporcional =
+                    Math.Round(creditoProporcional, 2);
+
+                modelo.CreditoProporcional =
+                    creditoProporcional;
+
+                modelo.TotalPagar =
+                    Math.Max(
+                        0,
+                        plan.Precio - creditoProporcional
+                    );
+            }
+
+            // Validar vencimiento de la tarjeta.
+            if (modelo.MesVencimiento.HasValue &&
+                modelo.AnioVencimiento.HasValue)
+            {
+                DateTime hoy = DateTime.Today;
+
+                if (modelo.AnioVencimiento.Value < hoy.Year ||
+                    (modelo.AnioVencimiento.Value == hoy.Year &&
+                     modelo.MesVencimiento.Value < hoy.Month))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.AnioVencimiento),
+                        "La tarjeta se encuentra vencida."
+                    );
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(modelo);
             }
 
-            TempData["MensajeSuscripcion"] =
-                $"El plan {modelo.PlanSeleccionado} fue seleccionado correctamente.";
+            // Procesar el monto calculado por el servidor.
+            ResultadoPago resultadoPago =
+                _pagoService.ProcesarPago(
+                    modelo.NumeroTarjeta,
+                    modelo.TotalPagar
+                );
+
+            if (!resultadoPago.Aprobado)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    resultadoPago.Mensaje
+                );
+
+                modelo.NumeroTarjeta = string.Empty;
+                modelo.Cvv = string.Empty;
+
+                return View(modelo);
+            }
+
+            DateOnly fechaInicio =
+                DateOnly.FromDateTime(DateTime.Today);
+
+            DateOnly fechaFin;
+
+            if (plan.Periodicidad.Equals(
+                "Anual",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                fechaFin = fechaInicio.AddYears(1);
+            }
+            else
+            {
+                fechaFin = fechaInicio.AddMonths(1);
+            }
+
+            // Si es un cambio de plan, cerrar la suscripción anterior
+            // únicamente después de que el pago haya sido aprobado.
+            if (suscripcionActual != null)
+            {
+                suscripcionActual.Estado = "Cancelada";
+            }
+
+            Suscripcione nuevaSuscripcion = new()
+            {
+                IdEmprendimiento =
+                    emprendimiento.IdEmprendimiento,
+
+                IdPlan = plan.IdPlan,
+                FechaInicio = fechaInicio,
+                FechaFin = fechaFin,
+                Estado = "Activa"
+            };
+
+            _context.Suscripciones.Add(nuevaSuscripcion);
+
+            await _context.SaveChangesAsync();
+
+            if (suscripcionActual != null)
+            {
+                TempData["MensajeSuscripcion"] =
+                    "El pago fue procesado y el cambio de plan se realizó correctamente.";
+            }
+            else
+            {
+                TempData["MensajeSuscripcion"] =
+                    "El pago fue procesado y tu suscripción fue activada correctamente.";
+            }
 
             return RedirectToAction(nameof(MiSuscripcion));
         }
 
         [HttpGet]
-        public IActionResult MiSuscripcion()
+        public async Task<IActionResult> MiSuscripcion()
         {
-            return View(new MiSuscripcionViewModel());
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento == null)
+            {
+                return RedirectToAction(nameof(Panel));
+            }
+
+            var suscripcion = await _context.Suscripciones
+                .AsNoTracking()
+                .Include(s => s.IdPlanNavigation)
+                .Where(s =>
+                    s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    s.Estado == "Activa")
+                .OrderByDescending(s => s.FechaInicio)
+                .FirstOrDefaultAsync();
+
+            MiSuscripcionViewModel modelo = new();
+
+            if (suscripcion != null)
+            {
+                modelo.TieneSuscripcion = true;
+                modelo.IdSuscripcion = suscripcion.IdSuscripcion;
+                modelo.IdPlan = suscripcion.IdPlan;
+
+                modelo.NombrePlan =
+                    suscripcion.IdPlanNavigation.Nombre;
+
+                modelo.DescripcionPlan =
+                    suscripcion.IdPlanNavigation.Descripcion;
+
+                modelo.Precio =
+                    suscripcion.IdPlanNavigation.Precio;
+
+                modelo.Periodicidad =
+                    suscripcion.IdPlanNavigation.Periodicidad;
+
+                modelo.Beneficios =
+                    suscripcion.IdPlanNavigation.Beneficios;
+
+                modelo.FechaInicio =
+                    suscripcion.FechaInicio;
+
+                modelo.FechaFin =
+                    suscripcion.FechaFin;
+
+                modelo.Estado =
+                    suscripcion.Estado;
+            }
+
+            var historialSuscripciones = await _context.Suscripciones
+            .AsNoTracking()
+            .Include(s => s.IdPlanNavigation)
+            .Where(s =>
+                s.IdEmprendimiento == emprendimiento.IdEmprendimiento)
+            .OrderByDescending(s => s.FechaInicio)
+            .Select(s => new MovimientoSuscripcionViewModel
+            {
+                Fecha = s.FechaInicio,
+                Descripcion = "Activación del " + s.IdPlanNavigation.Nombre,
+                Monto = s.IdPlanNavigation.Precio,
+                Estado = s.Estado
+            })
+            .ToListAsync();
+
+            modelo.Historial = historialSuscripciones;
+
+            return View(modelo);
         }
 
 

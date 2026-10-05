@@ -44,8 +44,8 @@
             <strong>Encuentra el plan ideal para tu negocio</strong>
 
             <p>
-                Todos los planes te permiten administrar tu perfil,
-                productos e información comercial desde el panel.
+                Revisa las opciones disponibles y selecciona
+                la que mejor se adapte a tu emprendimiento.
             </p>
         </div>
 
@@ -64,8 +64,7 @@
 </section>
 
 
-<form asp-controller="Emprendedor"
-      asp-action="PlanesSuscripcion"
+<form action="/Emprendedor/PlanesSuscripcion"
       method="post"
       class="formulario-planes-emprendedor"
       novalidate>
@@ -73,399 +72,366 @@
     @Html.AntiForgeryToken()
 
     <div asp-validation-summary="All"
-         class="resumen-validacion-emprendedor">
+     class="resumen-validacion-emprendedor">
+ </div>
+
+ @if (!ViewData.ModelState.IsValid)
+{
+    <div style="background:white; color:red; padding:15px; border:2px solid red; margin:15px 0;">
+        <strong>ERRORES DE VALIDACIÓN:</strong>
+
+        @foreach (var item in ViewData.ModelState)
+        {
+            foreach (var error in item.Value.Errors)
+            {
+                <p>
+                    Campo: @item.Key |
+                    Error: @(string.IsNullOrWhiteSpace(error.ErrorMessage)
+                        ? error.Exception?.Message
+                        : error.ErrorMessage)
+                </p>
+            }
+        }
+    </div>
+}
+
+
+
+    @if (Model.Planes.Count > 0)
+    {
+        <section class="grid-planes-suscripcion">
+
+            @foreach (var plan in Model.Planes)
+            {
+                <label class="tarjeta-plan-emprendedor">
+
+                    <input asp-for="IdPlanSeleccionado"
+                           type="radio"
+                           value="@plan.IdPlan"
+                           class="selector-plan-oculto" />
+
+                    <span class="indicador-seleccion-plan">
+                        <i class="bi bi-check-lg"></i>
+                    </span>
+
+
+                    <div class="cabecera-plan-emprendedor">
+
+                        <span class="icono-plan-suscripcion">
+                            <i class="bi bi-gem"></i>
+                        </span>
+
+                        <span class="etiqueta-plan-suscripcion">
+                            Plan disponible
+                        </span>
+
+                    </div>
+
+
+                    <div class="nombre-plan-emprendedor">
+
+                        <h2>@plan.Nombre</h2>
+
+                        @if (!string.IsNullOrWhiteSpace(plan.Descripcion))
+                        {
+                            <p>
+                                @plan.Descripcion
+                            </p>
+                        }
+
+                    </div>
+
+
+                    <div class="precio-plan-emprendedor">
+
+                        @if (plan.Precio == 0)
+                        {
+                            <strong>Gratis</strong>
+                        }
+                        else
+                        {
+                            <strong>₡@plan.Precio.ToString("N0")</strong>
+                        }
+
+                        <span>
+                            @plan.Periodicidad
+                        </span>
+
+                    </div>
+
+
+                    @if (!string.IsNullOrWhiteSpace(plan.Beneficios))
+                    {
+                        <ul class="beneficios-plan-emprendedor">
+
+                            @foreach (var beneficio in plan.Beneficios
+                                .Split(
+                                    new[] { '\r', '\n' },
+                                    StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <li>
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    @beneficio.Trim()
+                                </li>
+                            }
+
+                        </ul>
+                    }
+
+
+                    <span class="boton-seleccionar-plan">
+                        Seleccionar plan
+                    </span>
+
+                </label>
+            }
+
+        </section>
+
+
+        <span asp-validation-for="IdPlanSeleccionado"
+              class="mensaje-validacion-emprendedor validacion-plan-emprendedor">
+        </span>
+
+        @if (Model.Planes.Count >= 2)
+{
+    <div style="display:flex; justify-content:center; margin:28px 0;">
+        <button type="button"
+                id="botonCompararPlanes"
+                class="boton-cancelar-formulario-emprendedor">
+            <i class="bi bi-columns-gap"></i>
+            Comparar planes
+        </button>
     </div>
 
-
-    <section class="grid-planes-suscripcion">
-
-        <!-- PLAN BÁSICO -->
-        <label class="tarjeta-plan-emprendedor">
-
-            <input asp-for="PlanSeleccionado"
-                   type="radio"
-                   value="Básico"
-                   class="selector-plan-oculto" />
-
-            <span class="indicador-seleccion-plan">
-                <i class="bi bi-check-lg"></i>
-            </span>
-
-            <div class="cabecera-plan-emprendedor">
-
-                <span class="icono-plan-suscripcion basico">
-                    <i class="bi bi-box"></i>
-                </span>
-
-                <span class="etiqueta-plan-suscripcion">
-                    Para comenzar
-                </span>
-
-            </div>
-
-            <div class="nombre-plan-emprendedor">
-                <h2>Plan Básico</h2>
-
-                <p>
-                    Ideal para emprendimientos que están comenzando
-                    a publicar sus primeros productos.
-                </p>
-            </div>
-
-            <div class="precio-plan-emprendedor">
-
-                <strong>Gratis</strong>
-
-                <span>Sin costo mensual</span>
-
-            </div>
-
-            <ul class="beneficios-plan-emprendedor">
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Perfil público del emprendimiento.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Hasta 5 productos publicados.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Administración básica de inventario.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Consulta de ventas.
-                </li>
-
-                <li class="beneficio-no-incluido">
-                    <i class="bi bi-x-circle"></i>
-                    Participación prioritaria en eventos.
-                </li>
-
-                <li class="beneficio-no-incluido">
-                    <i class="bi bi-x-circle"></i>
-                    Acceso a Hecho en CR.
-                </li>
-
-            </ul>
-
-            <span class="boton-seleccionar-plan">
-                Seleccionar plan
-            </span>
-
-        </label>
-
-
-        <!-- PLAN EMPRENDEDOR -->
-        <label class="tarjeta-plan-emprendedor plan-recomendado">
-
-            <input asp-for="PlanSeleccionado"
-                   type="radio"
-                   value="Emprendedor"
-                   class="selector-plan-oculto" />
-
-            <span class="indicador-seleccion-plan">
-                <i class="bi bi-check-lg"></i>
-            </span>
-
-            <span class="insignia-plan-recomendado">
-                Más popular
-            </span>
-
-            <div class="cabecera-plan-emprendedor">
-
-                <span class="icono-plan-suscripcion emprendedor">
-                    <i class="bi bi-rocket-takeoff-fill"></i>
-                </span>
-
-                <span class="etiqueta-plan-suscripcion">
-                    Para crecer
-                </span>
-
-            </div>
-
-            <div class="nombre-plan-emprendedor">
-                <h2>Plan Emprendedor</h2>
-
-                <p>
-                    Diseñado para negocios que desean ampliar su catálogo
-                    y participar en actividades del Club.
-                </p>
-            </div>
-
-            <div class="precio-plan-emprendedor">
-
-                <strong>₡7.500</strong>
-
-                <span>por mes</span>
-
-            </div>
-
-            <ul class="beneficios-plan-emprendedor">
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Todos los beneficios del plan Básico.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Hasta 25 productos publicados.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Promociones para productos.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Participación en eventos seleccionados.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Estadísticas del emprendimiento.
-                </li>
-
-                <li class="beneficio-no-incluido">
-                    <i class="bi bi-x-circle"></i>
-                    Acceso completo a Hecho en CR.
-                </li>
-
-            </ul>
-
-            <span class="boton-seleccionar-plan">
-                Seleccionar plan
-            </span>
-
-        </label>
-
-
-        <!-- PLAN PREMIUM -->
-        <label class="tarjeta-plan-emprendedor">
-
-            <input asp-for="PlanSeleccionado"
-                   type="radio"
-                   value="Premium"
-                   class="selector-plan-oculto" />
-
-            <span class="indicador-seleccion-plan">
-                <i class="bi bi-check-lg"></i>
-            </span>
-
-            <div class="cabecera-plan-emprendedor">
-
-                <span class="icono-plan-suscripcion premium">
-                    <i class="bi bi-gem"></i>
-                </span>
-
-                <span class="etiqueta-plan-suscripcion">
-                    Para destacar
-                </span>
-
-            </div>
-
-            <div class="nombre-plan-emprendedor">
-                <h2>Plan Premium</h2>
-
-                <p>
-                    Para marcas consolidadas que necesitan mayor visibilidad,
-                    publicaciones y acceso a beneficios exclusivos.
-                </p>
-            </div>
-
-            <div class="precio-plan-emprendedor">
-
-                <strong>₡15.000</strong>
-
-                <span>por mes</span>
-
-            </div>
-
-            <ul class="beneficios-plan-emprendedor">
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Todos los beneficios del plan Emprendedor.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Productos publicados sin límite.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Participación prioritaria en eventos.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Acceso completo a Hecho en CR.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Mayor visibilidad en el catálogo.
-                </li>
-
-                <li>
-                    <i class="bi bi-check-circle-fill"></i>
-                    Estadísticas y reportes avanzados.
-                </li>
-
-            </ul>
-
-            <span class="boton-seleccionar-plan">
-                Seleccionar plan
-            </span>
-
-        </label>
-
-    </section>
-
-    <span asp-validation-for="PlanSeleccionado"
-          class="mensaje-validacion-emprendedor validacion-plan-emprendedor">
-    </span>
-
-
-    <!-- COMPARACIÓN -->
-    <section class="comparacion-planes-emprendedor">
-
-        <div class="encabezado-comparacion-planes">
-
-            <span class="subtitulo-emprendedor">
-                Comparación
-            </span>
-
-            <h2>Compara los beneficios</h2>
-
-            <p>
-                Revisa rápidamente las características incluidas
-                en cada opción.
-            </p>
-
-        </div>
-
-        <div class="tabla-comparacion-planes">
-
-            <div class="fila-comparacion encabezado-comparacion">
-                <span>Característica</span>
-                <span>Básico</span>
-                <span>Emprendedor</span>
-                <span>Premium</span>
-            </div>
-
-            <div class="fila-comparacion">
-                <span>Productos publicados</span>
-                <span>5</span>
-                <span>25</span>
-                <span>Sin límite</span>
-            </div>
-
-            <div class="fila-comparacion">
-                <span>Perfil público</span>
-                <span><i class="bi bi-check-circle-fill"></i></span>
-                <span><i class="bi bi-check-circle-fill"></i></span>
-                <span><i class="bi bi-check-circle-fill"></i></span>
-            </div>
-
-            <div class="fila-comparacion">
-                <span>Promociones</span>
-                <span><i class="bi bi-dash-circle"></i></span>
-                <span><i class="bi bi-check-circle-fill"></i></span>
-                <span><i class="bi bi-check-circle-fill"></i></span>
-            </div>
-
-            <div class="fila-comparacion">
-                <span>Participación en eventos</span>
-                <span>Limitada</span>
-                <span>Incluida</span>
-                <span>Prioritaria</span>
-            </div>
-
-            <div class="fila-comparacion">
-                <span>Hecho en CR</span>
-                <span><i class="bi bi-dash-circle"></i></span>
-                <span>Limitado</span>
-                <span><i class="bi bi-check-circle-fill"></i></span>
-            </div>
-
-            <div class="fila-comparacion">
-                <span>Estadísticas</span>
-                <span>Básicas</span>
-                <span>Completas</span>
-                <span>Avanzadas</span>
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- CONFIRMACIÓN -->
-    <section class="confirmacion-plan-emprendedor">
+    <section id="comparacionPlanes"
+             class="confirmacion-plan-emprendedor"
+             style="display:none;">
 
         <div class="informacion-confirmacion-plan">
 
             <span class="icono-confirmacion-plan">
-                <i class="bi bi-shield-check"></i>
+                <i class="bi bi-bar-chart"></i>
             </span>
 
             <div>
-                <h2>Confirma tu elección</h2>
-
+                <h2>Comparación de planes</h2>
                 <p>
-                    Selecciona uno de los planes y confirma que deseas
-                    continuar con la suscripción.
+                    Compara las características de los planes disponibles
+                    antes de seleccionar el que mejor se adapte a tu emprendimiento.
                 </p>
             </div>
 
         </div>
 
-        <label class="casilla-confirmacion-plan">
+        <div style="overflow-x:auto; margin-top:20px;">
 
-            <input asp-for="ConfirmaSeleccion" />
+            <table style="width:100%; border-collapse:collapse;">
 
-            <span>
-                Confirmo que deseo seleccionar el plan indicado
-                y conozco sus beneficios.
-            </span>
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding:14px;">
+                            Característica
+                        </th>
 
-        </label>
+                        @foreach (var plan in Model.Planes)
+                        {
+                            <th style="text-align:center; padding:14px;">
+                                @plan.Nombre
+                            </th>
+                        }
+                    </tr>
+                </thead>
 
-        <span asp-validation-for="ConfirmaSeleccion"
-              class="mensaje-validacion-emprendedor">
-        </span>
+                <tbody>
+
+                    <tr>
+                        <td style="padding:14px;">
+                            <strong>Precio</strong>
+                        </td>
+
+                        @foreach (var plan in Model.Planes)
+                        {
+                            <td style="text-align:center; padding:14px;">
+                                @if (plan.Precio == 0)
+                                {
+                                    <span>Gratis</span>
+                                }
+                                else
+                                {
+                                    <span>₡@plan.Precio.ToString("N0")</span>
+                                }
+                            </td>
+                        }
+                    </tr>
+
+                    <tr>
+                        <td style="padding:14px;">
+                            <strong>Periodicidad</strong>
+                        </td>
+
+                        @foreach (var plan in Model.Planes)
+                        {
+                            <td style="text-align:center; padding:14px;">
+                                @plan.Periodicidad
+                            </td>
+                        }
+                    </tr>
+
+                    <tr>
+                        <td style="padding:14px;">
+                            <strong>Descripción</strong>
+                        </td>
+
+                        @foreach (var plan in Model.Planes)
+                        {
+                            <td style="text-align:center; padding:14px;">
+                                @(string.IsNullOrWhiteSpace(plan.Descripcion)
+                                    ? "Sin descripción"
+                                    : plan.Descripcion)
+                            </td>
+                        }
+                    </tr>
+
+                    <tr>
+                        <td style="padding:14px; vertical-align:top;">
+                            <strong>Beneficios</strong>
+                        </td>
+
+                        @foreach (var plan in Model.Planes)
+                        {
+                            <td style="padding:14px; vertical-align:top;">
+
+                                @if (!string.IsNullOrWhiteSpace(plan.Beneficios))
+                                {
+                                    <ul style="margin:0; padding-left:20px;">
+
+                                        @foreach (var beneficio in plan.Beneficios
+                                            .Split(
+                                                new[] { '\r', '\n' },
+                                                StringSplitOptions.RemoveEmptyEntries))
+                                        {
+                                            <li style="margin-bottom:6px;">
+                                                @beneficio.Trim()
+                                            </li>
+                                        }
+
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <span>Sin beneficios registrados</span>
+                                }
+
+                            </td>
+                        }
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
 
     </section>
+}
+
+        <section class="confirmacion-plan-emprendedor">
+
+            <div class="informacion-confirmacion-plan">
+
+                <span class="icono-confirmacion-plan">
+                    <i class="bi bi-shield-check"></i>
+                </span>
+
+                <div>
+                    <h2>Confirma tu elección</h2>
+
+                    <p>
+                        Selecciona uno de los planes y confirma que deseas
+                        continuar con la suscripción.
+                    </p>
+                </div>
+
+            </div>
 
 
-    <div class="acciones-formulario-emprendedor">
+            <label class="casilla-confirmacion-plan">
 
-        <a asp-controller="Emprendedor"
-           asp-action="Panel"
-           class="boton-cancelar-formulario-emprendedor">
+                <input asp-for="ConfirmaSeleccion" />
 
-            Cancelar
+                <span>
+                    Confirmo que deseo seleccionar el plan indicado
+                    y conozco sus beneficios.
+                </span>
 
-        </a>
+            </label>
 
-        <button type="submit"
-                class="boton-guardar-formulario-emprendedor">
 
-            <i class="bi bi-credit-card-fill"></i>
-            Continuar con el plan
+            <span asp-validation-for="ConfirmaSeleccion"
+                  class="mensaje-validacion-emprendedor">
+            </span>
 
-        </button>
+        </section>
 
-    </div>
+
+        <div class="acciones-formulario-emprendedor">
+
+            <a asp-controller="Emprendedor"
+               asp-action="Panel"
+               class="boton-cancelar-formulario-emprendedor">
+
+                Cancelar
+
+            </a>
+
+            <button type="submit"
+                    class="boton-guardar-formulario-emprendedor">
+
+                <i class="bi bi-credit-card-fill"></i>
+                Continuar con el plan
+
+            </button>
+
+        </div>
+    }
+    else
+    {
+        <section class="confirmacion-plan-emprendedor">
+
+            <div class="informacion-confirmacion-plan">
+
+                <span class="icono-confirmacion-plan">
+                    <i class="bi bi-info-circle"></i>
+                </span>
+
+                <div>
+                    <h2>No hay planes disponibles</h2>
+
+                    <p>
+                        En este momento no existen planes de suscripción
+                        disponibles para nuevas suscripciones.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="acciones-formulario-emprendedor">
+
+            <a asp-controller="Emprendedor"
+               asp-action="Panel"
+               class="boton-cancelar-formulario-emprendedor">
+
+                Volver al panel
+
+            </a>
+
+        </div>
+    }
 
 </form>
 
@@ -482,6 +448,7 @@
 
     </div>
 
+
     <div class="grid-preguntas-planes">
 
         <article>
@@ -497,6 +464,7 @@
             </div>
         </article>
 
+
         <article>
             <i class="bi bi-calendar-x"></i>
 
@@ -510,6 +478,7 @@
             </div>
         </article>
 
+
         <article>
             <i class="bi bi-box-seam"></i>
 
@@ -517,8 +486,8 @@
                 <h3>¿Qué pasa con mis productos?</h3>
 
                 <p>
-                    Si cambias a un plan inferior, algunos productos
-                    podrían quedar temporalmente ocultos.
+                    Las condiciones relacionadas con los productos dependerán
+                    del plan de suscripción seleccionado.
                 </p>
             </div>
         </article>
@@ -526,3 +495,37 @@
     </div>
 
 </section>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const botonComparar = document.getElementById("botonCompararPlanes");
+            const comparacion = document.getElementById("comparacionPlanes");
+
+            if (botonComparar && comparacion) {
+
+                botonComparar.addEventListener("click", function () {
+
+                    const estaOculta = comparacion.style.display === "none";
+
+                    comparacion.style.display = estaOculta ? "block" : "none";
+
+                    botonComparar.innerHTML = estaOculta
+                        ? '<i class="bi bi-x-lg"></i> Ocultar comparación'
+                        : '<i class="bi bi-columns-gap"></i> Comparar planes';
+
+                    if (estaOculta) {
+                        comparacion.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+}

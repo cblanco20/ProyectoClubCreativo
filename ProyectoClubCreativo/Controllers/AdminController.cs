@@ -571,21 +571,30 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Suscripciones()
+        public async Task<IActionResult> Suscripciones()
         {
+            List<PlanSuscripcionViewModel> planes = await _context.PlanesSuscripcions
+                .AsNoTracking()
+                .OrderBy(p => p.IdPlan)
+                .Select(p => new PlanSuscripcionViewModel
+                {
+                    Id = p.IdPlan,
+                    Nombre = p.Nombre,
+                    Precio = p.Precio,
+                    Periodicidad = p.Periodicidad,
+                    Beneficios = p.Beneficios ?? string.Empty,
+                    Activo = p.Activo,
+                    CantidadSuscriptores = p.Suscripciones.Count()
+                })
+                .ToListAsync();
+
             GestionSuscripcionesViewModel modelo = new()
             {
-                Planes = ObtenerPlanesDemo(),
-                Activas =
-                [
-                    new() { Id = 1, Emprendimiento = "Artesanías MiVo", Plan = "Plan Emprendedor", FechaInicio = "01/02/2026", FechaVencimiento = "01/09/2026", Estado = "Por vencer" },
-                    new() { Id = 2, Emprendimiento = "Orquídea", Plan = "Plan Premium", FechaInicio = "15/01/2026", FechaVencimiento = "15/01/2027", Estado = "Vigente" },
-                    new() { Id = 3, Emprendimiento = "Luz Natural", Plan = "Plan Básico", FechaInicio = "20/03/2026", FechaVencimiento = "20/08/2026", Estado = "Por vencer" },
-                    new() { Id = 4, Emprendimiento = "Trazo Libre", Plan = "Plan Básico", FechaInicio = "10/12/2025", FechaVencimiento = "10/07/2026", Estado = "Vencida" }
-                ]
+                Planes = planes,
+                Activas = []
             };
 
-            modelo.TotalPorVencer = modelo.Activas.Count(a => a.Estado == "Por vencer");
+            modelo.TotalPorVencer = 0;
 
             return View(modelo);
         }
@@ -599,7 +608,7 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearPlan(PlanSuscripcionViewModel modelo)
+        public async Task<IActionResult> CrearPlan(PlanSuscripcionViewModel modelo)
         {
             ViewData["Titulo"] = "Crear plan de suscripción";
 
@@ -608,34 +617,73 @@ namespace ProyectoClubCreativo.Controllers
                 return View("FormularioPlan", modelo);
             }
 
-            TempData["MensajeAdmin"] = $"El plan \"{modelo.Nombre}\" fue creado correctamente.";
+            bool nombreExiste = await _context.PlanesSuscripcions
+                .AnyAsync(p => p.Nombre == modelo.Nombre.Trim());
+
+            if (nombreExiste)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Nombre),
+                    "Ya existe un plan de suscripción con este nombre.");
+
+                return View("FormularioPlan", modelo);
+            }
+
+            PlanesSuscripcion nuevoPlan = new()
+            {
+                Nombre = modelo.Nombre.Trim(),
+                Precio = modelo.Precio,
+                Periodicidad = modelo.Periodicidad,
+                Beneficios = string.IsNullOrWhiteSpace(modelo.Beneficios)
+                    ? null
+                    : modelo.Beneficios.Trim(),
+                Activo = modelo.Activo
+            };
+
+            _context.PlanesSuscripcions.Add(nuevoPlan);
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"El plan \"{nuevoPlan.Nombre}\" fue creado correctamente.";
+
             return RedirectToAction(nameof(Suscripciones));
         }
 
         [HttpGet]
-        public IActionResult EditarPlan(int id = 1)
+        public async Task<IActionResult> EditarPlan(int id)
         {
-            PlanSuscripcionViewModel modelo =
-                ObtenerPlanesDemo().FirstOrDefault(p => p.Id == id)
-                ?? new PlanSuscripcionViewModel { Id = id };
+            PlanesSuscripcion? plan = await _context.PlanesSuscripcions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.IdPlan == id);
+
+            if (plan is null)
+            {
+                TempData["MensajeAdmin"] =
+                    "El plan de suscripción no existe.";
+
+                return RedirectToAction(nameof(Suscripciones));
+            }
+
+            PlanSuscripcionViewModel modelo = new()
+            {
+                Id = plan.IdPlan,
+                Nombre = plan.Nombre,
+                Precio = plan.Precio,
+                Periodicidad = plan.Periodicidad,
+                Beneficios = plan.Beneficios ?? string.Empty,
+                Activo = plan.Activo,
+                CantidadSuscriptores = await _context.Suscripciones
+                    .CountAsync(s => s.IdPlan == plan.IdPlan)
+            };
 
             ViewData["Titulo"] = "Editar plan de suscripción";
-            return View("FormularioPlan", modelo);
-        }
 
-        private static List<PlanSuscripcionViewModel> ObtenerPlanesDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Plan Básico", Precio = 8000, Periodicidad = "Mensual", Beneficios = "1 espacio en catálogo\nParticipación en 1 feria al mes", CantidadSuscriptores = 22, Activo = true },
-                new() { Id = 2, Nombre = "Plan Emprendedor", Precio = 15000, Periodicidad = "Mensual", Beneficios = "5 productos destacados\nParticipación en 2 ferias al mes\nEstadísticas básicas", CantidadSuscriptores = 27, Activo = true },
-                new() { Id = 3, Nombre = "Plan Premium", Precio = 25000, Periodicidad = "Mensual", Beneficios = "Productos ilimitados\nParticipación en todas las ferias\nEstadísticas avanzadas", CantidadSuscriptores = 8, Activo = true }
-            ];
+            return View("FormularioPlan", modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarPlan(PlanSuscripcionViewModel modelo)
+        public async Task<IActionResult> EditarPlan(PlanSuscripcionViewModel modelo)
         {
             ViewData["Titulo"] = "Editar plan de suscripción";
 
@@ -644,7 +692,44 @@ namespace ProyectoClubCreativo.Controllers
                 return View("FormularioPlan", modelo);
             }
 
-            TempData["MensajeAdmin"] = $"El plan \"{modelo.Nombre}\" fue actualizado correctamente.";
+            PlanesSuscripcion? plan = await _context.PlanesSuscripcions
+                .FirstOrDefaultAsync(p => p.IdPlan == modelo.Id);
+
+            if (plan is null)
+            {
+                TempData["MensajeAdmin"] =
+                    "El plan de suscripción no existe.";
+
+                return RedirectToAction(nameof(Suscripciones));
+            }
+
+            bool nombreExiste = await _context.PlanesSuscripcions
+                .AnyAsync(p =>
+                    p.Nombre == modelo.Nombre.Trim() &&
+                    p.IdPlan != modelo.Id);
+
+            if (nombreExiste)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Nombre),
+                    "Ya existe otro plan de suscripción con este nombre.");
+
+                return View("FormularioPlan", modelo);
+            }
+
+            plan.Nombre = modelo.Nombre.Trim();
+            plan.Precio = modelo.Precio;
+            plan.Periodicidad = modelo.Periodicidad;
+            plan.Beneficios = string.IsNullOrWhiteSpace(modelo.Beneficios)
+                ? null
+                : modelo.Beneficios.Trim();
+            plan.Activo = modelo.Activo;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"El plan \"{plan.Nombre}\" fue actualizado correctamente.";
+
             return RedirectToAction(nameof(Suscripciones));
         }
 

@@ -7,8 +7,12 @@
 
 <article class="bloque-admin">
     <div class="encabezado-bloque-admin">
-        <h2><i class="bi bi-gem"></i> Planes de suscripción</h2>
-        <a asp-action="CrearPlan" class="boton-admin boton-admin-primario">
+        <h2>
+            <i class="bi bi-gem"></i> Planes de suscripción
+        </h2>
+
+        <a asp-action="CrearPlan"
+           class="boton-admin boton-admin-primario">
             <i class="bi bi-plus-circle-fill"></i> Crear plan
         </a>
     </div>
@@ -16,15 +20,43 @@
     <section class="grid-estadisticas-admin">
         @foreach (var plan in Model.Planes)
         {
-            <article class="tarjeta-estadistica-admin" style="align-items:flex-start;">
-                <span class="icono-estadistica-admin icono-solicitudes-admin"><i class="bi bi-gem"></i></span>
+            <article class="tarjeta-estadistica-admin"
+                     style="align-items:flex-start;">
+
+                <span class="icono-estadistica-admin icono-solicitudes-admin">
+                    <i class="bi bi-gem"></i>
+                </span>
+
                 <div style="flex:1;">
                     <strong>@plan.Nombre</strong>
-                    <span>₡@plan.Precio.ToString("N0") / @plan.Periodicidad.ToLower()</span>
+
+                    <span>
+                        ₡@plan.Precio.ToString("N0") / @plan.Periodicidad.ToLower()
+                    </span>
+
                     <div style="margin-top:8px;">
-                        <span class="etiqueta-estado-admin estado-activo">@plan.CantidadSuscriptores suscriptores</span>
+                        <span class="etiqueta-estado-admin estado-activo">
+                            @plan.CantidadSuscriptores suscriptores
+                        </span>
+
+                        @if (plan.Activo)
+                        {
+                            <span class="etiqueta-estado-admin estado-vigente">
+                                Activo
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="etiqueta-estado-admin estado-vencida">
+                                Retirado
+                            </span>
+                        }
                     </div>
-                    <a asp-action="EditarPlan" asp-route-id="@plan.Id" class="boton-admin boton-admin-secundario" style="margin-top:10px;padding:6px 14px;">
+
+                    <a asp-action="EditarPlan"
+                       asp-route-id="@plan.Id"
+                       class="boton-admin boton-admin-secundario"
+                       style="margin-top:10px;padding:6px 14px;">
                         <i class="bi bi-pencil-fill"></i> Editar
                     </a>
                 </div>
@@ -35,8 +67,14 @@
 
 <article class="bloque-admin">
     <div class="encabezado-bloque-admin">
-        <h2><i class="bi bi-credit-card-2-front-fill"></i> Suscripciones activas y vencimientos</h2>
-        <span class="etiqueta-estado-admin estado-porvencer">@Model.TotalPorVencer por vencer</span>
+        <h2>
+            <i class="bi bi-credit-card-2-front-fill"></i>
+            Suscripciones activas y vencimientos
+        </h2>
+
+        <span class="etiqueta-estado-admin estado-porvencer">
+            @Model.TotalPorVencer por vencer
+        </span>
     </div>
 
     <div class="tabla-admin-contenedor">
@@ -50,6 +88,7 @@
                     <th>Estado</th>
                 </tr>
             </thead>
+
             <tbody>
                 @foreach (var suscripcion in Model.Activas)
                 {
@@ -65,7 +104,11 @@
                         <td>@suscripcion.Plan</td>
                         <td>@suscripcion.FechaInicio</td>
                         <td>@suscripcion.FechaVencimiento</td>
-                        <td><span class="etiqueta-estado-admin @clase">@suscripcion.Estado</span></td>
+                        <td>
+                            <span class="etiqueta-estado-admin @clase">
+                                @suscripcion.Estado
+                            </span>
+                        </td>
                     </tr>
                 }
             </tbody>

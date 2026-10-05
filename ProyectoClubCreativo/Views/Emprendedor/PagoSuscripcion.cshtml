@@ -1,0 +1,306 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.PagoSuscripcionViewModel
+
+@{
+    ViewData["Title"] = "Pago de suscripción";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Suscripción
+        </span>
+
+        <h1>Completar suscripción</h1>
+
+        <p>
+            Revisa el plan seleccionado e ingresa los datos
+            necesarios para procesar el pago.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="PlanesSuscripcion"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-arrow-left"></i>
+        Volver a planes
+
+    </a>
+
+</section>
+
+
+<section class="grid-mi-suscripcion">
+
+    <!-- COLUMNA PRINCIPAL -->
+    <div class="columna-principal-suscripcion">
+
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Pago
+                    </span>
+
+                    <h2>Datos de pago</h2>
+
+                    <p>
+                        Completa la información para continuar
+                        con la activación de tu suscripción.
+                    </p>
+                </div>
+
+            </div>
+
+            <form asp-controller="Emprendedor"
+                  asp-action="PagoSuscripcion"
+                  method="post"
+                  class="formulario-emprendedor"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+                <input asp-for="IdPlan" type="hidden" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="resumen-validacion-emprendedor">
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="NombreTitular"></label>
+
+                    <input asp-for="NombreTitular"
+                           class="control-emprendedor"
+                           autocomplete="cc-name"
+                           placeholder="Nombre como aparece en la tarjeta" />
+
+                    <span asp-validation-for="NombreTitular"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="NumeroTarjeta"></label>
+
+                    <input asp-for="NumeroTarjeta"
+                           class="control-emprendedor"
+                           inputmode="numeric"
+                           autocomplete="cc-number"
+                           maxlength="16"
+                           placeholder="0000000000000000" />
+
+                    <span asp-validation-for="NumeroTarjeta"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+
+                <div class="fila-formulario">
+
+                    <div class="grupo-campo-emprendedor">
+
+                        <label asp-for="MesVencimiento"></label>
+
+                        <input asp-for="MesVencimiento"
+                               class="control-emprendedor"
+                               type="number"
+                               min="1"
+                               max="12"
+                               autocomplete="cc-exp-month"
+                               placeholder="MM" />
+
+                        <span asp-validation-for="MesVencimiento"
+                              class="mensaje-validacion-emprendedor">
+                        </span>
+
+                    </div>
+
+
+                    <div class="grupo-campo-emprendedor">
+
+                        <label asp-for="AnioVencimiento"></label>
+
+                        <input asp-for="AnioVencimiento"
+                               class="control-emprendedor"
+                               type="number"
+                               autocomplete="cc-exp-year"
+                               placeholder="AAAA" />
+
+                        <span asp-validation-for="AnioVencimiento"
+                              class="mensaje-validacion-emprendedor">
+                        </span>
+
+                    </div>
+
+
+                    <div class="grupo-campo-emprendedor">
+
+                        <label asp-for="Cvv"></label>
+
+                        <input asp-for="Cvv"
+                               class="control-emprendedor"
+                               type="password"
+                               inputmode="numeric"
+                               autocomplete="cc-csc"
+                               maxlength="4"
+                               placeholder="CVV" />
+
+                        <span asp-validation-for="Cvv"
+                              class="mensaje-validacion-emprendedor">
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="acciones-formulario-emprendedor">
+
+                    <a asp-controller="Emprendedor"
+                       asp-action="PlanesSuscripcion"
+                       class="boton-cancelar-formulario-emprendedor">
+
+                        Cancelar
+
+                    </a>
+
+                    <button type="submit"
+                            class="boton-guardar-formulario-emprendedor">
+
+                        <i class="bi bi-lock-fill"></i>
+                        Pagar y activar plan
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </article>
+
+    </div>
+
+
+    <!-- RESUMEN -->
+    <aside class="columna-lateral-suscripcion">
+
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Resumen
+                    </span>
+
+                    <h2>Tu plan</h2>
+                </div>
+
+            </div>
+
+          
+            <div class="detalle-renovacion-suscripcion">
+
+    @if (Model.EsCambioPlan)
+    {
+        <div>
+            <span>Plan actual</span>
+            <strong>@Model.NombrePlanActual</strong>
+        </div>
+
+        <div>
+            <span>Nuevo plan</span>
+            <strong>@Model.NombrePlan</strong>
+        </div>
+
+        <div>
+            <span>Precio del nuevo plan</span>
+            <strong>₡@Model.Precio.ToString("N0")</strong>
+        </div>
+
+        <div>
+            <span>Crédito proporcional</span>
+            <strong>- ₡@Model.CreditoProporcional.ToString("N0")</strong>
+        </div>
+
+        <div>
+            <span>Total a pagar</span>
+
+            @if (Model.TotalPagar == 0)
+            {
+                <strong>₡0</strong>
+            }
+            else
+            {
+                <strong>₡@Model.TotalPagar.ToString("N0")</strong>
+            }
+
+        </div>
+    }
+    else
+    {
+        <div>
+            <span>Plan</span>
+            <strong>@Model.NombrePlan</strong>
+        </div>
+
+        <div>
+            <span>Periodicidad</span>
+            <strong>@Model.Periodicidad</strong>
+        </div>
+
+        <div>
+            <span>Total</span>
+
+            @if (Model.Precio == 0)
+            {
+                <strong>Gratis</strong>
+            }
+            else
+            {
+                <strong>₡@Model.Precio.ToString("N0")</strong>
+            }
+
+        </div>
+    }
+
+</div>
+        </article>
+
+
+        <article class="soporte-suscripcion-emprendedor">
+
+            <span>
+                <i class="bi bi-shield-lock-fill"></i>
+            </span>
+
+            <div>
+                <h2>Pago seguro</h2>
+
+                <p>
+                    Los datos de la tarjeta se utilizan únicamente
+                    para procesar esta operación y no se almacenan
+                    en el sistema.
+                </p>
+            </div>
+
+        </article>
+
+    </aside>
+
+</section>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
