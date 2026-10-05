@@ -28,6 +28,13 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         public string Estado { get; set; } = string.Empty;
 
+        // Estado de cancelación programada
+        public bool TieneCancelacionProgramada { get; set; }
+
+        public DateTime? FechaSolicitudCancelacion { get; set; }
+
+        public string? MotivoCancelacionRegistrado { get; set; }
+
 
         // Historial de suscripciones
         public List<MovimientoSuscripcionViewModel> Historial { get; set; } = new();
@@ -57,4 +64,6 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         public string Estado { get; set; } = string.Empty;
     }
+
+
 }

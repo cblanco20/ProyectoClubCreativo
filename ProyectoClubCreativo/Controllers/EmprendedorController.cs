@@ -1440,6 +1440,25 @@ namespace ProyectoClubCreativo.Controllers
 
                 modelo.Estado =
                     suscripcion.Estado;
+
+                var cancelacionProgramada =
+                    await _context.SuscripcionCancelaciones
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(c =>
+                            c.IdSuscripcion == suscripcion.IdSuscripcion);
+
+                if (cancelacionProgramada != null)
+                {
+                    modelo.TieneCancelacionProgramada = true;
+
+                    modelo.FechaSolicitudCancelacion =
+                        cancelacionProgramada.FechaCancelacion;
+
+                    modelo.MotivoCancelacionRegistrado =
+                        cancelacionProgramada.MotivoCancelacion;
+                }
+
+
             }
 
             var historialSuscripciones = await _context.Suscripciones
@@ -1465,27 +1484,178 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CancelarSuscripcion(
-            MiSuscripcionViewModel modelo)
+        public async Task<IActionResult> CancelarSuscripcion(
+    MiSuscripcionViewModel modelo)
         {
             if (!modelo.ConfirmaCancelacion)
             {
-                ModelState.AddModelError(
-                    nameof(modelo.ConfirmaCancelacion),
-                    "Debe confirmar que desea cancelar la suscripción."
+                TempData["MensajeError"] =
+                    "Debe confirmar que desea cancelar la suscripción.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            if (string.IsNullOrWhiteSpace(modelo.MotivoCancelacion))
+            {
+                TempData["MensajeError"] =
+                    "Debe indicar el motivo de la cancelación.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            if (modelo.MotivoCancelacion.Length > 400)
+            {
+                TempData["MensajeError"] =
+                    "El motivo no puede superar los 400 caracteres.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
                 );
             }
 
-            if (!ModelState.IsValid)
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
             {
-                return View(
-                    "MiSuscripcion",
-                    modelo
-                );
+                TempData["MensajeError"] =
+                    "No se encontró el emprendimiento.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
             }
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion is null)
+            {
+                TempData["MensajeError"] =
+                    "No tienes una suscripción activa para cancelar.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            bool cancelacionExistente =
+                await _context.SuscripcionCancelaciones
+                    .AnyAsync(c =>
+                        c.IdSuscripcion ==
+                            suscripcion.IdSuscripcion);
+
+            if (cancelacionExistente)
+            {
+                TempData["MensajeError"] =
+                    "Ya existe una solicitud de cancelación para esta suscripción.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            SuscripcionCancelacione cancelacion = new()
+            {
+                IdSuscripcion =
+                    suscripcion.IdSuscripcion,
+
+                MotivoCancelacion =
+                    modelo.MotivoCancelacion.Trim(),
+
+                FechaCancelacion =
+                    DateTime.Now
+            };
+
+            _context.SuscripcionCancelaciones.Add(cancelacion);
+
+            await _context.SaveChangesAsync();
 
             TempData["MensajeSuscripcion"] =
-                "La solicitud de cancelación fue enviada correctamente.";
+                $"La cancelación fue registrada correctamente. " +
+                $"Tu plan permanecerá activo hasta el " +
+                $"{suscripcion.FechaFin:dd/MM/yyyy}.";
+
+            return RedirectToAction(nameof(MiSuscripcion));
+        }
+
+        [HttpPost]
+[ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReactivarSuscripcion()
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            var emprendimiento =
+                await _context.Emprendimientos
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento == null)
+            {
+                return RedirectToAction(nameof(Panel));
+            }
+
+            var suscripcion =
+                await _context.Suscripciones
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion == null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró una suscripción activa.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            var cancelacion =
+                await _context.SuscripcionCancelaciones
+                    .FirstOrDefaultAsync(c =>
+                        c.IdSuscripcion == suscripcion.IdSuscripcion);
+
+            if (cancelacion == null)
+            {
+                TempData["MensajeError"] =
+                    "La suscripción no tiene una cancelación programada.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            if (suscripcion.FechaFin <=
+                DateOnly.FromDateTime(DateTime.Today))
+            {
+                TempData["MensajeError"] =
+                    "La suscripción ya alcanzó la fecha de finalización y no puede reactivarse.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            _context.SuscripcionCancelaciones.Remove(cancelacion);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeSuscripcion"] =
+                "La suscripción fue reactivada correctamente. La renovación continuará activa.";
 
             return RedirectToAction(nameof(MiSuscripcion));
         }

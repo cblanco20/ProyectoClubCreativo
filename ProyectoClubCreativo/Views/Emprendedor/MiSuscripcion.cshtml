@@ -439,24 +439,58 @@
                         Administración
                     </span>
 
-                    <h2>Cancelar suscripción</h2>
+                    @if (Model.TieneCancelacionProgramada)
+                    {
+                        <h2>Cancelación programada</h2>
 
-                    <p>
-                        El plan continuará activo hasta finalizar
-                        el período actual.
-                    </p>
+                        <p>
+                            Tu suscripción continuará activa hasta el
+                            @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "final del período").
+                            Puedes reactivarla antes de esa fecha.
+                        </p>
+                    }
+                    else
+                    {
+                        <h2>Cancelar suscripción</h2>
+
+                        <p>
+                            El plan continuará activo hasta finalizar
+                            el período actual.
+                        </p>
+                    }
                 </div>
 
             </div>
 
-            <button type="button"
-                    id="abrirCancelacionSuscripcion"
-                    class="boton-abrir-cancelacion">
+            @if (Model.TieneCancelacionProgramada)
+            {
+                <form asp-controller="Emprendedor"
+                      asp-action="ReactivarSuscripcion"
+                      method="post">
 
-                <i class="bi bi-x-circle"></i>
-                Solicitar cancelación
+                    @Html.AntiForgeryToken()
 
-            </button>
+                    <button type="submit"
+                            class="boton-abrir-cancelacion">
+
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Reactivar suscripción
+
+                    </button>
+
+                </form>
+            }
+            else
+            {
+                <button type="button"
+                        id="abrirCancelacionSuscripcion"
+                        class="boton-abrir-cancelacion">
+
+                    <i class="bi bi-x-circle"></i>
+                    Solicitar cancelación
+
+                </button>
+            }
 
         </article>
 
