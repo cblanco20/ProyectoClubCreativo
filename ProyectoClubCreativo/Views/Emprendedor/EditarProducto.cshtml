@@ -146,18 +146,15 @@
                         <select asp-for="Categoria"
                                 class="control-emprendedor">
 
-                            <option value="">
-                                Seleccione una categoría
-                            </option>
-
-                            <option>Arte e ilustración</option>
-                            <option>Accesorios y joyería</option>
-                            <option>Moda y textiles</option>
-                            <option>Alimentos y bebidas</option>
-                            <option>Cuidado personal</option>
-                            <option>Decoración</option>
-                            <option>Servicios creativos</option>
-                            <option>Otro</option>
+                            <option value="">Seleccione una categoría</option>
+                            <option>Artesanía</option>
+                            <option>Moda y accesorios</option>
+                            <option>Gastronomía</option>
+                            <option>Arte y diseño</option>
+                            <option>Belleza y cuidado personal</option>
+                            <option>Hogar y decoración</option>
+                            <option>Joyería y bisutería</option>
+                            <option>Otros</option>
 
                         </select>
 
@@ -246,7 +243,6 @@
 
                             <input asp-for="Precio"
                                    class="control-emprendedor"
-                                   min="0.01"
                                    step="0.01"
                                    placeholder="8500" />
 
@@ -287,13 +283,9 @@
                     <select asp-for="Estado"
                             class="control-emprendedor">
 
-                        <option value="">
-                            Seleccione un estado
-                        </option>
-
-                        <option>Activo</option>
+                        <option value="">Seleccione un estado</option>
+                        <option>Publicado</option>
                         <option>Inactivo</option>
-                        <option>Agotado</option>
                         <option>Borrador</option>
 
                     </select>
@@ -305,20 +297,25 @@
                 </div>
 
 
-                <div class="alerta-inventario-editar">
+                @if (Model.Inventario.HasValue &&
+     Model.Inventario.Value > 0 &&
+     Model.Inventario.Value <= 3)
+{
+    <div class="alerta-inventario-editar">
 
-                    <i class="bi bi-exclamation-triangle-fill"></i>
+        <i class="bi bi-exclamation-triangle-fill"></i>
 
-                    <div>
-                        <strong>Inventario bajo</strong>
+        <div>
+            <strong>Inventario bajo</strong>
 
-                        <p>
-                            Actualmente este producto tiene solamente
-                            dos unidades disponibles.
-                        </p>
-                    </div>
+            <p>
+                Actualmente este producto tiene solamente
+                @Model.Inventario.Value unidad(es) disponibles.
+            </p>
+        </div>
 
-                </div>
+    </div>
+}
 
             </section>
 
@@ -418,32 +415,25 @@
                 </div>
 
 
-                <div class="imagenes-actuales-producto">
+                @if (ViewBag.ImagenActual is not null)
+{
+    <div class="imagenes-actuales-producto">
 
-                    <span>Imágenes actuales</span>
+        <span>Imagen actual</span>
 
-                    <div class="grid-imagenes-actuales-producto">
+        <div class="grid-imagenes-actuales-producto">
 
-                        <div>
-                            <img src="~/images/producto-1.jpg"
-                                 alt="Imagen actual del producto" />
+            <div>
+                <img src="@ViewBag.ImagenActual"
+                     alt="Imagen actual de @Model.Nombre" />
 
-                            <span>Principal</span>
-                        </div>
+                <span>Principal</span>
+            </div>
 
-                        <div>
-                            <img src="~/images/noticia-emprendimiento.jpg"
-                                 alt="Imagen secundaria del producto" />
-                        </div>
+        </div>
 
-                        <div>
-                            <img src="~/images/registro-emprendedor.jpg"
-                                 alt="Imagen secundaria del producto" />
-                        </div>
-
-                    </div>
-
-                </div>
+    </div>
+}
 
 
                 <label class="selector-imagenes-producto"

@@ -2187,18 +2187,121 @@ namespace ProyectoClubCreativo.Controllers
 
 
 
-        public IActionResult MisProductos()
+        public async Task<IActionResult> MisProductos()
         {
-            return View();
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(Panel));
+            }
+
+            List<Producto> productos =
+                await _context.Productos
+                    .AsNoTracking()
+                    .Include(p => p.IdCategoriaNavigation)
+                    .Include(p => p.ProductoImagene)
+                    .Where(p =>
+                        p.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento)
+                    .OrderByDescending(p => p.FechaRegistro)
+                    .ToListAsync();
+
+            return View(productos);
         }
 
         [HttpGet]
-        public IActionResult CrearProducto()
+        public async Task<IActionResult> CrearProducto()
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(Panel));
+            }
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .Include(s => s.IdPlanNavigation)
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion is null)
+            {
+                TempData["MensajeError"] =
+                    "Necesitas una suscripción activa para publicar productos o servicios.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            int limiteProductos =
+                suscripcion.IdPlanNavigation.Nombre switch
+                {
+                    "Plan Básico" => 10,
+                    "Plan Emprendedor" => 20,
+                    "Plan Premium" => 35,
+                    _ => 10
+                };
+
+            int cantidadProductos =
+                await _context.Productos
+                    .CountAsync(p =>
+                        p.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento);
+
+            if (cantidadProductos >= limiteProductos)
+            {
+                TempData["MensajeError"] =
+                    $"Has alcanzado el límite de {limiteProductos} " +
+                    $"publicaciones permitido por tu plan. " +
+                    $"Puedes mejorar tu plan para publicar más productos o servicios.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
             return View(new ProductoEmprendedorViewModel
             {
                 TipoPublicacion = "Producto",
-                Estado = "Activo",
+                Estado = "Publicado",
                 Inventario = 1
             });
         }
@@ -2206,9 +2309,75 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearProducto(
-            ProductoEmprendedorViewModel modelo)
+        public async Task<IActionResult> CrearProducto(
+    ProductoEmprendedorViewModel modelo)
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(Panel));
+            }
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .Include(s => s.IdPlanNavigation)
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion is null)
+            {
+                TempData["MensajeError"] =
+                    "Necesitas una suscripción activa para publicar productos o servicios.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            int limiteProductos =
+                suscripcion.IdPlanNavigation.Nombre switch
+                {
+                    "Plan Básico" => 10,
+                    "Plan Emprendedor" => 20,
+                    "Plan Premium" => 35,
+                    _ => 10
+                };
+
+            int cantidadProductos =
+                await _context.Productos
+                    .CountAsync(p =>
+                        p.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento);
+
+            if (cantidadProductos >= limiteProductos)
+            {
+                TempData["MensajeError"] =
+                    $"Has alcanzado el límite de {limiteProductos} " +
+                    $"publicaciones permitido por tu plan. " +
+                    $"Puedes mejorar tu plan para publicar más productos o servicios.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
             ValidarImagenesProducto(modelo);
 
             if (modelo.TipoPublicacion == "Producto" &&
@@ -2228,13 +2397,116 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+            Categoria? categoria =
+                await _context.Categorias
+                    .FirstOrDefaultAsync(c =>
+                        c.Nombre == modelo.Categoria &&
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa);
+
+            if (categoria is null)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Categoria),
+                    "La categoría seleccionada no es válida."
+                );
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(modelo);
             }
 
+            Producto producto = new()
+            {
+                IdEmprendimiento =
+                    emprendimiento.IdEmprendimiento,
+
+                IdCategoria =
+                    categoria!.IdCategoria,
+
+                Nombre =
+                    modelo.Nombre.Trim(),
+
+                Descripcion =
+                    modelo.Descripcion.Trim(),
+
+                TipoPublicacion =
+                    modelo.TipoPublicacion,
+
+                Precio =
+                    modelo.Precio!.Value,
+
+                StockActual =
+                    modelo.TipoPublicacion == "Producto"
+                        ? modelo.Inventario ?? 0
+                        : 0,
+
+                EsDestacado =
+                    modelo.EsDestacado,
+
+                Estado =
+                    modelo.Estado,
+
+                FechaPublicacion =
+                    DateTime.Now,
+
+                FechaRegistro =
+                    DateTime.Now
+            };
+
+            _context.Productos.Add(producto);
+
+            await _context.SaveChangesAsync();
+
+            IFormFile imagenPrincipal =
+                modelo.Imagenes!.First();
+
+            string extension =
+                Path.GetExtension(imagenPrincipal.FileName)
+                    .ToLowerInvariant();
+
+            string nombreArchivo =
+                $"{Guid.NewGuid()}{extension}";
+
+            string carpetaProductos =
+                Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    "uploads",
+                    "productos"
+                );
+
+            Directory.CreateDirectory(carpetaProductos);
+
+            string rutaFisica =
+                Path.Combine(
+                    carpetaProductos,
+                    nombreArchivo
+                );
+
+            using (FileStream stream =
+                   new FileStream(rutaFisica, FileMode.Create))
+            {
+                await imagenPrincipal.CopyToAsync(stream);
+            }
+
+            ProductoImagene imagenProducto = new()
+            {
+                IdProducto = producto.IdProducto,
+                UrlImagen =
+                    $"/uploads/productos/{nombreArchivo}",
+                NombreArchivo = nombreArchivo,
+                OrdenVisual = 1,
+                EsPrincipal = true
+            };
+
+            _context.ProductoImagenes.Add(imagenProducto);
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajeProducto"] =
-                "El producto o servicio fue creado correctamente.";
+                "El producto o servicio fue publicado correctamente.";
 
             return RedirectToAction(nameof(MisProductos));
         }
@@ -2301,24 +2573,87 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult EditarProducto(int? id)
+        public async Task<IActionResult> EditarProducto(int? id)
         {
-            var modelo = new ProductoEmprendedorViewModel
+            if (!id.HasValue)
             {
-                Nombre = "Aretes artesanales",
-                TipoPublicacion = "Producto",
-                Categoria = "Accesorios y joyería",
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                return RedirectToAction(nameof(Panel));
+            }
+
+            Producto? producto =
+                await _context.Productos
+                    .AsNoTracking()
+                    .Include(p => p.IdCategoriaNavigation)
+                    .Include(p => p.ProductoImagene)
+                    .FirstOrDefaultAsync(p =>
+                        p.IdProducto == id.Value &&
+                        p.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento);
+
+            if (producto is null)
+            {
+                TempData["MensajeError"] =
+                    "El producto o servicio que intentas editar no existe.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            ProductoEmprendedorViewModel modelo = new()
+            {
+                Nombre = producto.Nombre,
+
+                TipoPublicacion =
+                    producto.TipoPublicacion,
+
+                Categoria =
+                    producto.IdCategoriaNavigation?.Nombre
+                    ?? string.Empty,
+
                 Descripcion =
-                    "Aretes artesanales elaborados cuidadosamente a mano con materiales resistentes y diseños originales.",
-                Etiquetas = "artesanal, accesorios, regalo",
-                Precio = 8500,
-                Inventario = 2,
-                Estado = "Activo",
-                PromocionAsociada = "Descuento 10%",
-                EsDestacado = true
+                    producto.Descripcion,
+
+                Precio =
+                    producto.Precio,
+
+                Inventario =
+                    producto.TipoPublicacion == "Producto"
+                        ? producto.StockActual
+                        : null,
+
+                Estado =
+                    producto.Estado,
+
+                EsDestacado =
+                    producto.EsDestacado
             };
 
-            ViewBag.IdProducto = id ?? 1;
+            ViewBag.IdProducto =
+                producto.IdProducto;
+
+            ViewBag.ImagenActual =
+                producto.ProductoImagene?.UrlImagen;
 
             return View(modelo);
         }
@@ -2326,10 +2661,47 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarProducto(
-            int id,
-            ProductoEmprendedorViewModel modelo)
+        public async Task<IActionResult> EditarProducto(
+    int id,
+    ProductoEmprendedorViewModel modelo)
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                return RedirectToAction(nameof(Panel));
+            }
+
+            Producto? producto =
+                await _context.Productos
+                    .Include(p => p.ProductoImagene)
+                    .FirstOrDefaultAsync(p =>
+                        p.IdProducto == id &&
+                        p.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento);
+
+            if (producto is null)
+            {
+                TempData["MensajeError"] =
+                    "El producto o servicio que intentas editar no existe.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
             ValidarImagenesOpcionalesProducto(modelo);
 
             if (modelo.TipoPublicacion == "Producto" &&
@@ -2349,15 +2721,125 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+            Categoria? categoria =
+                await _context.Categorias
+                    .FirstOrDefaultAsync(c =>
+                        c.Nombre == modelo.Categoria &&
+                        c.Modulo == "Emprendimientos" &&
+                        c.Activa);
+
+            if (categoria is null)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Categoria),
+                    "La categoría seleccionada no es válida."
+                );
+            }
+
             if (!ModelState.IsValid)
             {
-                ViewBag.IdProducto = id;
+                ViewBag.IdProducto = producto.IdProducto;
+
+                ViewBag.ImagenActual =
+                    producto.ProductoImagene?.UrlImagen;
 
                 return View(modelo);
             }
 
+            producto.Nombre =
+                modelo.Nombre.Trim();
+
+            producto.Descripcion =
+                modelo.Descripcion.Trim();
+
+            producto.TipoPublicacion =
+                modelo.TipoPublicacion;
+
+            producto.IdCategoria =
+                categoria!.IdCategoria;
+
+            producto.Precio =
+                modelo.Precio!.Value;
+
+            producto.StockActual =
+                modelo.TipoPublicacion == "Producto"
+                    ? modelo.Inventario ?? 0
+                    : 0;
+
+            producto.Estado =
+                modelo.Estado;
+
+            producto.EsDestacado =
+    modelo.EsDestacado;
+
+            if (modelo.Imagenes is not null &&
+                modelo.Imagenes.Count > 0)
+            {
+                IFormFile imagenNueva =
+                    modelo.Imagenes.First();
+
+                string extension =
+                    Path.GetExtension(imagenNueva.FileName)
+                        .ToLowerInvariant();
+
+                string nombreArchivo =
+                    $"{Guid.NewGuid()}{extension}";
+
+                string carpetaProductos =
+                    Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot",
+                        "uploads",
+                        "productos"
+                    );
+
+                Directory.CreateDirectory(carpetaProductos);
+
+                string rutaFisica =
+                    Path.Combine(
+                        carpetaProductos,
+                        nombreArchivo
+                    );
+
+                using (FileStream stream =
+                       new FileStream(rutaFisica, FileMode.Create))
+                {
+                    await imagenNueva.CopyToAsync(stream);
+                }
+
+                string urlImagenNueva =
+                    $"/uploads/productos/{nombreArchivo}";
+
+                if (producto.ProductoImagene is not null)
+                {
+                    producto.ProductoImagene.UrlImagen =
+                        urlImagenNueva;
+
+                    producto.ProductoImagene.NombreArchivo =
+                        nombreArchivo;
+
+                    producto.ProductoImagene.OrdenVisual = 1;
+                    producto.ProductoImagene.EsPrincipal = true;
+                }
+                else
+                {
+                    ProductoImagene imagenProducto = new()
+                    {
+                        IdProducto = producto.IdProducto,
+                        UrlImagen = urlImagenNueva,
+                        NombreArchivo = nombreArchivo,
+                        OrdenVisual = 1,
+                        EsPrincipal = true
+                    };
+
+                    _context.ProductoImagenes.Add(imagenProducto);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajeProducto"] =
-                $"El producto «{modelo.Nombre}» fue actualizado correctamente.";
+                $"El producto «{producto.Nombre}» fue actualizado correctamente.";
 
             return RedirectToAction(nameof(MisProductos));
         }

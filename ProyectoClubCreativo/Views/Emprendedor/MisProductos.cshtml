@@ -1,4 +1,6 @@
-﻿@{
+﻿@model List<ProyectoClubCreativo.Models.Entities.Producto>
+
+@{
     ViewData["Title"] = "Mis productos y servicios";
     Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
 }
@@ -8,6 +10,14 @@
     <div class="mensaje-exito-emprendedor">
         <i class="bi bi-check-circle-fill"></i>
         @TempData["MensajeProducto"]
+    </div>
+}
+
+@if (TempData["MensajeError"] is not null)
+{
+    <div class="mensaje-error-emprendedor">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        @TempData["MensajeError"]
     </div>
 }
 
@@ -48,7 +58,7 @@
         </span>
 
         <div>
-            <strong>8</strong>
+            <strong>@Model.Count</strong>
             <span>Productos publicados</span>
         </div>
 
@@ -61,8 +71,8 @@
         </span>
 
         <div>
-            <strong>6</strong>
-            <span>Productos activos</span>
+            <strong>@Model.Count(p => p.Estado == "Publicado")</strong>
+            <span>Productos Publicados</span>
         </div>
 
     </article>
@@ -74,7 +84,7 @@
         </span>
 
         <div>
-            <strong>3</strong>
+            <strong>@Model.Count(p => p.TipoPublicacion == "Producto" && p.StockActual > 0 && p.StockActual <= 3)</strong>
             <span>Con inventario bajo</span>
         </div>
 
@@ -87,7 +97,7 @@
         </span>
 
         <div>
-            <strong>1</strong>
+            <strong>@Model.Count(p => p.TipoPublicacion == "Producto" && p.StockActual == 0)</strong>
             <span>Producto agotado</span>
         </div>
 
@@ -97,30 +107,41 @@
 
 
 <!-- AVISO DE INVENTARIO -->
-<section class="aviso-inventario-productos">
+@{
+    int productosInventarioBajo =
+        Model.Count(p =>
+            p.TipoPublicacion == "Producto" &&
+            p.StockActual > 0 &&
+            p.StockActual <= 3);
+}
 
-    <span class="icono-aviso-inventario">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-    </span>
+@if (productosInventarioBajo > 0)
+{
+    <section class="aviso-inventario-productos">
 
-    <div>
-        <strong>Revisa tu inventario</strong>
+        <span class="icono-aviso-inventario">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </span>
 
-        <p>
-            Tres productos tienen pocas existencias disponibles.
-            Actualiza las cantidades para evitar ventas sin inventario.
-        </p>
-    </div>
+        <div>
+            <strong>Revisa tu inventario</strong>
 
-    <a asp-controller="Emprendedor"
-       asp-action="Inventario">
+            <p>
+                @productosInventarioBajo producto(s) tienen pocas existencias disponibles.
+                Actualiza las cantidades para evitar ventas sin inventario.
+            </p>
+        </div>
 
-        Ver inventario
-        <i class="bi bi-arrow-right"></i>
+        <a asp-controller="Emprendedor"
+           asp-action="Inventario">
 
-    </a>
+            Ver inventario
+            <i class="bi bi-arrow-right"></i>
 
-</section>
+        </a>
+
+    </section>
+}
 
 
 <!-- CONTENEDOR PRINCIPAL -->
@@ -192,319 +213,93 @@
             </div>
 
 
-            <!-- PRODUCTO 1 -->
-            <article class="fila-producto-emprendedor producto-filtrable"
-                     data-nombre="Aretes artesanales"
-                     data-categoria="accesorios"
-                     data-estado="activo">
+            @if (Model.Any())
+{
+    foreach (var producto in Model)
+    {
+        string categoria =
+            producto.IdCategoriaNavigation?.Nombre
+            ?? "Sin categoría";
 
-                <div class="informacion-producto-listado">
+        string estado =
+            producto.Estado.ToLowerInvariant();
 
-                    <img src="~/images/producto-1.jpg"
-                         alt="Aretes artesanales" />
+        string claseStock =
+            producto.TipoPublicacion != "Producto"
+                ? "servicio"
+                : producto.StockActual == 0
+                    ? "agotado"
+                    : producto.StockActual <= 3
+                        ? "bajo"
+                        : "disponible";
 
-                    <div>
-                        <strong>Aretes artesanales</strong>
+        string textoStock =
+            producto.TipoPublicacion != "Producto"
+                ? "No aplica"
+                : producto.StockActual == 0
+                    ? "Sin existencias"
+                    : $"{producto.StockActual} unidades";
 
-                        <span>
-                            Código: PROD-001
-                        </span>
-                    </div>
+        string imagen =
+            producto.ProductoImagene?.UrlImagen
+            ?? "/images/producto-1.jpg";
 
+        <article class="fila-producto-emprendedor producto-filtrable"
+                 data-nombre="@producto.Nombre.ToLowerInvariant()"
+                 data-categoria="@categoria.ToLowerInvariant()"
+                 data-estado="@estado">
+
+            <div class="informacion-producto-listado">
+
+                <img src="@imagen"
+                     alt="@producto.Nombre" />
+
+                <div>
+                    <strong>@producto.Nombre</strong>
+
+                    <span>
+                        Código:
+                        @(producto.TipoPublicacion == "Servicio"
+                            ? $"SERV-{producto.IdProducto:D3}"
+                            : $"PROD-{producto.IdProducto:D3}")
+                    </span>
                 </div>
 
-                <span class="categoria-tabla-producto">
-                    Accesorios
-                </span>
+            </div>
 
-                <strong class="precio-tabla-producto">
-                    ₡8.500
-                </strong>
+            <span class="categoria-tabla-producto">
+                @categoria
+            </span>
 
-                <span class="stock-producto bajo">
-                    2 unidades
-                </span>
+            <strong class="precio-tabla-producto">
+                ₡@producto.Precio.ToString("N0")
+            </strong>
 
-                <span class="estado-tabla-producto activo">
-                    Activo
-                </span>
+            <span class="stock-producto @claseStock">
+                @textoStock
+            </span>
 
-                <div class="acciones-producto-tabla">
+            <span class="estado-tabla-producto @estado">
+                @producto.Estado
+            </span>
 
-                    <a asp-controller="Emprendedor"
-                       asp-action="EditarProducto"
-                       asp-route-id="1"
-                       class="boton-accion-producto editar"
-                       aria-label="Editar aretes artesanales">
+            <div class="acciones-producto-tabla">
 
-                        <i class="bi bi-pencil-square"></i>
+                <a asp-controller="Emprendedor"
+                   asp-action="EditarProducto"
+                   asp-route-id="@producto.IdProducto"
+                   class="boton-accion-producto editar"
+                   aria-label="Editar @producto.Nombre">
 
-                    </a>
+                    <i class="bi bi-pencil-square"></i>
 
-                    <button type="button"
-                            class="boton-accion-producto eliminar boton-eliminar-producto"
-                            data-producto="Aretes artesanales"
-                            aria-label="Eliminar aretes artesanales">
+                </a>
 
-                        <i class="bi bi-trash3-fill"></i>
+            </div>
 
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <!-- PRODUCTO 2 -->
-            <article class="fila-producto-emprendedor producto-filtrable"
-                     data-nombre="Bolso tejido artesanal"
-                     data-categoria="textiles"
-                     data-estado="activo">
-
-                <div class="informacion-producto-listado">
-
-                    <img src="~/images/producto-2.jpg"
-                         alt="Bolso tejido artesanal" />
-
-                    <div>
-                        <strong>Bolso tejido artesanal</strong>
-
-                        <span>
-                            Código: PROD-002
-                        </span>
-                    </div>
-
-                </div>
-
-                <span class="categoria-tabla-producto">
-                    Moda y textiles
-                </span>
-
-                <strong class="precio-tabla-producto">
-                    ₡18.000
-                </strong>
-
-                <span class="stock-producto bajo">
-                    1 unidad
-                </span>
-
-                <span class="estado-tabla-producto activo">
-                    Activo
-                </span>
-
-                <div class="acciones-producto-tabla">
-
-                    <a asp-controller="Emprendedor"
-                       asp-action="EditarProducto"
-                       asp-route-id="2"
-                       class="boton-accion-producto editar"
-                       aria-label="Editar bolso tejido">
-
-                        <i class="bi bi-pencil-square"></i>
-
-                    </a>
-
-                    <button type="button"
-                            class="boton-accion-producto eliminar boton-eliminar-producto"
-                            data-producto="Bolso tejido artesanal"
-                            aria-label="Eliminar bolso tejido">
-
-                        <i class="bi bi-trash3-fill"></i>
-
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <!-- PRODUCTO 3 -->
-            <article class="fila-producto-emprendedor producto-filtrable"
-                     data-nombre="Set decorativo artesanal"
-                     data-categoria="decoracion"
-                     data-estado="agotado">
-
-                <div class="informacion-producto-listado">
-
-                    <img src="~/images/producto-3.jpg"
-                         alt="Set decorativo artesanal" />
-
-                    <div>
-                        <strong>Set decorativo artesanal</strong>
-
-                        <span>
-                            Código: PROD-003
-                        </span>
-                    </div>
-
-                </div>
-
-                <span class="categoria-tabla-producto">
-                    Decoración
-                </span>
-
-                <strong class="precio-tabla-producto">
-                    ₡12.500
-                </strong>
-
-                <span class="stock-producto agotado">
-                    Sin existencias
-                </span>
-
-                <span class="estado-tabla-producto agotado">
-                    Agotado
-                </span>
-
-                <div class="acciones-producto-tabla">
-
-                    <a asp-controller="Emprendedor"
-                       asp-action="EditarProducto"
-                       asp-route-id="3"
-                       class="boton-accion-producto editar"
-                       aria-label="Editar set decorativo">
-
-                        <i class="bi bi-pencil-square"></i>
-
-                    </a>
-
-                    <button type="button"
-                            class="boton-accion-producto eliminar boton-eliminar-producto"
-                            data-producto="Set decorativo artesanal"
-                            aria-label="Eliminar set decorativo">
-
-                        <i class="bi bi-trash3-fill"></i>
-
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <!-- PRODUCTO 4 -->
-            <article class="fila-producto-emprendedor producto-filtrable"
-                     data-nombre="Cuadro personalizado"
-                     data-categoria="decoracion"
-                     data-estado="activo">
-
-                <div class="informacion-producto-listado">
-
-                    <img src="~/images/noticia-concurso.jpg"
-                         alt="Cuadro personalizado" />
-
-                    <div>
-                        <strong>Cuadro personalizado</strong>
-
-                        <span>
-                            Código: PROD-004
-                        </span>
-                    </div>
-
-                </div>
-
-                <span class="categoria-tabla-producto">
-                    Decoración
-                </span>
-
-                <strong class="precio-tabla-producto">
-                    ₡22.000
-                </strong>
-
-                <span class="stock-producto disponible">
-                    12 unidades
-                </span>
-
-                <span class="estado-tabla-producto activo">
-                    Activo
-                </span>
-
-                <div class="acciones-producto-tabla">
-
-                    <a asp-controller="Emprendedor"
-                       asp-action="EditarProducto"
-                       asp-route-id="4"
-                       class="boton-accion-producto editar"
-                       aria-label="Editar cuadro personalizado">
-
-                        <i class="bi bi-pencil-square"></i>
-
-                    </a>
-
-                    <button type="button"
-                            class="boton-accion-producto eliminar boton-eliminar-producto"
-                            data-producto="Cuadro personalizado"
-                            aria-label="Eliminar cuadro personalizado">
-
-                        <i class="bi bi-trash3-fill"></i>
-
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <!-- PRODUCTO 5 -->
-            <article class="fila-producto-emprendedor producto-filtrable"
-                     data-nombre="Diseño de invitación digital"
-                     data-categoria="servicios"
-                     data-estado="inactivo">
-
-                <div class="informacion-producto-listado">
-
-                    <img src="~/images/noticia-taller.jpg"
-                         alt="Diseño de invitación digital" />
-
-                    <div>
-                        <strong>Diseño de invitación digital</strong>
-
-                        <span>
-                            Código: SERV-001
-                        </span>
-                    </div>
-
-                </div>
-
-                <span class="categoria-tabla-producto">
-                    Servicios creativos
-                </span>
-
-                <strong class="precio-tabla-producto">
-                    ₡15.000
-                </strong>
-
-                <span class="stock-producto servicio">
-                    No aplica
-                </span>
-
-                <span class="estado-tabla-producto inactivo">
-                    Inactivo
-                </span>
-
-                <div class="acciones-producto-tabla">
-
-                    <a asp-controller="Emprendedor"
-                       asp-action="EditarProducto"
-                       asp-route-id="5"
-                       class="boton-accion-producto editar"
-                       aria-label="Editar diseño digital">
-
-                        <i class="bi bi-pencil-square"></i>
-
-                    </a>
-
-                    <button type="button"
-                            class="boton-accion-producto eliminar boton-eliminar-producto"
-                            data-producto="Diseño de invitación digital"
-                            aria-label="Eliminar diseño digital">
-
-                        <i class="bi bi-trash3-fill"></i>
-
-                    </button>
-
-                </div>
-
-            </article>
+        </article>
+    }
+}
 
         </div>
 
@@ -529,7 +324,7 @@
     <div class="pie-listado-productos">
 
         <span>
-            Mostrando 5 de 8 productos
+            Mostrando @Model.Count producto(s)
         </span>
 
         <div class="paginacion-productos">
