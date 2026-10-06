@@ -573,28 +573,77 @@ namespace ProyectoClubCreativo.Controllers
         [HttpGet]
         public async Task<IActionResult> Suscripciones()
         {
-            List<PlanSuscripcionViewModel> planes = await _context.PlanesSuscripcions
-                .AsNoTracking()
-                .OrderBy(p => p.IdPlan)
-                .Select(p => new PlanSuscripcionViewModel
-                {
-                    Id = p.IdPlan,
-                    Nombre = p.Nombre,
-                    Precio = p.Precio,
-                    Periodicidad = p.Periodicidad,
-                    Beneficios = p.Beneficios ?? string.Empty,
-                    Activo = p.Activo,
-                    CantidadSuscriptores = p.Suscripciones.Count()
-                })
-                .ToListAsync();
+            List<PlanSuscripcionViewModel> planes =
+                await _context.PlanesSuscripcions
+                    .AsNoTracking()
+                    .OrderBy(p => p.IdPlan)
+                    .Select(p => new PlanSuscripcionViewModel
+                    {
+                        Id = p.IdPlan,
+                        Nombre = p.Nombre,
+                        Precio = p.Precio,
+                        Periodicidad = p.Periodicidad,
+                        Beneficios = p.Beneficios ?? string.Empty,
+                        Activo = p.Activo,
+                        CantidadSuscriptores = p.Suscripciones.Count()
+                    })
+                    .ToListAsync();
+
+
+            List<Suscripcione> suscripciones =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .Include(s => s.IdEmprendimientoNavigation)
+                    .Include(s => s.IdPlanNavigation)
+                    .Where(s => s.Estado == "Activa")
+                    .OrderBy(s => s.FechaFin)
+                    .ToListAsync();
+
+
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
+            DateOnly fechaLimite =
+                fechaActual.AddDays(7);
+
+
+            List<SuscripcionActivaViewModel> activas =
+                suscripciones
+                    .Select(s => new SuscripcionActivaViewModel
+                    {
+                        Id = s.IdSuscripcion,
+
+                        Emprendimiento =
+                            s.IdEmprendimientoNavigation.NombreComercial,
+
+                        Plan =
+                            s.IdPlanNavigation.Nombre,
+
+                        FechaInicio =
+                            s.FechaInicio.ToString("dd/MM/yyyy"),
+
+                        FechaVencimiento =
+                            s.FechaFin.ToString("dd/MM/yyyy"),
+
+                        Estado =
+                            s.FechaFin < fechaActual
+                                ? "Vencida"
+                                : s.FechaFin <= fechaLimite
+                                    ? "Por vencer"
+                                    : "Vigente"
+                    })
+                    .ToList();
+
 
             GestionSuscripcionesViewModel modelo = new()
             {
                 Planes = planes,
-                Activas = []
+                Activas = activas,
+                TotalPorVencer =
+                    activas.Count(s =>
+                        s.Estado == "Por vencer")
             };
 
-            modelo.TotalPorVencer = 0;
 
             return View(modelo);
         }
