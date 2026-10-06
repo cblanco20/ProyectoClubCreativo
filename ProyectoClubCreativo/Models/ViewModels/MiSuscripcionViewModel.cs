@@ -28,6 +28,9 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         public string Estado { get; set; } = string.Empty;
 
+        // Renovación de la suscripción
+        public bool RenovacionAutomatica { get; set; }
+
         // Estado de cancelación programada
         public bool TieneCancelacionProgramada { get; set; }
 

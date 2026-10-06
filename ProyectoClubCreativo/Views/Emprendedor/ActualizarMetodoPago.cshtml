@@ -1,7 +1,7 @@
 ﻿@model ProyectoClubCreativo.Models.ViewModels.PagoSuscripcionViewModel
 
 @{
-    ViewData["Title"] = "Pago de suscripción";
+    ViewData["Title"] = "Actualizar método de pago";
     Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
 }
 
@@ -12,20 +12,20 @@
             Suscripción
         </span>
 
-        <h1>Completar suscripción</h1>
+        <h1>Actualizar método de pago</h1>
 
         <p>
-            Revisa el plan seleccionado e ingresa los datos
-            necesarios para procesar el pago.
+            Ingresa los datos de la nueva tarjeta que deseas utilizar
+            para las próximas renovaciones automáticas.
         </p>
     </div>
 
     <a asp-controller="Emprendedor"
-       asp-action="PlanesSuscripcion"
+       asp-action="MiSuscripcion"
        class="boton-volver-emprendedor">
 
         <i class="bi bi-arrow-left"></i>
-        Volver a planes
+        Volver a mi suscripción
 
     </a>
 
@@ -43,21 +43,21 @@
 
                 <div>
                     <span class="subtitulo-emprendedor">
-                        Pago
+                        Método de pago
                     </span>
 
-                    <h2>Datos de pago</h2>
+                    <h2>Nueva tarjeta</h2>
 
                     <p>
-                        Completa la información para continuar
-                        con la activación de tu suscripción.
+                        La nueva tarjeta sustituirá el método de pago
+                        utilizado para las renovaciones automáticas.
                     </p>
                 </div>
 
             </div>
 
             <form asp-controller="Emprendedor"
-                  asp-action="PagoSuscripcion"
+                  asp-action="ActualizarMetodoPago"
                   method="post"
                   class="formulario-emprendedor"
                   novalidate>
@@ -163,21 +163,11 @@
 
                 </div>
 
-                <div class="form-check mt-4">
-                    <input asp-for="GuardarMetodoPago"
-                           class="form-check-input"
-                           type="checkbox" />
-
-                    <label asp-for="GuardarMetodoPago"
-                            class="form-check-label">
-                        Guardar método de pago para futuras renovaciones automáticas
-                    </label>
-                </div>
 
                 <div class="acciones-formulario-emprendedor">
 
                     <a asp-controller="Emprendedor"
-                       asp-action="PlanesSuscripcion"
+                       asp-action="MiSuscripcion"
                        class="boton-cancelar-formulario-emprendedor">
 
                         Cancelar
@@ -187,8 +177,8 @@
                     <button type="submit"
                             class="boton-guardar-formulario-emprendedor">
 
-                        <i class="bi bi-lock-fill"></i>
-                        Pagar y activar plan
+                        <i class="bi bi-credit-card-fill"></i>
+                        Actualizar método de pago
 
                     </button>
 
@@ -201,7 +191,7 @@
     </div>
 
 
-    <!-- RESUMEN -->
+    <!-- COLUMNA LATERAL -->
     <aside class="columna-lateral-suscripcion">
 
         <article class="bloque-suscripcion-emprendedor">
@@ -210,81 +200,36 @@
 
                 <div>
                     <span class="subtitulo-emprendedor">
-                        Resumen
+                        Suscripción actual
                     </span>
 
-                    <h2>Tu plan</h2>
+                    <h2>@Model.NombrePlan</h2>
                 </div>
 
             </div>
 
-          
             <div class="detalle-renovacion-suscripcion">
 
-    @if (Model.EsCambioPlan)
-    {
-        <div>
-            <span>Plan actual</span>
-            <strong>@Model.NombrePlanActual</strong>
-        </div>
+                <div>
+                    <span>Precio</span>
 
-        <div>
-            <span>Nuevo plan</span>
-            <strong>@Model.NombrePlan</strong>
-        </div>
+                    @if (Model.Precio == 0)
+                    {
+                        <strong>Gratis</strong>
+                    }
+                    else
+                    {
+                        <strong>₡@Model.Precio.ToString("N0")</strong>
+                    }
+                </div>
 
-        <div>
-            <span>Precio del nuevo plan</span>
-            <strong>₡@Model.Precio.ToString("N0")</strong>
-        </div>
+                <div>
+                    <span>Periodicidad</span>
+                    <strong>@Model.Periodicidad</strong>
+                </div>
 
-        <div>
-            <span>Crédito proporcional</span>
-            <strong>- ₡@Model.CreditoProporcional.ToString("N0")</strong>
-        </div>
+            </div>
 
-        <div>
-            <span>Total a pagar</span>
-
-            @if (Model.TotalPagar == 0)
-            {
-                <strong>₡0</strong>
-            }
-            else
-            {
-                <strong>₡@Model.TotalPagar.ToString("N0")</strong>
-            }
-
-        </div>
-    }
-    else
-    {
-        <div>
-            <span>Plan</span>
-            <strong>@Model.NombrePlan</strong>
-        </div>
-
-        <div>
-            <span>Periodicidad</span>
-            <strong>@Model.Periodicidad</strong>
-        </div>
-
-        <div>
-            <span>Total</span>
-
-            @if (Model.Precio == 0)
-            {
-                <strong>Gratis</strong>
-            }
-            else
-            {
-                <strong>₡@Model.Precio.ToString("N0")</strong>
-            }
-
-        </div>
-    }
-
-</div>
         </article>
 
 
@@ -295,12 +240,11 @@
             </span>
 
             <div>
-                <h2>Pago seguro</h2>
+                <h2>Datos protegidos</h2>
 
                 <p>
-                    Los datos de la tarjeta se utilizan únicamente
-                    para procesar esta operación y no se almacenan
-                    en el sistema.
+                    Por seguridad, el sistema no almacena el número
+                    completo de la tarjeta ni el código CVV.
                 </p>
             </div>
 

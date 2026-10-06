@@ -52,6 +52,8 @@ public partial class ClubCreativoDbContext : DbContext
 
     public virtual DbSet<MensajesContacto> MensajesContactos { get; set; }
 
+    public virtual DbSet<MetodoPagoSuscripcion> MetodosPagoSuscripcion { get; set; }
+
     public virtual DbSet<MotivosRechazo> MotivosRechazos { get; set; }
 
     public virtual DbSet<MovimientosInventario> MovimientosInventarios { get; set; }
@@ -651,6 +653,29 @@ public partial class ClubCreativoDbContext : DbContext
             entity.Property(e => e.Telefono).HasMaxLength(25);
         });
 
+        modelBuilder.Entity<MetodoPagoSuscripcion>(entity =>
+        {
+            entity.HasKey(e => e.IdMetodoPago);
+
+            entity.ToTable("MetodosPagoSuscripcion");
+
+            entity.Property(e => e.UltimosCuatro)
+                .HasMaxLength(4)
+                .IsFixedLength();
+
+            entity.Property(e => e.EstadoSimulado)
+                .HasMaxLength(20);
+
+            entity.Property(e => e.Activo)
+                .HasDefaultValue(true);
+
+            entity.HasOne(d => d.IdEmprendimientoNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.IdEmprendimiento)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MetodosPagoSuscripcion_Emprendimientos");
+        });
+
         modelBuilder.Entity<MotivosRechazo>(entity =>
         {
             entity.HasKey(e => e.IdMotivoRechazo);
@@ -1134,6 +1159,9 @@ public partial class ClubCreativoDbContext : DbContext
             entity.Property(e => e.Estado)
                 .HasMaxLength(20)
                 .HasDefaultValue("Activa");
+
+            entity.Property(e => e.RenovacionAutomatica)
+                .HasDefaultValue(true);
 
             entity.HasOne(d => d.IdEmprendimientoNavigation).WithOne(p => p.Suscripcione)
                 .HasForeignKey<Suscripcione>(d => d.IdEmprendimiento)

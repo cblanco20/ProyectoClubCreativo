@@ -54,10 +54,49 @@ namespace ProyectoClubCreativo.Controllers
             await next();
         }
 
-        public IActionResult Panel()
+        public async Task<IActionResult> Panel()
         {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                ViewBag.PlanSuscripcion = "Sin suscripción";
+                return View();
+            }
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .Include(s => s.IdPlanNavigation)
+                    .Where(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa")
+                    .OrderByDescending(s => s.FechaInicio)
+                    .FirstOrDefaultAsync();
+
+            ViewBag.PlanSuscripcion =
+                suscripcion?.IdPlanNavigation.Nombre
+                ?? "Sin suscripción activa";
+
             return View();
         }
+
         [HttpGet]
         public async Task<IActionResult> SolicitudEmprendimiento(
     int? idCategoria)
@@ -1354,16 +1393,58 @@ namespace ProyectoClubCreativo.Controllers
 
             Suscripcione nuevaSuscripcion = new()
             {
-                IdEmprendimiento =
-                    emprendimiento.IdEmprendimiento,
+                IdEmprendimiento = emprendimiento.IdEmprendimiento,
 
                 IdPlan = plan.IdPlan,
                 FechaInicio = fechaInicio,
                 FechaFin = fechaFin,
-                Estado = "Activa"
+                Estado = "Activa",
+                RenovacionAutomatica = true
             };
 
             _context.Suscripciones.Add(nuevaSuscripcion);
+
+            // Guardar el método de pago únicamente si el usuario
+            // seleccionó la opción y el pago fue aprobado.
+            if (modelo.GuardarMetodoPago)
+            {
+                // Desactivar cualquier método de pago anterior
+                // del mismo emprendimiento.
+                var metodosAnteriores =
+                    await _context.MetodosPagoSuscripcion
+                        .Where(m =>
+                            m.IdEmprendimiento ==
+                                emprendimiento.IdEmprendimiento &&
+                            m.Activo)
+                        .ToListAsync();
+
+                foreach (var metodoAnterior in metodosAnteriores)
+                {
+                    metodoAnterior.Activo = false;
+                }
+
+                MetodoPagoSuscripcion metodoPago = new()
+                {
+                    IdEmprendimiento =
+                        emprendimiento.IdEmprendimiento,
+
+                    UltimosCuatro =
+                        modelo.NumeroTarjeta[^4..],
+
+                    MesVencimiento =
+                        modelo.MesVencimiento!.Value,
+
+                    AnioVencimiento =
+                        modelo.AnioVencimiento!.Value,
+
+                    EstadoSimulado = "Aprobado",
+
+                    Activo = true
+                };
+
+                _context.MetodosPagoSuscripcion.Add(metodoPago);
+            }
+
 
             await _context.SaveChangesAsync();
 
@@ -1441,6 +1522,9 @@ namespace ProyectoClubCreativo.Controllers
                 modelo.Estado =
                     suscripcion.Estado;
 
+                modelo.RenovacionAutomatica =
+                    suscripcion.RenovacionAutomatica;
+
                 var cancelacionProgramada =
                     await _context.SuscripcionCancelaciones
                         .AsNoTracking()
@@ -1481,6 +1565,208 @@ namespace ProyectoClubCreativo.Controllers
             return View(modelo);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ActualizarMetodoPago()
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró el emprendimiento.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .Include(s => s.IdPlanNavigation)
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró una suscripción activa.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            PagoSuscripcionViewModel modelo = new()
+            {
+                IdPlan = suscripcion.IdPlan,
+                NombrePlan = suscripcion.IdPlanNavigation.Nombre,
+                Precio = suscripcion.IdPlanNavigation.Precio,
+                Periodicidad =
+                    suscripcion.IdPlanNavigation.Periodicidad
+            };
+
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ActualizarMetodoPago(
+    PagoSuscripcionViewModel modelo)
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró el emprendimiento.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .Include(s => s.IdPlanNavigation)
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró una suscripción activa.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            // Estos datos siempre se recuperan desde la BD
+            // y no se confía en los valores enviados por el navegador.
+            modelo.IdPlan = suscripcion.IdPlan;
+            modelo.NombrePlan =
+                suscripcion.IdPlanNavigation.Nombre;
+            modelo.Precio =
+                suscripcion.IdPlanNavigation.Precio;
+            modelo.Periodicidad =
+                suscripcion.IdPlanNavigation.Periodicidad;
+
+            // Validar el vencimiento de la nueva tarjeta.
+            if (modelo.MesVencimiento.HasValue &&
+                modelo.AnioVencimiento.HasValue)
+            {
+                DateTime hoy = DateTime.Today;
+
+                if (modelo.AnioVencimiento.Value < hoy.Year ||
+                    (modelo.AnioVencimiento.Value == hoy.Year &&
+                     modelo.MesVencimiento.Value < hoy.Month))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.AnioVencimiento),
+                        "La tarjeta se encuentra vencida."
+                    );
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+
+            // Validar la nueva tarjeta mediante
+            // la misma pasarela simulada del proyecto.
+            ResultadoPago resultado =
+                _pagoService.ProcesarPago(
+                    modelo.NumeroTarjeta,
+                    suscripcion.IdPlanNavigation.Precio
+                );
+
+            if (!resultado.Aprobado)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    resultado.Mensaje
+                );
+
+                modelo.NumeroTarjeta = string.Empty;
+                modelo.Cvv = string.Empty;
+
+                return View(modelo);
+            }
+
+            // Desactivar cualquier método anterior.
+            List<MetodoPagoSuscripcion> metodosAnteriores =
+                await _context.MetodosPagoSuscripcion
+                    .Where(m =>
+                        m.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        m.Activo)
+                    .ToListAsync();
+
+            foreach (MetodoPagoSuscripcion metodoAnterior
+                in metodosAnteriores)
+            {
+                metodoAnterior.Activo = false;
+            }
+
+            // Registrar el nuevo método.
+            MetodoPagoSuscripcion nuevoMetodo = new()
+            {
+                IdEmprendimiento =
+                    emprendimiento.IdEmprendimiento,
+
+                UltimosCuatro =
+                    modelo.NumeroTarjeta[^4..],
+
+                MesVencimiento =
+                    modelo.MesVencimiento!.Value,
+
+                AnioVencimiento =
+                    modelo.AnioVencimiento!.Value,
+
+                EstadoSimulado = "Aprobado",
+
+                Activo = true
+            };
+
+            _context.MetodosPagoSuscripcion.Add(nuevoMetodo);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeSuscripcion"] =
+                "El método de pago fue actualizado correctamente. " +
+                "Ya puedes volver a intentar la renovación de tu suscripción.";
+
+            return RedirectToAction(nameof(MiSuscripcion));
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1579,6 +1865,8 @@ namespace ProyectoClubCreativo.Controllers
 
             _context.SuscripcionCancelaciones.Add(cancelacion);
 
+            suscripcion.RenovacionAutomatica = false;
+
             await _context.SaveChangesAsync();
 
             TempData["MensajeSuscripcion"] =
@@ -1652,6 +1940,8 @@ namespace ProyectoClubCreativo.Controllers
 
             _context.SuscripcionCancelaciones.Remove(cancelacion);
 
+            suscripcion.RenovacionAutomatica = true;
+
             await _context.SaveChangesAsync();
 
             TempData["MensajeSuscripcion"] =
@@ -1663,13 +1953,239 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RenovarSuscripcion()
+        public async Task<IActionResult> RenovarSuscripcion()
         {
-            TempData["MensajeSuscripcion"] =
-                "La renovación automática fue activada correctamente.";
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            var emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento == null)
+            {
+                return RedirectToAction(nameof(Panel));
+            }
+
+            var suscripcion =
+                await _context.Suscripciones
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion == null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró una suscripción activa.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            if (suscripcion.FechaFin <=
+                DateOnly.FromDateTime(DateTime.Today))
+            {
+                TempData["MensajeError"] =
+                    "La suscripción ya alcanzó su fecha de vencimiento.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            suscripcion.RenovacionAutomatica =
+                !suscripcion.RenovacionAutomatica;
+
+            await _context.SaveChangesAsync();
+
+            if (suscripcion.RenovacionAutomatica)
+            {
+                TempData["MensajeSuscripcion"] =
+                    "La renovación automática fue activada correctamente.";
+            }
+            else
+            {
+                TempData["MensajeSuscripcion"] =
+                    "La renovación automática fue desactivada. Tu plan permanecerá activo hasta finalizar el período actual.";
+            }
 
             return RedirectToAction(nameof(MiSuscripcion));
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcesarRenovacionesAutomaticas()
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró el emprendimiento.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .Include(s => s.IdPlanNavigation)
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa");
+
+            if (suscripcion is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró una suscripción activa.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            DateOnly hoy =
+    DateOnly.FromDateTime(DateTime.Today);
+
+            // Si la renovación automática fue desactivada,
+            // no se realiza ningún cobro.
+            if (!suscripcion.RenovacionAutomatica)
+            {
+                // Si ya llegó la fecha de vencimiento,
+                // la suscripción pasa a estado Vencida.
+                if (suscripcion.FechaFin <= hoy)
+                {
+                    suscripcion.Estado = "Vencida";
+
+                    await _context.SaveChangesAsync();
+
+                    TempData["MensajeSuscripcion"] =
+                        "La suscripción llegó a su fecha de vencimiento. " +
+                        "No se realizó ningún cobro porque la renovación automática estaba desactivada.";
+                }
+                else
+                {
+                    TempData["MensajeError"] =
+                        $"La renovación automática está desactivada. " +
+                        $"Tu plan permanecerá activo hasta el " +
+                        $"{suscripcion.FechaFin:dd/MM/yyyy}.";
+                }
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            if (suscripcion.FechaFin > hoy)
+            {
+                TempData["MensajeError"] =
+                    $"La suscripción todavía no requiere renovación. " +
+                    $"Su fecha de vencimiento es el " +
+                    $"{suscripcion.FechaFin:dd/MM/yyyy}.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            MetodoPagoSuscripcion? metodoPago =
+                await _context.MetodosPagoSuscripcion
+                    .FirstOrDefaultAsync(m =>
+                        m.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        m.Activo);
+
+            if (metodoPago is null)
+            {
+                TempData["MensajeError"] =
+                    "No existe un método de pago registrado para realizar la renovación automática.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            ResultadoPago resultado =
+                _pagoService.ProcesarRenovacionAutomatica(
+                    metodoPago.EstadoSimulado,
+                    suscripcion.IdPlanNavigation.Precio
+                );
+
+            if (!resultado.Aprobado)
+            {
+                DateTime fechaLimite =
+                    DateTime.Now.AddDays(3);
+
+                Notificacione notificacion = new()
+                {
+                    IdUsuario = idUsuario.Value,
+
+                    Titulo = "Fallo en la renovación de la suscripción",
+
+                    Mensaje =
+                        $"No fue posible procesar la renovación automática de tu plan. " +
+                        $"Actualiza tu método de pago antes del " +
+                        $"{fechaLimite:dd/MM/yyyy} para evitar perder el acceso.",
+
+                    Tipo = "Suscripcion",
+
+                    FechaEnvio = DateTime.Now,
+
+                    Leida = false,
+
+                    FechaLectura = null
+                };
+
+                _context.Notificaciones.Add(notificacion);
+
+                await _context.SaveChangesAsync();
+
+                TempData["MensajeError"] =
+                    $"No fue posible procesar la renovación automática. " +
+                    $"Debes actualizar tu método de pago antes del " +
+                    $"{fechaLimite:dd/MM/yyyy}.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            // Extender la vigencia del mismo plan.
+            if (suscripcion.IdPlanNavigation.Periodicidad.Equals(
+                "Anual",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                suscripcion.FechaFin =
+                    suscripcion.FechaFin.AddYears(1);
+            }
+            else
+            {
+                suscripcion.FechaFin =
+                    suscripcion.FechaFin.AddMonths(1);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeSuscripcion"] =
+                $"La suscripción se renovó automáticamente hasta el " +
+                $"{suscripcion.FechaFin:dd/MM/yyyy}.";
+
+            return RedirectToAction(nameof(MiSuscripcion));
+        }
+
+
 
         public IActionResult MisProductos()
         {

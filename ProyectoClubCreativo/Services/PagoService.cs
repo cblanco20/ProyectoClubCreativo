@@ -37,5 +37,34 @@
                     .ToUpper()
             };
         }
+
+        public ResultadoPago ProcesarRenovacionAutomatica(
+    string estadoSimulado,
+    decimal monto)
+        {
+            // Simula el cobro automático utilizando
+            // el estado del método de pago guardado.
+            if (!estadoSimulado.Equals(
+                "Aprobado",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return new ResultadoPago
+                {
+                    Aprobado = false,
+                    Mensaje =
+                        "No fue posible procesar la renovación automática. " +
+                        "Debe actualizar su método de pago."
+                };
+            }
+
+            return new ResultadoPago
+            {
+                Aprobado = true,
+                Mensaje = "Renovación automática aprobada.",
+                CodigoTransaccion = Guid.NewGuid()
+                    .ToString("N")
+                    .ToUpper()
+            };
+        }
     }
 }

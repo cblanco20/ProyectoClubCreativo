@@ -47,7 +47,38 @@
 
 </section>
 
+@if (!Model.TieneSuscripcion)
+{
+    <article class="bloque-suscripcion-emprendedor">
 
+        <div class="encabezado-bloque-suscripcion">
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Suscripción
+                </span>
+
+                <h2>No tienes una suscripción activa</h2>
+
+                <p>
+                    Tu suscripción anterior ha finalizado.
+                    Puedes seleccionar un plan para volver a disfrutar
+                    de los beneficios.
+                </p>
+            </div>
+        </div>
+
+        <a asp-controller="Emprendedor"
+           asp-action="PlanesSuscripcion"
+           class="boton-guardar-formulario-emprendedor">
+
+            <i class="bi bi-arrow-repeat"></i>
+            Ver planes disponibles
+        </a>
+
+    </article>
+}
+else
+{
 <!-- PLAN ACTUAL -->
 <section class="tarjeta-plan-actual-emprendedor">
 
@@ -165,7 +196,13 @@
 
         <div>
             <span>Método de pago</span>
-            <strong>Pendiente de configuración</strong>
+
+            <strong>
+                <a asp-controller="Emprendedor"
+                   asp-action="ActualizarMetodoPago">
+                    Actualizar método de pago
+                </a>
+            </strong>
         </div>
 
     </article>
@@ -186,11 +223,15 @@
 
 </section>
 
+}
 
 <!-- CONTENIDO -->
 <section class="grid-mi-suscripcion">
 
     <div class="columna-principal-suscripcion">
+
+@if (Model.TieneSuscripcion)
+{
 
         <!-- BENEFICIOS -->
 <section class="beneficios-mi-suscripcion">
@@ -244,7 +285,7 @@
 
 </section>
 
-
+        }
         <!-- HISTORIAL -->
         <article class="bloque-suscripcion-emprendedor">
 
@@ -323,79 +364,114 @@
     <!-- COLUMNA LATERAL -->
     <aside class="columna-lateral-suscripcion">
 
+        @if (Model.TieneSuscripcion)
+{
+
         <!-- RENOVACIÓN -->
-<article class="bloque-suscripcion-emprendedor">
+        <article class="bloque-suscripcion-emprendedor">
 
-    <div class="encabezado-bloque-suscripcion">
+            <div class="encabezado-bloque-suscripcion">
 
-        <div>
-            <span class="subtitulo-emprendedor">
-                Renovación
-            </span>
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Renovación
+                    </span>
 
-            <h2>Renovación automática</h2>
-        </div>
+                    <h2>Renovación automática</h2>
+                </div>
 
-    </div>
+            </div>
 
-    <div class="estado-renovacion-suscripcion">
+            <div class="estado-renovacion-suscripcion">
 
-        <span class="icono-renovacion-activa">
-            <i class="bi bi-arrow-repeat"></i>
-        </span>
+                <span class="icono-renovacion-activa">
+                    <i class="bi bi-arrow-repeat"></i>
+                </span>
 
-        <div>
-            <strong>Renovación activada</strong>
+                <div>
+                    @if (Model.RenovacionAutomatica)
+                    {
+                        <strong>Renovación activada</strong>
 
-            <p>
-                El plan se renovará automáticamente
-                el @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "fecha pendiente").
-            </p>
-        </div>
+                        <p>
+                            El plan se renovará automáticamente
+                            el @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "fecha pendiente").
+                        </p>
+                    }
+                    else
+                    {
+                        <strong>Renovación desactivada</strong>
 
-    </div>
+                        <p>
+                            El plan permanecerá activo hasta el
+                            @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "final del período")
+                            y después vencerá.
+                        </p>
+                    }
+                </div>
 
-    <div class="detalle-renovacion-suscripcion">
+            </div>
 
-        <div>
-            <span>Próximo cobro</span>
+            <div class="detalle-renovacion-suscripcion">
 
-            @if (Model.Precio == 0)
-            {
-                <strong>Gratis</strong>
-            }
-            else
-            {
-                <strong>₡@Model.Precio.ToString("N0")</strong>
-            }
-        </div>
+                <div>
+                    <span>
+                        @(Model.RenovacionAutomatica ? "Próximo cobro" : "Monto del plan")
+                    </span>
 
-        <div>
-            <span>Fecha</span>
-            <strong>
-                @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha")
-            </strong>
-        </div>
+                    @if (Model.Precio == 0)
+                    {
+                        <strong>Gratis</strong>
+                    }
+                    else
+                    {
+                        <strong>₡@Model.Precio.ToString("N0")</strong>
+                    }
+                </div>
 
-    </div>
+                <div>
+                    <span>
+                        @(Model.RenovacionAutomatica ? "Fecha" : "Vence")
+                    </span>
 
-    <form asp-controller="Emprendedor"
-          asp-action="RenovarSuscripcion"
-          method="post">
+                    <strong>
+                        @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha")
+                    </strong>
+                </div>
 
-        @Html.AntiForgeryToken()
+            </div>
 
-        <button type="submit"
-                class="boton-renovacion-suscripcion">
+            <form asp-controller="Emprendedor"
+                  asp-action="RenovarSuscripcion"
+                  method="post">
 
-            <i class="bi bi-check-circle"></i>
-            Mantener renovación activa
+                @Html.AntiForgeryToken()
 
-        </button>
+                @if (Model.RenovacionAutomatica)
+                {
+                    <button type="submit"
+                            class="boton-renovacion-suscripcion">
 
-    </form>
+                        <i class="bi bi-x-circle"></i>
+                        Desactivar renovación automática
 
-</article>
+                    </button>
+                }
+                else
+                {
+                    <button type="submit"
+                            class="boton-renovacion-suscripcion">
+
+                        <i class="bi bi-arrow-repeat"></i>
+                        Activar renovación automática
+
+                    </button>
+                }
+
+            </form>
+           
+        </article>
+        }
 
 
         <!-- CAMBIAR PLAN -->
@@ -428,7 +504,8 @@
 
         </article>
 
-
+        @if (Model.TieneSuscripcion)
+{
         <!-- CANCELACIÓN -->
         <article class="bloque-suscripcion-emprendedor bloque-cancelacion-suscripcion">
 
@@ -493,6 +570,8 @@
             }
 
         </article>
+
+        }
 
 
         <!-- SOPORTE -->

@@ -17,6 +17,8 @@ public partial class Suscripcione
 
     public string Estado { get; set; } = null!;
 
+    public bool RenovacionAutomatica { get; set; }
+
     public virtual Emprendimiento IdEmprendimientoNavigation { get; set; } = null!;
 
     public virtual PlanesSuscripcion IdPlanNavigation { get; set; } = null!;
