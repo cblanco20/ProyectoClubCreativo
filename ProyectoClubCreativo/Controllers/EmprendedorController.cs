@@ -1379,6 +1379,12 @@ namespace ProyectoClubCreativo.Controllers
             {
                 fechaFin = fechaInicio.AddYears(1);
             }
+            else if (plan.Periodicidad.Equals(
+                "Trimestral",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                fechaFin = fechaInicio.AddMonths(3);
+            }
             else
             {
                 fechaFin = fechaInicio.AddMonths(1);
@@ -2169,6 +2175,13 @@ namespace ProyectoClubCreativo.Controllers
             {
                 suscripcion.FechaFin =
                     suscripcion.FechaFin.AddYears(1);
+            }
+            else if (suscripcion.IdPlanNavigation.Periodicidad.Equals(
+                "Trimestral",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                suscripcion.FechaFin =
+                    suscripcion.FechaFin.AddMonths(3);
             }
             else
             {
