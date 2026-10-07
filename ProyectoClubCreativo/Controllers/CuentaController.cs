@@ -595,38 +595,195 @@ namespace ProyectoClubCreativo.Controllers
                     "Recuperación de contraseña - Club Creativo";
 
                 string contenidoCorreo = $@"
-            <h2>Club Creativo</h2>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""UTF-8"">
+</head>
 
-            <p>Hola {usuario.Nombre},</p>
+<body style=""
+    margin: 0;
+    padding: 0;
+    background-color: #f8f5fb;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #33283f;
+"">
 
-            <p>
-                Recibimos una solicitud para restablecer
-                la contraseña de tu cuenta.
-            </p>
+    <table width=""100%"" cellpadding=""0"" cellspacing=""0""
+           style=""background-color: #f8f5fb; padding: 40px 15px;"">
+        <tr>
+            <td align=""center"">
 
-            <p>
-                Haz clic en el siguiente enlace para crear
-                una nueva contraseña:
-            </p>
+                <table width=""100%"" cellpadding=""0"" cellspacing=""0""
+                       style=""
+                           max-width: 600px;
+                           background-color: #ffffff;
+                           border-radius: 16px;
+                           overflow: hidden;
+                           box-shadow: 0 4px 18px rgba(51, 40, 63, 0.10);
+                       "">
 
-            <p>
-                <a href=""{enlaceRecuperacion}"">
-                    Restablecer mi contraseña
-                </a>
-            </p>
+                    <!-- Encabezado -->
+                    <tr>
+                        <td align=""center""
+                            style=""
+                                background-color: #6f42c1;
+                                padding: 30px 20px;
+                            "">
 
-            <p>
-                Este enlace estará disponible durante
-                30 minutos.
-            </p>
+                            <div style=""
+                                font-size: 28px;
+                                font-weight: bold;
+                                color: #ffffff;
+                            "">
+                                Club Creativo
+                            </div>
 
-            <p>
-                Si no solicitaste este cambio,
-                puedes ignorar este correo.
-            </p>
+                            <div style=""
+                                margin-top: 7px;
+                                font-size: 14px;
+                                color: #eee7ff;
+                            "">
+                                Comunidad creativa MiVo
+                            </div>
 
-            <p>Club Creativo</p>
-        ";
+                        </td>
+                    </tr>
+
+                    <!-- Contenido -->
+                    <tr>
+                        <td style=""padding: 35px 40px;"">
+
+                            <h2 style=""
+                                margin-top: 0;
+                                margin-bottom: 20px;
+                                color: #33283f;
+                                font-size: 24px;
+                            "">
+                                Recuperación de contraseña
+                            </h2>
+
+                            <p style=""
+                                font-size: 16px;
+                                line-height: 1.6;
+                                margin-bottom: 15px;
+                            "">
+                                Hola <strong>{usuario.Nombre}</strong>,
+                            </p>
+
+                            <p style=""
+                                font-size: 16px;
+                                line-height: 1.6;
+                                color: #655c6b;
+                            "">
+                                Recibimos una solicitud para restablecer
+                                la contraseña de tu cuenta en Club Creativo.
+                            </p>
+
+                            <p style=""
+                                font-size: 16px;
+                                line-height: 1.6;
+                                color: #655c6b;
+                            "">
+                                Presiona el siguiente botón para crear
+                                una nueva contraseña:
+                            </p>
+
+                            <!-- Botón -->
+                            <table width=""100%"" cellpadding=""0"" cellspacing=""0""
+                                   style=""margin: 30px 0;"">
+                                <tr>
+                                    <td align=""center"">
+
+                                        <a href=""{enlaceRecuperacion}""
+                                           style=""
+                                               display: inline-block;
+                                               background-color: #6f42c1;
+                                               color: #ffffff;
+                                               text-decoration: none;
+                                               padding: 14px 28px;
+                                               border-radius: 8px;
+                                               font-size: 16px;
+                                               font-weight: bold;
+                                           "">
+                                            Restablecer mi contraseña
+                                        </a>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Aviso -->
+                            <div style=""
+                                background-color: #faf7ff;
+                                border-left: 4px solid #a855c7;
+                                padding: 15px 18px;
+                                border-radius: 6px;
+                                margin-bottom: 25px;
+                            "">
+                                <p style=""
+                                    margin: 0;
+                                    color: #655c6b;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                "">
+                                    Este enlace estará disponible durante
+                                    <strong>30 minutos</strong>.
+                                </p>
+                            </div>
+
+                            <p style=""
+                                font-size: 14px;
+                                line-height: 1.6;
+                                color: #706779;
+                                margin-bottom: 0;
+                            "">
+                                Si no solicitaste este cambio, puedes ignorar
+                                este correo. Tu contraseña actual seguirá
+                                funcionando normalmente.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Pie -->
+                    <tr>
+                        <td align=""center""
+                            style=""
+                                background-color: #faf7ff;
+                                padding: 22px;
+                                border-top: 1px solid #eee8f1;
+                            "">
+
+                            <p style=""
+                                margin: 0 0 5px 0;
+                                color: #6f42c1;
+                                font-size: 14px;
+                                font-weight: bold;
+                            "">
+                                Club Creativo MiVo
+                            </p>
+
+                            <p style=""
+                                margin: 0;
+                                color: #a097a6;
+                                font-size: 12px;
+                            "">
+                                Impulsando la creatividad y el emprendimiento
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
+";
 
                 try
                 {
