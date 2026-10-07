@@ -2,16 +2,23 @@ using Microsoft.AspNetCore.Mvc;
 using ProyectoClubCreativo.Models;
 using ProyectoClubCreativo.Models.ViewModels;
 using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using ProyectoClubCreativo.Data;
+using ProyectoClubCreativo.Models.Entities;
 
 namespace ProyectoClubCreativo.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly ClubCreativoDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(
+            ILogger<HomeController> logger,
+            ClubCreativoDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
         public IActionResult Index()
@@ -91,14 +98,43 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View();
         }
-        public IActionResult CatalogoProductos()
+        [HttpGet]
+        public async Task<IActionResult> CatalogoProductos()
         {
-            return View();
+            List<Producto> productos = await _context.Productos
+                .AsNoTracking()
+                .Include(p => p.IdCategoriaNavigation)
+                .Include(p => p.IdEmprendimientoNavigation)
+                .Include(p => p.ProductoImagene)
+                .Where(p =>
+                    p.Estado == "Publicado" &&
+                    p.IdEmprendimientoNavigation.Activo &&
+                    p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado")
+                .OrderByDescending(p => p.FechaRegistro)
+                .ToListAsync();
+
+            return View(productos);
         }
-        public IActionResult DetalleProducto(string name)
+        [HttpGet]
+        public async Task<IActionResult> DetalleProducto(int id)
         {
-            ViewData["NombreProducto"] = string.IsNullOrWhiteSpace(name) ? "Aretes tejidos" : name;
-            return View();
+            var producto = await _context.Productos
+                .AsNoTracking()
+                .Include(p => p.IdCategoriaNavigation)
+                .Include(p => p.IdEmprendimientoNavigation)
+                .Include(p => p.ProductoImagene)
+                .FirstOrDefaultAsync(p =>
+                    p.IdProducto == id &&
+                    p.Estado == "Publicado" &&
+                    p.IdEmprendimientoNavigation.Activo &&
+                    p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado");
+
+            if (producto == null)
+            {
+                return NotFound();
+            }
+
+            return View(producto);
         }
         public IActionResult DetalleEvento(string name)
         {

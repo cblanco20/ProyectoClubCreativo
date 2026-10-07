@@ -6791,7 +6791,7 @@ textarea {
 .precio-detalle-producto {
     font-size: 1.6rem;
     font-weight: 800;
-    color: var(--color-naranja-oscuro);
+    color: #ffffff;
     margin: 8px 0 4px;
 }
 
