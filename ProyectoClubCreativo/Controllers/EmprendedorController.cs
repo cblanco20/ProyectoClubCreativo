@@ -2857,6 +2857,273 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(MisProductos));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PausarProducto(int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var emprendimiento = await _context.Emprendimientos
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró el emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            var producto = await _context.Productos
+                .FirstOrDefaultAsync(p =>
+                    p.IdProducto == id &&
+                    p.IdEmprendimiento == emprendimiento.IdEmprendimiento);
+
+            if (producto is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró el producto o no tienes permiso para modificarlo.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            if (producto.Estado != "Publicado")
+            {
+                TempData["MensajeError"] =
+                    "Solo se pueden pausar productos que estén publicados.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            producto.Estado = "Inactivo";
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeProducto"] =
+                $"El producto \"{producto.Nombre}\" fue pausado correctamente.";
+
+            return RedirectToAction(nameof(MisProductos));
+        }
+
+        // HU-18 - Reactivar un producto pausado
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReactivarProducto(int id)
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            Producto? producto =
+                await _context.Productos
+                    .FirstOrDefaultAsync(p =>
+                        p.IdProducto == id &&
+                        p.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento);
+
+            if (producto is null)
+            {
+                TempData["MensajeError"] =
+                    "El producto no existe o no tienes permiso para reactivarlo.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            if (producto.Estado != "Inactivo")
+            {
+                TempData["MensajeError"] =
+                    "Solo se pueden reactivar productos que estén inactivos.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            producto.Estado = "Publicado";
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeProducto"] =
+                $"El producto «{producto.Nombre}» fue reactivado correctamente.";
+
+            return RedirectToAction(nameof(MisProductos));
+        }
+
+        // HU-18 - Eliminar definitivamente un producto
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarProducto(int id)
+        {
+            int? idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction(
+                    "IniciarSesion",
+                    "Cuenta"
+                );
+            }
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            Producto? producto =
+                await _context.Productos
+                    .Include(p => p.ProductoImagene)
+                    .FirstOrDefaultAsync(p =>
+                        p.IdProducto == id &&
+                        p.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento);
+
+            if (producto is null)
+            {
+                TempData["MensajeError"] =
+                    "El producto no existe o no tienes permiso para eliminarlo.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            // No eliminar productos que tengan ventas registradas.
+            bool tieneVentas =
+                await _context.VentaDetalles
+                    .AnyAsync(v => v.IdProducto == id);
+
+            if (tieneVentas)
+            {
+                TempData["MensajeError"] =
+                    "No puedes eliminar definitivamente este producto porque tiene compras registradas.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            // Comprobar si tiene otras relaciones que impidan eliminarlo.
+            bool tieneOtrasRelaciones =
+                await _context.CarritoDetalles.AnyAsync(x => x.IdProducto == id) ||
+                await _context.ComentariosResenas.AnyAsync(x => x.IdProducto == id) ||
+                await _context.Favoritos.AnyAsync(x => x.IdProducto == id) ||
+                await _context.Galerias.AnyAsync(x => x.IdProducto == id) ||
+                await _context.MovimientosInventarios.AnyAsync(x => x.IdProducto == id);
+
+            if (tieneOtrasRelaciones)
+            {
+                TempData["MensajeError"] =
+                    "No se puede eliminar este producto porque tiene información relacionada.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            string nombreProducto = producto.Nombre;
+
+            string? nombreImagen =
+                producto.ProductoImagene?.NombreArchivo;
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // Eliminar primero la imagen registrada en SQL.
+                if (producto.ProductoImagene is not null)
+                {
+                    _context.ProductoImagenes.Remove(
+                        producto.ProductoImagene
+                    );
+                }
+
+                // Eliminar el producto.
+                _context.Productos.Remove(producto);
+
+                await _context.SaveChangesAsync();
+
+                await transaccion.CommitAsync();
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["MensajeError"] =
+                    "No se pudo eliminar el producto porque tiene registros relacionados.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            // Eliminar el archivo físico solamente después
+            // de confirmar la eliminación en SQL.
+            if (!string.IsNullOrWhiteSpace(nombreImagen))
+            {
+                string carpetaProductos =
+                    Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot",
+                        "uploads",
+                        "productos"
+                    );
+
+                string rutaImagen =
+                    Path.Combine(
+                        carpetaProductos,
+                        Path.GetFileName(nombreImagen)
+                    );
+
+                try
+                {
+                    if (System.IO.File.Exists(rutaImagen))
+                    {
+                        System.IO.File.Delete(rutaImagen);
+                    }
+                }
+                catch (IOException)
+                {
+                    // La eliminación en SQL ya fue confirmada.
+                    // No interrumpimos la respuesta por el archivo.
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // El archivo no pudo eliminarse por permisos.
+                }
+            }
+
+            TempData["MensajeProducto"] =
+                $"El producto «{nombreProducto}» fue eliminado correctamente.";
+
+            return RedirectToAction(nameof(MisProductos));
+        }
+
         private void ValidarImagenesOpcionalesProducto(
     ProductoEmprendedorViewModel modelo)
         {

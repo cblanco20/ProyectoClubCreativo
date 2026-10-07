@@ -283,19 +283,71 @@
                 @producto.Estado
             </span>
 
-            <div class="acciones-producto-tabla">
+                        <div class="acciones-producto-tabla">
 
-                <a asp-controller="Emprendedor"
-                   asp-action="EditarProducto"
-                   asp-route-id="@producto.IdProducto"
-                   class="boton-accion-producto editar"
-                   aria-label="Editar @producto.Nombre">
+                            <a asp-controller="Emprendedor"
+                               asp-action="EditarProducto"
+                               asp-route-id="@producto.IdProducto"
+                               class="boton-accion-producto editar"
+                               aria-label="Editar @producto.Nombre"
+                               title="Editar producto">
 
-                    <i class="bi bi-pencil-square"></i>
+                                <i class="bi bi-pencil-square"></i>
 
-                </a>
+                            </a>
 
-            </div>
+                            @if (producto.Estado == "Publicado")
+                            {
+                                <form asp-controller="Emprendedor"
+                                      asp-action="PausarProducto"
+                                      asp-route-id="@producto.IdProducto"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="boton-accion-producto pausar"
+                                            aria-label="Pausar @producto.Nombre"
+                                            title="Pausar producto">
+
+                                        <i class="bi bi-pause-circle"></i>
+
+                                    </button>
+
+                                </form>
+                            }
+                            @if (producto.Estado == "Inactivo")
+                            {
+                                <form asp-controller="Emprendedor"
+                                      asp-action="ReactivarProducto"
+                                      asp-route-id="@producto.IdProducto"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="boton-accion-producto reactivar"
+                                            aria-label="Reactivar @producto.Nombre"
+                                            title="Reactivar producto">
+
+                                        <i class="bi bi-play-circle"></i>
+
+                                    </button>
+
+                                </form>
+                            }
+
+                            <button type="button"
+                                    class="boton-accion-producto eliminar boton-eliminar-producto"
+                                    data-id="@producto.IdProducto"
+                                    data-producto="@producto.Nombre"
+                                    aria-label="Eliminar @producto.Nombre"
+                                    title="Eliminar producto">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
 
         </article>
     }
@@ -399,20 +451,29 @@
 
         <div class="acciones-modal-eliminar-producto">
 
+            <form id="formEliminarProducto"
+                  asp-controller="Emprendedor"
+                  asp-action="EliminarProducto"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       id="idProductoEliminar"
+                       name="id" />
+
+                <button type="submit"
+                        id="confirmarEliminarProducto"
+                        class="boton-confirmar-eliminacion">
+                    Sí, eliminar
+                </button>
+
+            </form>
+
             <button type="button"
                     id="cancelarEliminarProducto"
                     class="boton-cancelar-eliminacion">
-
                 Cancelar
-
-            </button>
-
-            <button type="button"
-                    id="confirmarEliminarProducto"
-                    class="boton-confirmar-eliminacion">
-
-                Sí, eliminar
-
             </button>
 
         </div>
@@ -545,13 +606,13 @@
             const botonesEliminar =
                 document.querySelectorAll(".boton-eliminar-producto");
 
-            let filaSeleccionada = null;
+            const idProductoEliminar =
+                document.getElementById("idProductoEliminar");
 
 
             const abrirModal = (boton) => {
 
-                filaSeleccionada =
-                    boton.closest(".producto-filtrable");
+                idProductoEliminar.value = boton.dataset.id;
 
                 nombreProducto.textContent =
                     boton.dataset.producto;
@@ -582,7 +643,7 @@
                     "modal-producto-abierto"
                 );
 
-                filaSeleccionada = null;
+
             };
 
 
@@ -608,13 +669,7 @@
                 "click",
                 cerrarModal
             );
-
-            botonConfirmar?.addEventListener("click", () => {
-
-                filaSeleccionada?.remove();
-                cerrarModal();
-                filtrarProductos();
-            });
+     
 
             document.addEventListener("keydown", (evento) => {
 
