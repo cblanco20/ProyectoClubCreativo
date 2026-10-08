@@ -2241,6 +2241,136 @@ namespace ProyectoClubCreativo.Controllers
             return View(productos);
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PublicarEnHechoEnCr(int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var emprendimiento = await _context.Emprendimientos
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento == null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            if (!emprendimiento.Activo ||
+                emprendimiento.EstadoAprobacion != "Aprobado" ||
+                !emprendimiento.ParticipaHechoEnCr)
+            {
+                TempData["MensajeError"] =
+                    "Tu emprendimiento debe estar aprobado y participar en Hecho en CR para publicar productos en esta sección.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            var producto = await _context.Productos
+                .FirstOrDefaultAsync(p =>
+                    p.IdProducto == id &&
+                    p.IdEmprendimiento == emprendimiento.IdEmprendimiento);
+
+            if (producto == null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró el producto solicitado.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            if (producto.Estado != "Publicado")
+            {
+                TempData["MensajeError"] =
+                    "El producto debe estar publicado en el catálogo general antes de incluirlo en Hecho en CR.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            if (producto.PublicadoHechoEnCr)
+            {
+                TempData["MensajeError"] =
+                    "Este producto ya está publicado en Hecho en CR.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            producto.PublicadoHechoEnCr = true;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeProducto"] =
+                "El producto se publicó correctamente en Hecho en CR.";
+
+            return RedirectToAction(nameof(MisProductos));
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> QuitarDeHechoEnCr(int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento == null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un emprendimiento asociado a tu cuenta.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            var producto = await _context.Productos
+                .FirstOrDefaultAsync(p =>
+                    p.IdProducto == id &&
+                    p.IdEmprendimiento == emprendimiento.IdEmprendimiento);
+
+            if (producto == null)
+            {
+                TempData["MensajeError"] =
+                    "No se encontró el producto solicitado.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            if (!producto.PublicadoHechoEnCr)
+            {
+                TempData["MensajeError"] =
+                    "Este producto no está publicado en Hecho en CR.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            producto.PublicadoHechoEnCr = false;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeProducto"] =
+                "El producto se quitó correctamente de Hecho en CR.";
+
+            return RedirectToAction(nameof(MisProductos));
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> CrearProducto()
         {

@@ -285,6 +285,50 @@
 
                         <div class="acciones-producto-tabla">
 
+                            @if (producto.Estado == "Publicado" && !producto.PublicadoHechoEnCr)
+                            {
+                                <form asp-controller="Emprendedor"
+                                      asp-action="PublicarEnHechoEnCr"
+                                      asp-route-id="@producto.IdProducto"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="boton-accion-producto"
+                                            title="Publicar en Hecho en CR"
+                                            aria-label="Publicar @producto.Nombre en Hecho en CR">
+
+                                        <i class="bi bi-patch-check"></i>
+
+                                    </button>
+                                </form>
+                            }
+
+                            
+                            @if (producto.PublicadoHechoEnCr)
+                            {
+                                <form asp-controller="Emprendedor"
+                                      asp-action="QuitarDeHechoEnCr"
+                                      asp-route-id="@producto.IdProducto"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="boton-accion-producto"
+                                            title="Quitar de Hecho en CR"
+                                            aria-label="Quitar @producto.Nombre de Hecho en CR">
+
+                                        <i class="bi bi-patch-minus"></i>
+
+                                    </button>
+                                </form>
+                            }
+
+
                             <a asp-controller="Emprendedor"
                                asp-action="EditarProducto"
                                asp-route-id="@producto.IdProducto"

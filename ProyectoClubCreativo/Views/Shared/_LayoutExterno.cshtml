@@ -90,6 +90,13 @@
 
                 <li>
                     <a asp-controller="Home"
+                       asp-action="HechoEnCR">
+                        Hecho en CR
+                    </a>
+                </li>
+
+                <li>
+                    <a asp-controller="Home"
                        asp-action="Emprendimientos">
                         Emprendimientos
                     </a>
@@ -235,6 +242,14 @@
                            asp-action="CatalogoProductos"
                            class="@ClaseMenu("CatalogoProductos")">
                             Productos
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="HechoEnCR"
+                           class="@ClaseMenu("HechoEnCR")">
+                            Hecho en CR
                         </a>
                     </li>
 
@@ -400,6 +415,13 @@
                         <a asp-controller="Home"
                            asp-action="CatalogoProductos">
                             Productos cool
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="HechoEnCR">
+                            Hecho en CR
                         </a>
                     </li>
 

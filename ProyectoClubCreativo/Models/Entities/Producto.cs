@@ -22,7 +22,7 @@ public partial class Producto
     public int StockActual { get; set; }
 
     public bool EsDestacado { get; set; }
-
+    public bool PublicadoHechoEnCr { get; set; }
     public string Estado { get; set; } = null!;
 
     public DateTime? FechaPublicacion { get; set; }

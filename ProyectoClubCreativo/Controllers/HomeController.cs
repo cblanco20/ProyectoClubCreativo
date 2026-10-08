@@ -115,6 +115,29 @@ namespace ProyectoClubCreativo.Controllers
 
             return View(productos);
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> HechoEnCR()
+        {
+            var productos = await _context.Productos
+                .AsNoTracking()
+                .Include(p => p.IdCategoriaNavigation)
+                .Include(p => p.IdEmprendimientoNavigation)
+                .Include(p => p.ProductoImagene)
+                .Where(p =>
+                    p.PublicadoHechoEnCr &&
+                    p.Estado == "Publicado" &&
+                    p.IdEmprendimientoNavigation.Activo &&
+                    p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado" &&
+                    p.IdEmprendimientoNavigation.ParticipaHechoEnCr)
+                .OrderByDescending(p => p.FechaRegistro)
+                .ToListAsync();
+
+            return View(productos);
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> DetalleProducto(int id)
         {

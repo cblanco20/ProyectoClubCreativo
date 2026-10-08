@@ -906,6 +906,8 @@ public partial class ClubCreativoDbContext : DbContext
                 .HasPrecision(0)
                 .HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Nombre).HasMaxLength(120);
+            entity.Property(e => e.PublicadoHechoEnCr)
+    .HasDefaultValue(false);
             entity.Property(e => e.Precio).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.TipoPublicacion).HasMaxLength(20);
 
