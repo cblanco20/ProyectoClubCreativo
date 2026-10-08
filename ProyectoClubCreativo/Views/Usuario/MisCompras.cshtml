@@ -3,12 +3,21 @@
 @{
     ViewData["Title"] = "Mis compras";
     Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+
+    bool hayFiltros =
+        !string.IsNullOrEmpty(ViewBag.FechaInicio as string)
+        || !string.IsNullOrEmpty(ViewBag.FechaFin as string)
+        || ViewBag.IdEmprendimiento != null;
 }
 
 <div class="encabezado-pagina-usuario">
     <div>
         <span class="etiqueta-pagina-usuario">Pedidos</span>
-        <h1 class="titulo-pagina-usuario">Mis compras</h1>
+
+        <h1 class="titulo-pagina-usuario">
+            Mis compras
+        </h1>
+
         <p class="descripcion-pagina-usuario">
             Consulta el historial y estado de tus órdenes.
         </p>
@@ -17,6 +26,7 @@
     <a asp-controller="Home"
        asp-action="CatalogoProductos"
        class="boton-accion-usuario">
+
         <i class="bi bi-shop"></i>
         Seguir comprando
     </a>
@@ -24,70 +34,202 @@
 
 <section class="tarjeta-modulo-usuario">
 
-    <div class="filtros-modulo-usuario">
-        <button class="filtro-activo">Todas</button>
-        <button>En proceso</button>
-        <button>Entregadas</button>
-        <button>Canceladas</button>
-    </div>
+    <!-- Filtros de compras -->
+    <form asp-controller="Usuario"
+          asp-action="MisCompras"
+          method="get"
+          class="mb-4">
 
-    <div class="tabla-responsive-usuario">
-        <table class="tabla-usuario">
-            <thead>
-                <tr>
-                    <th>Orden</th>
-                    <th>Fecha</th>
-                    <th>Entrega</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                    <th></th>
-                </tr>
-            </thead>
+        <div class="row g-3 align-items-end">
 
-            <tbody>
-                @foreach (var compra in Model)
-                {
-                    string estadoClase =
-                        compra.Estado == "Entregado"
-                            ? "estado-tabla estado-verde"
-                            : compra.Estado == "Cancelado"
-                                ? "estado-tabla estado-rojo"
-                                : "estado-tabla estado-amarillo";
+            <!-- Fecha inicial -->
+            <div class="col-md-3">
+                <label for="fechaInicio"
+                       class="form-label fw-semibold">
+                    Fecha inicial
+                </label>
 
+                <input type="date"
+                       id="fechaInicio"
+                       name="fechaInicio"
+                       value="@ViewBag.FechaInicio"
+                       class="form-control" />
+            </div>
+
+            <!-- Fecha final -->
+            <div class="col-md-3">
+                <label for="fechaFin"
+                       class="form-label fw-semibold">
+                    Fecha final
+                </label>
+
+                <input type="date"
+                       id="fechaFin"
+                       name="fechaFin"
+                       value="@ViewBag.FechaFin"
+                       class="form-control" />
+            </div>
+
+            <!-- Emprendimiento -->
+            <div class="col-md-3">
+                <label for="idEmprendimiento"
+                       class="form-label fw-semibold">
+                    Emprendimiento
+                </label>
+
+                <select id="idEmprendimiento"
+                        name="idEmprendimiento"
+                        asp-items="ViewBag.Emprendimientos"
+                        class="form-select">
+
+                    <option value="">
+                        Todos los emprendimientos
+                    </option>
+
+                </select>
+            </div>
+
+            <!-- Botones -->
+            <div class="col-md-3 d-flex gap-2">
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    <i class="bi bi-funnel"></i>
+                    Filtrar
+                </button>
+
+                <a asp-controller="Usuario"
+                   asp-action="MisCompras"
+                   class="btn btn-outline-secondary">
+
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Limpiar
+                </a>
+
+            </div>
+        </div>
+    </form>
+
+    <!-- Historial de compras -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="tabla-responsive-usuario">
+
+            <table class="tabla-usuario">
+
+                <thead>
                     <tr>
-                        <td>
-                            <strong>@compra.NumeroOrden</strong>
-                        </td>
-
-                        <td>
-                            @compra.Fecha.ToString("dd/MM/yyyy")
-                        </td>
-
-                        <td>
-                            @compra.MetodoEntrega
-                        </td>
-
-                        <td>
-                            ₡@compra.Total.ToString("N0")
-                        </td>
-
-                        <td>
-                            <span class="@estadoClase">
-                                @compra.Estado
-                            </span>
-                        </td>
-
-                        <td>
-                            <a asp-controller="Usuario"
-                               asp-action="DetalleCompra"
-                               asp-route-id="@compra.NumeroOrden"
-                               class="enlace-tabla-usuario">
-                                Ver detalle
-                            </a>
-                        </td>
+                        <th>Orden</th>
+                        <th>Fecha</th>
+                        <th>Entrega</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th></th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+
+                <tbody>
+                    @foreach (var compra in Model)
+                    {
+                        string estadoClase =
+                            compra.Estado == "Entregado"
+                                ? "estado-tabla estado-verde"
+                                : compra.Estado == "Cancelado"
+                                    ? "estado-tabla estado-rojo"
+                                    : "estado-tabla estado-amarillo";
+
+                        <tr>
+                            <td>
+                                <strong>
+                                    @compra.NumeroOrden
+                                </strong>
+                            </td>
+
+                            <td>
+                                @compra.Fecha.ToString("dd/MM/yyyy")
+                            </td>
+
+                            <td>
+                                @compra.MetodoEntrega
+                            </td>
+
+                            <td>
+                                ₡@compra.Total.ToString("N0")
+                            </td>
+
+                            <td>
+                                <span class="@estadoClase">
+                                    @compra.Estado
+                                </span>
+                            </td>
+
+                            <td>
+                                <a asp-controller="Usuario"
+                                   asp-action="DetalleCompra"
+                                   asp-route-id="@compra.NumeroOrden"
+                                   class="enlace-tabla-usuario">
+
+                                    Ver detalle
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    }
+    else
+    {
+        <!-- Mensaje cuando no hay compras -->
+        <div class="text-center py-5">
+
+            <i class="bi bi-bag-x"
+               style="font-size: 45px; color: #a78bfa;">
+            </i>
+
+            @if (hayFiltros)
+            {
+                <h4 class="mt-3">
+                    No se encontraron compras
+                </h4>
+
+                <p class="text-muted mt-2">
+                    No tienes compras que coincidan con
+                    los filtros seleccionados.
+                    Intenta con otras opciones.
+                </p>
+
+                <a asp-controller="Usuario"
+                   asp-action="MisCompras"
+                   class="btn btn-outline-secondary mt-3">
+
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Limpiar filtros
+                </a>
+            }
+            else
+            {
+                <h4 class="mt-3">
+                    Todavía no tienes compras registradas
+                </h4>
+
+                <p class="text-muted mt-2">
+                    Cuando realices tu primera compra,
+                    podrás consultar aquí su información.
+                </p>
+
+                <a asp-controller="Home"
+                   asp-action="CatalogoProductos"
+                   class="boton-accion-usuario mt-3">
+
+                    <i class="bi bi-shop"></i>
+                    Explorar productos
+                </a>
+            }
+
+        </div>
+    }
+
 </section>

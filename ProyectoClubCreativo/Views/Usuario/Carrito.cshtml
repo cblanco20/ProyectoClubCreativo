@@ -124,11 +124,24 @@
             <strong>₡@Model.Total.ToString("N0")</strong>
         </div>
 
-        <a asp-action="ProcesoCompra"
-           class="boton-accion-usuario boton-ancho-completo">
-            Continuar compra
-            <i class="bi bi-arrow-right"></i>
-        </a>
+       
+        @if (Model.Productos.Any())
+        {
+            <a asp-action="ProcesoCompra"
+               class="boton-accion-usuario boton-ancho-completo">
+                Continuar compra
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        }
+        else
+        {
+            <p class="text-center text-muted mt-3">
+                <i class="bi bi-cart-x"></i>
+                Tu carrito está vacío. Agrega productos para continuar
+                con la compra.
+            </p>
+        }
+
 
         <a asp-controller="Home"
            asp-action="CatalogoProductos"

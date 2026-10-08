@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels;
-using System.Text.Json;
 using ProyectoClubCreativo.Services;
+using System.Text.Json;
 
 namespace ProyectoClubCreativo.Controllers
 {
@@ -404,47 +405,98 @@ namespace ProyectoClubCreativo.Controllers
             };
         }
 
+
+
+
         [HttpGet]
-        public IActionResult MisCompras()
+        public async Task<IActionResult> MisCompras(
+            DateTime? fechaInicio,
+            DateTime? fechaFin,
+            int? idEmprendimiento)
         {
-            List<CompraUsuarioViewModel> modelo =
-            [
-                new()
-        {
-            NumeroOrden = "CC-1025",
-            Fecha = new DateTime(2026, 8, 2),
-            Total = 18500,
-            Estado = "En preparación",
-            MetodoEntrega = "Retiro en feria"
-        },
-        new()
-        {
-            NumeroOrden = "CC-1008",
-            Fecha = new DateTime(2026, 7, 25),
-            Total = 32000,
-            Estado = "Entregado",
-            MetodoEntrega = "Envío a domicilio"
-        },
-        new()
-        {
-            NumeroOrden = "CC-0984",
-            Fecha = new DateTime(2026, 7, 10),
-            Total = 12750,
-            Estado = "Entregado",
-            MetodoEntrega = "Retiro en feria"
-        },
-        new()
-        {
-            NumeroOrden = "CC-0950",
-            Fecha = new DateTime(2026, 6, 18),
-            Total = 24400,
-            Estado = "Cancelado",
-            MetodoEntrega = "Envío a domicilio"
-        }
-            ];
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            // Consultar las compras del usuario.
+            var consulta = _context.Ventas
+                .AsNoTracking()
+                .Where(v => v.IdUsuario == idUsuario.Value);
+
+            // Filtrar por fecha inicial.
+            if (fechaInicio.HasValue)
+            {
+                consulta = consulta.Where(v =>
+                    v.FechaVenta >= fechaInicio.Value.Date);
+            }
+
+            // Filtrar por fecha final, incluyéndola.
+            if (fechaFin.HasValue)
+            {
+                DateTime fechaLimite = fechaFin.Value.Date.AddDays(1);
+
+                consulta = consulta.Where(v =>
+                    v.FechaVenta < fechaLimite);
+            }
+
+            // Filtrar compras por emprendimiento.
+            if (idEmprendimiento.HasValue)
+            {
+                consulta = consulta.Where(v =>
+                    v.VentaDetalles.Any(d =>
+                        d.IdProductoNavigation.IdEmprendimiento
+                            == idEmprendimiento.Value));
+            }
+
+            var ventas = await consulta
+                .OrderByDescending(v => v.FechaVenta)
+                .ToListAsync();
+
+            var modelo = ventas.Select(v => new CompraUsuarioViewModel
+            {
+                NumeroOrden = v.NumeroOrden,
+                Fecha = v.FechaVenta,
+                Total = v.Total,
+                Estado = v.Estado,
+                MetodoEntrega = v.TipoEntrega == "Domicilio"
+                    ? "Envío a domicilio"
+                    : "Retiro"
+            }).ToList();
+
+            // Obtener únicamente emprendimientos asociados
+            // a productos que el usuario haya comprado.
+            var emprendimientos = await _context.VentaDetalles
+                .AsNoTracking()
+                .Where(d =>
+                    d.IdVentaNavigation.IdUsuario == idUsuario.Value)
+                .Select(d => new
+                {
+                    Id = d.IdProductoNavigation.IdEmprendimiento,
+                    Nombre = d.IdProductoNavigation
+                        .IdEmprendimientoNavigation.NombreComercial
+                })
+                .Distinct()
+                .OrderBy(e => e.Nombre)
+                .ToListAsync();
+
+            ViewBag.Emprendimientos = new SelectList(
+                emprendimientos,
+                "Id",
+                "Nombre",
+                idEmprendimiento);
+
+            ViewBag.FechaInicio = fechaInicio?.ToString("yyyy-MM-dd");
+            ViewBag.FechaFin = fechaFin?.ToString("yyyy-MM-dd");
+            ViewBag.IdEmprendimiento = idEmprendimiento;
 
             return View(modelo);
         }
+
+
+
 
 
         [HttpGet]

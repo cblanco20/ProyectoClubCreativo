@@ -130,6 +130,19 @@
                     </a>
                 </li>
 
+               
+                @if (haySesion && rolUsuarioSesion == "Usuario")
+                {
+                    <li>
+                        <a asp-controller="Usuario"
+                           asp-action="Carrito">
+                            Carrito de compras
+                        </a>
+                    </li>
+                }
+
+
+
                 <li>
                     <a asp-controller="Home"
                        asp-action="GaleriaMultimedia">
@@ -300,13 +313,6 @@
                         </a>
                     </li>
 
-                    <li>
-                        <a asp-controller="Home"
-                           asp-action="Contacto"
-                           class="@ClaseMenu("Contacto")">
-                            Contacto
-                        </a>
-                    </li>
                 </ul>
             </nav>
 
