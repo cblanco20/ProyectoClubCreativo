@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Confirmar pedido";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<section class="container py-5">
+
+    <div class="card shadow-sm mx-auto"
+         style="max-width: 650px;">
+
+        <div class="card-body p-4">
+
+            <h1 class="h3 mb-3">Confirmar pedido</h1>
+
+            <p class="text-muted">
+                Revisa la información antes de registrar tu pedido.
+            </p>
+
+            <hr />
+
+            <p>
+                <strong>Método de pago:</strong>
+                @ViewBag.MetodoPago
+            </p>
+
+            <p>
+                <strong>Tipo de entrega:</strong>
+                @ViewBag.TipoEntrega
+            </p>
+
+            <p>
+                <strong>Total:</strong>
+                ₡@(((decimal)ViewBag.Total).ToString("N0"))
+            </p>
+
+            <div class="alert alert-info">
+                Tu pedido se registrará con el pago pendiente.
+            </div>
+
+            <form asp-controller="Usuario"
+                  asp-action="ConfirmarPedido"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="d-flex justify-content-between mt-4">
+
+                    <a asp-controller="Usuario"
+                       asp-action="ProcesoCompra"
+                       class="btn btn-outline-secondary">
+                        Volver
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Confirmar pedido
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</section>

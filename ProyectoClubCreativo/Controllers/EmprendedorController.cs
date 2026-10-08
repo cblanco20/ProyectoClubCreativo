@@ -94,8 +94,58 @@ namespace ProyectoClubCreativo.Controllers
                 suscripcion?.IdPlanNavigation.Nombre
                 ?? "Sin suscripción activa";
 
+
+            var productosInventarioBajo = await _context.Productos
+                .AsNoTracking()
+                .Include(p => p.ProductoImagene)
+                .Where(p =>
+                    p.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    p.TipoPublicacion == "Producto" &&
+                    p.Estado == "Publicado" &&
+                    p.StockActual > 0 &&
+                    p.StockActual <= 3)
+                .OrderBy(p => p.StockActual)
+                .ToListAsync();
+
+            ViewBag.ProductosInventarioBajo = productosInventarioBajo;
+
+
             return View();
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Notificaciones()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var datos = await _context.Notificaciones
+                .AsNoTracking()
+                .Where(n => n.IdUsuario == idUsuario.Value)
+                .OrderByDescending(n => n.FechaEnvio)
+                .ToListAsync();
+
+            var modelo = datos.Select(n => new NotificacionListadoViewModel
+            {
+                Id = (int)n.IdNotificacion,
+                Tipo = n.Tipo,
+                Titulo = n.Titulo,
+                Mensaje = n.Mensaje,
+                Fecha = n.FechaEnvio.ToString("dd/MM/yyyy HH:mm"),
+                Icono = n.Tipo == "Compra"
+                    ? "bi-bag-check-fill"
+                    : "bi-bell-fill",
+                Leida = n.Leida
+            }).ToList();
+
+            return View(modelo);
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> SolicitudEmprendimiento(

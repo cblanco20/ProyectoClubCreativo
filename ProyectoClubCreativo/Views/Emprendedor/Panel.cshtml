@@ -1,10 +1,17 @@
-﻿@{
+﻿@using ProyectoClubCreativo.Models.Entities
+
+@{
     ViewData["Title"] = "Panel del emprendedor";
     Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
 
     string estadoEmprendimientoPanel =
         ViewBag.EstadoEmprendimiento as string ?? "Pendiente";
+
+    List<Producto> productosInventarioBajo =
+        ViewBag.ProductosInventarioBajo as List<Producto>
+        ?? new List<Producto>();
 }
+
 
 @if (TempData["MensajeEmprendedor"] is not null)
 {
@@ -116,49 +123,50 @@
                 </a>
             </div>
 
+            
             <div class="lista-inventario-panel">
 
-                <div class="producto-inventario-panel">
-                    <img src="~/images/producto-1.jpg"
-                         alt="Producto artesanal" />
+                @if (productosInventarioBajo.Any())
+                {
+                    foreach (var producto in productosInventarioBajo)
+                    {
+                        <div class="producto-inventario-panel">
 
-                    <div>
-                        <strong>Aretes artesanales</strong>
-                        <span>Solo quedan 2 unidades</span>
+                            <img src="@(producto.ProductoImagene?.UrlImagen ?? "/images/logo.jpg")"
+                                 alt="@producto.Nombre" />
+
+                            <div>
+                                <strong>@producto.Nombre</strong>
+
+                                <span>
+                                    Solo quedan @producto.StockActual unidad(es)
+                                </span>
+                            </div>
+
+                            <span class="estado-inventario-bajo">
+                                Bajo
+                            </span>
+
+                        </div>
+                    }
+                }
+
+                else
+                {
+                    <div style="width: 100%; padding: 20px 15px; text-align: center;">
+                        <i class="bi bi-check-circle-fill"
+                           style="font-size: 28px; color: #28a745;"></i>
+
+                        <p style="margin: 10px 0 5px; font-weight: 600;">
+                            ¡Inventario en buen estado!
+                        </p>
+
+                        <p style="margin: 0; color: #777;">
+                            No tienes productos publicados con inventario bajo.
+                        </p>
                     </div>
+                }
 
-                    <span class="estado-inventario-bajo">
-                        Bajo
-                    </span>
-                </div>
-
-                <div class="producto-inventario-panel">
-                    <img src="~/images/producto-2.jpg"
-                         alt="Producto artesanal" />
-
-                    <div>
-                        <strong>Bolso tejido</strong>
-                        <span>Solo queda 1 unidad</span>
-                    </div>
-
-                    <span class="estado-inventario-bajo">
-                        Bajo
-                    </span>
-                </div>
-
-                <div class="producto-inventario-panel">
-                    <img src="~/images/producto-3.jpg"
-                         alt="Producto artesanal" />
-
-                    <div>
-                        <strong>Set decorativo</strong>
-                        <span>Quedan 3 unidades</span>
-                    </div>
-
-                    <span class="estado-inventario-medio">
-                        Revisar
-                    </span>
-                </div>
 
             </div>
 
@@ -299,33 +307,33 @@
                 </div>
             </div>
 
-            <div class="notificacion-emprendedor">
-                <span class="icono-notificacion-emprendedor">
-                    <i class="bi bi-bag-check-fill"></i>
-                </span>
+           
+            @if (productosInventarioBajo.Any())
+            {
+                <div class="notificacion-emprendedor">
+                    <span class="icono-notificacion-emprendedor">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </span>
 
-                <div>
-                    <p>
-                        Recibiste una nueva orden de compra.
-                    </p>
+                    <div>
+                        <p>
+                            @if (productosInventarioBajo.Count == 1)
+                            {
+                                <text>Tienes 1 producto con inventario bajo.</text>
+                            }
+                            else
+                            {
+                                <text>Tienes @productosInventarioBajo.Count productos con inventario bajo.</text>
+                            }
+                        </p>
 
-                    <span>Hace 20 minutos</span>
+                        <span>
+                            Revisa tu inventario para reabastecer los productos.
+                        </span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="notificacion-emprendedor">
-                <span class="icono-notificacion-emprendedor">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                </span>
-
-                <div>
-                    <p>
-                        Dos productos tienen inventario bajo.
-                    </p>
-
-                    <span>Hace 2 horas</span>
-                </div>
-            </div>
 
             <div class="notificacion-emprendedor">
                 <span class="icono-notificacion-emprendedor">

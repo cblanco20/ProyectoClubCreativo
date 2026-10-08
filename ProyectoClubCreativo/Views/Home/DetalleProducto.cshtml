@@ -67,14 +67,16 @@
                     <span>
                         <i class="bi bi-box-seam"></i>
 
+                       
                         @if (Model.StockActual > 0)
                         {
                             <text>Stock disponible</text>
                         }
                         else
                         {
-                            <text>Sin existencias</text>
+                            <text>Agotado</text>
                         }
+
                     </span>
 
                 </div>
@@ -118,14 +120,16 @@
                     <h3>Disponibilidad</h3>
 
                     <p>
+
                         @if (Model.StockActual > 0)
                         {
                             <text>@Model.StockActual unidades disponibles</text>
                         }
                         else
                         {
-                            <text>Sin existencias</text>
+                            <strong>Agotado</strong>
                         }
+
                     </p>
                 </article>
 
@@ -165,6 +169,40 @@
                 </li>
 
             </ul>
+
+            
+            
+            @if (Model.StockActual > 0)
+            {
+                <form asp-controller="Usuario"
+                      asp-action="AgregarAlCarrito"
+                      method="post"
+                      style="margin-bottom: 15px;">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="idProducto"
+                           value="@Model.IdProducto" />
+
+                    <button type="submit"
+                            class="boton-contacto-emprendimiento boton-agregar-carrito">
+                        <i class="bi bi-cart-plus"></i>
+                        Agregar al carrito
+                    </button>
+                </form>
+            }
+            else
+            {
+                <button type="button"
+                        class="boton-contacto-emprendimiento boton-agregar-carrito"
+                        disabled>
+                    <i class="bi bi-x-circle"></i>
+                    Producto agotado
+                </button>
+            }
+
+
 
             <a asp-controller="Home"
                asp-action="CatalogoProductos"

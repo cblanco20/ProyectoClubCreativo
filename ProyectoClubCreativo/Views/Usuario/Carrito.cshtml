@@ -29,13 +29,53 @@
                     <h2>@producto.Nombre</h2>
                     <span>@producto.Emprendimiento</span>
 
+                    
                     <div class="cantidad-carrito">
-                        <button type="button">−</button>
-                        <input value="@producto.Cantidad"
+
+                        <form asp-controller="Usuario"
+                              asp-action="CambiarCantidadCarrito"
+                              method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="idProducto"
+                                   value="@producto.IdProducto" />
+
+                            <input type="hidden"
+                                   name="cambio"
+                                   value="-1" />
+
+                            <button type="submit"
+                                    disabled="@(producto.Cantidad <= 1)">
+                                −
+                            </button>
+                        </form>
+
+                        <input type="number"
+                               value="@producto.Cantidad"
                                min="1"
-                               type="number" />
-                        <button type="button">+</button>
+                               readonly />
+
+                        <form asp-controller="Usuario"
+                              asp-action="CambiarCantidadCarrito"
+                              method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="idProducto"
+                                   value="@producto.IdProducto" />
+
+                            <input type="hidden"
+                                   name="cambio"
+                                   value="1" />
+
+                            <button type="submit">+</button>
+                        </form>
+
                     </div>
+
                 </div>
 
                 <div class="precio-producto-carrito">
@@ -43,11 +83,23 @@
                         ₡@producto.Subtotal.ToString("N0")
                     </strong>
 
-                    <button type="button"
-                            class="eliminar-carrito">
-                        <i class="bi bi-trash3"></i>
-                        Eliminar
-                    </button>
+                    <form asp-controller="Usuario"
+                          asp-action="EliminarDelCarrito"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               name="idProducto"
+                               value="@producto.IdProducto" />
+
+                        <button type="submit"
+                                class="eliminar-carrito">
+                            <i class="bi bi-trash3"></i>
+                            Eliminar
+                        </button>
+                    </form>
+
                 </div>
 
             </article>

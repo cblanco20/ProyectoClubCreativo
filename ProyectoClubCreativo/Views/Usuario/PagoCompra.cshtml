@@ -1,0 +1,186 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.PagoCompraViewModel
+
+@{
+    ViewData["Title"] = "Pago de productos";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<section class="container py-4">
+
+    <div class="mb-4">
+        <h1>Completar compra</h1>
+        <p class="text-muted">
+            Ingresa los datos de tu tarjeta para completar
+            el pago de tus productos.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- FORMULARIO DE PAGO -->
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <h2 class="h4 mb-3">
+                        <i class="bi bi-credit-card"></i>
+                        Datos de pago
+                    </h2>
+                    
+                    @if (TempData["MensajePago"] != null)
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle-fill"></i>
+                            @TempData["MensajePago"]
+                        </div>
+                    }
+
+
+                    <form asp-controller="Usuario"
+                          asp-action="PagoCompra"
+                          method="post"
+                          novalidate>
+
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="NombreTitular"
+                                   class="form-label"></label>
+
+                            <input asp-for="NombreTitular"
+                                   class="form-control"
+                                   autocomplete="off"
+                                   placeholder="Nombre del titular" />
+
+                            <span asp-validation-for="NombreTitular"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="NumeroTarjeta"
+                                   class="form-label"></label>
+
+                            <input asp-for="NumeroTarjeta"
+                                   class="form-control"
+                                   inputmode="numeric"
+                                   autocomplete="off"
+                                   maxlength="16"
+                                   placeholder="0000000000000000" />
+
+                            <span asp-validation-for="NumeroTarjeta"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+
+                            <div class="col-md-4">
+                                <label asp-for="MesVencimiento"
+                                       class="form-label"></label>
+
+                                <input asp-for="MesVencimiento"
+                                       type="number"
+                                       min="1"
+                                       max="12"
+                                       class="form-control"
+                                       placeholder="MM" />
+
+                                <span asp-validation-for="MesVencimiento"
+                                      class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="AnioVencimiento"
+                                       class="form-label"></label>
+
+                                <input asp-for="AnioVencimiento"
+                                       type="number"
+                                       class="form-control"
+                                       placeholder="AAAA" />
+
+                                <span asp-validation-for="AnioVencimiento"
+                                      class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="Cvv"
+                                       class="form-label"></label>
+
+                                <input asp-for="Cvv"
+                                       type="password"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       maxlength="4"
+                                       class="form-control"
+                                       placeholder="CVV" />
+
+                                <span asp-validation-for="Cvv"
+                                      class="text-danger"></span>
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+
+                            <a asp-controller="Usuario"
+                               asp-action="ProcesoCompra"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Volver
+                            </a>
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                <i class="bi bi-lock-fill"></i>
+                                Confirmar pago 
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RESUMEN DE COMPRA -->
+        <div class="col-lg-4">
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <h2 class="h5 mb-4">Resumen de compra</h2>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <strong>₡@Model.Subtotal.ToString("N0")</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Descuento</span>
+                        <strong>₡@Model.Descuento.ToString("N0")</strong>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-between">
+                        <strong>Total a pagar</strong>
+                        <strong>₡@Model.TotalPagar.ToString("N0")</strong>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

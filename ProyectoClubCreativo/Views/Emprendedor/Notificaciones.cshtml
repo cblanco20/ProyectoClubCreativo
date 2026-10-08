@@ -1,0 +1,178 @@
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.NotificacionListadoViewModel>
+
+@{
+    ViewData["Title"] = "Notificaciones";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+<style>
+    .notificaciones-contenedor {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+
+    .notificaciones-encabezado {
+        margin-bottom: 25px;
+    }
+
+    .notificaciones-etiqueta {
+        color: #8b5cf6;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .notificaciones-encabezado h1 {
+        font-size: 30px;
+        font-weight: 700;
+        color: #30243f;
+        margin: 5px 0 10px;
+    }
+
+    .notificaciones-encabezado p {
+        color: #777080;
+        font-size: 14px;
+    }
+
+    .notificaciones-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .notificacion-tarjeta {
+        display: flex;
+        align-items: flex-start;
+        gap: 18px;
+        padding: 22px;
+        background: #ffffff;
+        border: 1px solid #eee8f4;
+        border-radius: 15px;
+        box-shadow: 0 3px 12px rgba(50, 30, 70, 0.04);
+    }
+
+        .notificacion-tarjeta.no-leida {
+            background: #faf7ff;
+            border-left: 4px solid #8b5cf6;
+        }
+
+    .notificacion-icono {
+        width: 46px;
+        height: 46px;
+        min-width: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f0e7ff;
+        color: #8b5cf6;
+        border-radius: 12px;
+        font-size: 21px;
+    }
+
+    .notificacion-contenido {
+        flex: 1;
+    }
+
+    .notificacion-tipo {
+        font-size: 12px;
+        font-weight: 600;
+        color: #8b5cf6;
+    }
+
+    .notificacion-contenido h2 {
+        font-size: 17px;
+        font-weight: 700;
+        color: #30243f;
+        margin: 5px 0 8px;
+    }
+
+    .notificacion-contenido p {
+        font-size: 14px;
+        color: #66606e;
+        margin-bottom: 10px;
+    }
+
+    .notificacion-fecha {
+        font-size: 12px;
+        color: #99919f;
+    }
+
+    .notificaciones-vacias {
+        text-align: center;
+        padding: 65px 20px;
+        background: #ffffff;
+        border: 1px solid #eee8f4;
+        border-radius: 15px;
+    }
+
+        .notificaciones-vacias i {
+            font-size: 40px;
+            color: #a78bfa;
+        }
+
+        .notificaciones-vacias p {
+            margin-top: 15px;
+            color: #777080;
+        }
+</style>
+
+<div class="notificaciones-contenedor">
+
+    <div class="notificaciones-encabezado">
+        <span class="notificaciones-etiqueta">Avisos</span>
+        <h1>Notificaciones</h1>
+        <p>
+            Mantente al tanto de las ventas y novedades
+            de tu emprendimiento.
+        </p>
+    </div>
+
+    <section class="notificaciones-lista">
+
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var notificacion in Model)
+            {
+                string clase = notificacion.Leida
+                    ? "notificacion-tarjeta"
+                    : "notificacion-tarjeta no-leida";
+
+                <article class="@clase">
+
+                    <div class="notificacion-icono">
+                        <i class="bi @notificacion.Icono"></i>
+                    </div>
+
+                    <div class="notificacion-contenido">
+
+                        <span class="notificacion-tipo">
+                            @notificacion.Tipo
+                        </span>
+
+                        <h2>@notificacion.Titulo</h2>
+
+                        <p>@notificacion.Mensaje</p>
+
+                        <small class="notificacion-fecha">
+                            <i class="bi bi-clock"></i>
+                            @notificacion.Fecha
+                        </small>
+
+                    </div>
+
+                </article>
+            }
+        }
+        else
+        {
+            <div class="notificaciones-vacias">
+                <i class="bi bi-bell"></i>
+                <p>
+                    Todavía no tienes notificaciones.
+                </p>
+            </div>
+        }
+
+    </section>
+
+</div>

@@ -6836,3 +6836,10 @@ textarea {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+.boton-agregar-carrito {
+    display: block;
+    width: 100%;
+    margin-bottom: 15px;
+    cursor: not-allowed;
+}

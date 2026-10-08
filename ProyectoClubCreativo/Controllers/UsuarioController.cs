@@ -5,16 +5,22 @@ using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels;
+using System.Text.Json;
+using ProyectoClubCreativo.Services;
 
 namespace ProyectoClubCreativo.Controllers
 {
     public class UsuarioController : Controller
     {
         private readonly ClubCreativoDbContext _context;
+        private readonly PagoService _pagoService;
 
-        public UsuarioController(ClubCreativoDbContext context)
+        public UsuarioController(
+    ClubCreativoDbContext context,
+    PagoService pagoService)
         {
             _context = context;
+            _pagoService = pagoService;
         }
 
         [HttpGet]
@@ -440,122 +446,1192 @@ namespace ProyectoClubCreativo.Controllers
             return View(modelo);
         }
 
+
         [HttpGet]
-        public IActionResult DetalleCompra(string id = "CC-1025")
+        public async Task<IActionResult> DetalleCompra(string id)
         {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var venta = await _context.Ventas
+                .AsNoTracking()
+                .Include(v => v.VentaDetalles)
+                    .ThenInclude(d => d.IdProductoNavigation)
+                        .ThenInclude(p => p.ProductoImagene)
+                .Include(v => v.VentaDetalles)
+                    .ThenInclude(d => d.IdProductoNavigation)
+                        .ThenInclude(p => p.IdEmprendimientoNavigation)
+                .FirstOrDefaultAsync(v =>
+                    v.NumeroOrden == id &&
+                    v.IdUsuario == idUsuario.Value);
+
+            if (venta == null)
+            {
+                return NotFound();
+            }
+
             DetalleCompraUsuarioViewModel modelo = new()
             {
-                NumeroOrden = id,
-                Fecha = new DateTime(2026, 8, 2),
-                Estado = "En preparación",
-                MetodoEntrega = "Retiro en Feria Creativa San Pedro",
-                DireccionEntrega = "Punto de retiro del evento",
-                Subtotal = 20500,
-                Descuento = 2000,
-                Total = 18500,
+                NumeroOrden = venta.NumeroOrden,
+                Fecha = venta.FechaVenta,
+                Estado = venta.Estado,
 
-                Productos =
-                [
-                    new()
-            {
-                IdProducto = 1,
-                Nombre = "Aretes Orquídea",
-                Emprendimiento = "Orquídea",
-                Imagen = "/images/producto-1.jpg",
-                Cantidad = 1,
-                Precio = 12000
-            },
-            new()
-            {
-                IdProducto = 2,
-                Nombre = "Vela Antojo de Churchill",
-                Emprendimiento = "Luz Natural",
-                Imagen = "/images/producto-3.jpg",
-                Cantidad = 1,
-                Precio = 8500
-            }
-                ]
+                MetodoEntrega = venta.TipoEntrega == "Domicilio"
+                    ? "Entrega a domicilio"
+                    : "Retiro",
+
+                DireccionEntrega = venta.TipoEntrega == "Domicilio"
+                    ? venta.DireccionEntrega ?? ""
+                    : "Punto de retiro por coordinar",
+
+                Subtotal = venta.Subtotal,
+                Descuento = venta.Descuento,
+                Total = venta.Total,
+
+                Productos = venta.VentaDetalles.Select(d =>
+     new ProductoCompraViewModel
+     {
+                        IdProducto = d.IdProducto,
+                        Nombre = d.IdProductoNavigation.Nombre,
+                        Emprendimiento =
+                            d.IdProductoNavigation
+                                .IdEmprendimientoNavigation
+                                .NombreComercial,
+
+        Imagen = d.IdProductoNavigation
+    .ProductoImagene?.UrlImagen ?? "/images/logo.jpg",
+
+        Cantidad = d.Cantidad,
+                        Precio = d.PrecioUnitario
+                    }).ToList()
             };
 
             return View(modelo);
         }
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarAlCarrito(int idProducto)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var producto = await _context.Productos
+    .AsNoTracking()
+    .Include(p => p.ProductoImagene)
+    .Include(p => p.IdEmprendimientoNavigation)
+    .FirstOrDefaultAsync(p => p.IdProducto == idProducto);
+
+            if (producto == null ||
+                producto.TipoPublicacion != "Producto" ||
+                producto.Estado != "Publicado" ||
+                producto.StockActual <= 0)
+            {
+                TempData["ErrorCarrito"] =
+                    "Este producto no está disponible para la compra.";
+
+                return RedirectToAction(
+                    "DetalleProducto",
+                    "Home",
+                    new { id = idProducto });
+            }
+
+            var carrito = ObtenerCarrito();
+
+            var productoEnCarrito = carrito
+                .FirstOrDefault(p => p.IdProducto == producto.IdProducto);
+
+            int cantidadActual = productoEnCarrito?.Cantidad ?? 0;
+
+            if (cantidadActual >= producto.StockActual)
+            {
+                TempData["ErrorCarrito"] =
+                    "No puedes agregar más unidades de las disponibles.";
+
+                return RedirectToAction(
+                    "DetalleProducto",
+                    "Home",
+                    new { id = idProducto });
+            }
+
+            if (productoEnCarrito != null)
+            {
+                productoEnCarrito.Cantidad++;
+            }
+            else
+            {
+
+                carrito.Add(new ProductoCompraViewModel
+                {
+                    IdProducto = producto.IdProducto,
+                    Nombre = producto.Nombre,
+                    Precio = producto.Precio,
+                    Cantidad = 1,
+                    Imagen = producto.ProductoImagene?.UrlImagen
+                        ?? "/images/logo.jpg",
+                    Emprendimiento =
+                        producto.IdEmprendimientoNavigation?.NombreComercial
+                        ?? "Emprendimiento"
+                });
+
+            }
+
+            GuardarCarrito(carrito);
+
+            TempData["MensajeCarrito"] =
+                "Producto agregado al carrito correctamente.";
+
+            return RedirectToAction(nameof(Carrito));
+
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EliminarDelCarrito(int idProducto)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var carrito = ObtenerCarrito();
+
+            carrito.RemoveAll(p => p.IdProducto == idProducto);
+
+            GuardarCarrito(carrito);
+
+            TempData["MensajeCarrito"] =
+                "Producto eliminado del carrito correctamente.";
+
+            return RedirectToAction(nameof(Carrito));
+        }
+
+
+        private List<ProductoCompraViewModel> ObtenerCarrito()
+        {
+            string? carritoJson =
+                HttpContext.Session.GetString("CarritoProductos");
+
+            if (string.IsNullOrEmpty(carritoJson))
+            {
+                return new List<ProductoCompraViewModel>();
+            }
+
+            return JsonSerializer.Deserialize<List<ProductoCompraViewModel>>(
+                carritoJson
+            ) ?? new List<ProductoCompraViewModel>();
+        }
+
+        private void GuardarCarrito(List<ProductoCompraViewModel> productos)
+        {
+            string carritoJson = JsonSerializer.Serialize(productos);
+
+            HttpContext.Session.SetString(
+                "CarritoProductos",
+                carritoJson
+            );
+        }
+
+
+        private async Task<bool> DescontarInventarioAsync(
+            int idProducto,
+            int cantidad)
+        {
+            if (cantidad <= 0)
+            {
+                return false;
+            }
+
+            int filasActualizadas = await _context.Productos
+                .Where(p =>
+                    p.IdProducto == idProducto &&
+                    p.TipoPublicacion == "Producto" &&
+                    p.Estado == "Publicado" &&
+                    p.StockActual >= cantidad)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(
+                        p => p.StockActual,
+                        p => p.StockActual - cantidad
+                    )
+                );
+
+            return filasActualizadas == 1;
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarCantidadCarrito(
+            int idProducto, int cambio)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var carrito = ObtenerCarrito();
+
+            var productoCarrito = carrito
+                .FirstOrDefault(p => p.IdProducto == idProducto);
+
+            if (productoCarrito == null)
+            {
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            if (cambio != 1 && cambio != -1)
+            {
+                return BadRequest();
+            }
+
+            int nuevaCantidad = productoCarrito.Cantidad + cambio;
+
+            if (nuevaCantidad < 1)
+            {
+                TempData["ErrorCarrito"] =
+                    "La cantidad mínima es una unidad.";
+
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            var producto = await _context.Productos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.IdProducto == idProducto);
+
+            if (producto == null ||
+                producto.TipoPublicacion != "Producto" ||
+                producto.Estado != "Publicado" ||
+                producto.StockActual <= 0)
+            {
+                TempData["ErrorCarrito"] =
+                    "Este producto ya no está disponible.";
+
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            if (nuevaCantidad > producto.StockActual)
+            {
+                TempData["ErrorCarrito"] =
+                    "No hay suficientes unidades disponibles.";
+
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            productoCarrito.Cantidad = nuevaCantidad;
+
+            GuardarCarrito(carrito);
+
+            return RedirectToAction(nameof(Carrito));
+        }
+
 
         [HttpGet]
         public IActionResult Carrito()
         {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var productos = ObtenerCarrito();
+
             CarritoUsuarioViewModel modelo = new()
             {
-                Descuento = 2000,
-
-                Productos =
-                [
-                    new()
-            {
-                IdProducto = 1,
-                Nombre = "Aretes Orquídea",
-                Emprendimiento = "Orquídea",
-                Imagen = "/images/producto-1.jpg",
-                Cantidad = 1,
-                Precio = 12000
-            },
-            new()
-            {
-                IdProducto = 2,
-                Nombre = "Vela Antojo de Churchill",
-                Emprendimiento = "Luz Natural",
-                Imagen = "/images/producto-3.jpg",
-                Cantidad = 1,
-                Precio = 8500
-            }
-                ]
+                Productos = productos,
+                Descuento = 0
             };
 
             return View(modelo);
         }
+
+
 
         [HttpGet]
-        public IActionResult ProcesoCompra()
+        public async Task<IActionResult> ProcesoCompra()
         {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var carrito = ObtenerCarrito();
+
+            if (!carrito.Any())
+            {
+                TempData["ErrorCarrito"] =
+                    "Debes agregar al menos un producto antes de continuar.";
+
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            foreach (var item in carrito)
+            {
+                var producto = await _context.Productos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto);
+
+                if (producto == null ||
+                    producto.TipoPublicacion != "Producto" ||
+                    producto.Estado != "Publicado" ||
+                    producto.StockActual < item.Cantidad ||
+                    item.Cantidad <= 0)
+                {
+                    TempData["ErrorCarrito"] =
+                        "Uno o más productos no tienen existencias suficientes. Revisa tu carrito.";
+
+                    return RedirectToAction(nameof(Carrito));
+                }
+            }
+
+            var usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstAsync(u => u.IdUsuario == idUsuario.Value);
+
             ProcesoCompraViewModel modelo = new()
             {
-                Nombre = "Maria",
-                Correo = "maria@ejemplo.com",
-                Telefono = "88888888",
-                Subtotal = 20500,
-                Descuento = 2000,
-                Total = 18500
+                Nombre = usuario.Nombre,
+                Correo = usuario.Correo,
+                Telefono = usuario.Telefono ?? string.Empty,
+                Subtotal = carrito.Sum(p => p.Subtotal),
+                Descuento = 0,
+                Total = carrito.Sum(p => p.Subtotal)
             };
 
             return View(modelo);
         }
+
+
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ProcesoCompra(ProcesoCompraViewModel modelo)
+        public async Task<IActionResult> ProcesoCompra(
+            ProcesoCompraViewModel modelo)
         {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var carrito = ObtenerCarrito();
+
+            if (!carrito.Any())
+            {
+                TempData["ErrorCarrito"] = "El carrito está vacío.";
+                return RedirectToAction(nameof(Carrito));
+            }
+
             if (modelo.TipoEntrega == "Domicilio" &&
                 string.IsNullOrWhiteSpace(modelo.Direccion))
             {
                 ModelState.AddModelError(
                     nameof(modelo.Direccion),
-                    "Ingrese la dirección de entrega."
-                );
+                    "Ingrese la dirección de entrega.");
             }
-
-            modelo.Subtotal = 20500;
-            modelo.Descuento = 2000;
-            modelo.Total = 18500;
 
             if (!ModelState.IsValid)
             {
+                modelo.Subtotal = carrito.Sum(p => p.Subtotal);
+                modelo.Descuento = 0;
+                modelo.Total = modelo.Subtotal;
+
                 return View(modelo);
             }
 
-            TempData["MensajeCompra"] =
-                "La información de la compra se validó correctamente.";
+            // Validar las opciones recibidas del formulario.
+            if (modelo.TipoEntrega != "Retiro" &&
+                modelo.TipoEntrega != "Domicilio")
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.TipoEntrega),
+                    "Seleccione un tipo de entrega válido.");
+            }
 
-            return RedirectToAction(nameof(DetalleCompra), new { id = "CC-1026" });
+            if (modelo.MetodoPago != "Tarjeta de crédito o débito" &&
+                modelo.MetodoPago != "SINPE Móvil" &&
+                modelo.MetodoPago != "Pago al retirar")
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.MetodoPago),
+                    "Seleccione un método de pago válido.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                modelo.Subtotal = carrito.Sum(p => p.Subtotal);
+                modelo.Descuento = 0;
+                modelo.Total = modelo.Subtotal;
+
+                return View(modelo);
+            }
+
+
+            // Guardar temporalmente los datos de entrega.
+            // Todavía no se registra la venta ni se descuenta inventario.
+            HttpContext.Session.SetString(
+                "DatosEntregaCompra",
+                JsonSerializer.Serialize(modelo));
+
+            // Si el usuario eligió tarjeta, continuar al formulario de pago.
+            if (modelo.MetodoPago == "Tarjeta de crédito o débito")
+            {
+                return RedirectToAction(nameof(PagoCompra));
+            }
+
+            // SINPE Móvil y pago al retirar no necesitan
+            // ingresar datos de tarjeta.
+            return RedirectToAction(nameof(ConfirmacionPedido));
         }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmarPedido()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            string? datosEntrega = HttpContext.Session
+                .GetString("DatosEntregaCompra");
+
+            if (string.IsNullOrWhiteSpace(datosEntrega))
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            ProcesoCompraViewModel? entrega;
+
+            try
+            {
+                entrega = JsonSerializer.Deserialize<ProcesoCompraViewModel>(
+                    datosEntrega);
+            }
+            catch (JsonException)
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            if (entrega == null ||
+                (entrega.MetodoPago != "SINPE Móvil" &&
+                 entrega.MetodoPago != "Pago al retirar") ||
+                (entrega.TipoEntrega != "Retiro" &&
+                 entrega.TipoEntrega != "Domicilio") ||
+                (entrega.TipoEntrega == "Domicilio" &&
+                 string.IsNullOrWhiteSpace(entrega.Direccion)))
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            var carrito = ObtenerCarrito();
+
+            if (!carrito.Any())
+            {
+                TempData["ErrorCarrito"] = "El carrito está vacío.";
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync(
+                    System.Data.IsolationLevel.ReadCommitted);
+
+            try
+            {
+                var detalles = new List<VentaDetalle>();
+                decimal subtotal = 0;
+
+                foreach (var item in carrito)
+                {
+                    var producto = await _context.Productos
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p =>
+                            p.IdProducto == item.IdProducto);
+
+                    if (producto == null ||
+                        producto.TipoPublicacion != "Producto" ||
+                        producto.Estado != "Publicado" ||
+                        item.Cantidad <= 0 ||
+                        producto.StockActual < item.Cantidad)
+                    {
+                        await transaccion.RollbackAsync();
+
+                        TempData["ErrorCarrito"] =
+                            "Uno o más productos no están disponibles.";
+
+                        return RedirectToAction(nameof(Carrito));
+                    }
+
+                    bool descontado = await DescontarInventarioAsync(
+                        item.IdProducto,
+                        item.Cantidad);
+
+                    if (!descontado)
+                    {
+                        await transaccion.RollbackAsync();
+
+                        TempData["ErrorCarrito"] =
+                            "Las existencias cambiaron durante la compra.";
+
+                        return RedirectToAction(nameof(Carrito));
+                    }
+
+                    decimal precio = producto.Precio;
+                    subtotal += precio * item.Cantidad;
+
+                    detalles.Add(new VentaDetalle
+                    {
+                        IdProducto = producto.IdProducto,
+                        Cantidad = item.Cantidad,
+                        PrecioUnitario = precio
+                    });
+                }
+
+                var venta = new Venta
+                {
+                    NumeroOrden = "CC-" +
+                        Guid.NewGuid().ToString("N")[..20].ToUpperInvariant(),
+
+                    IdUsuario = idUsuario.Value,
+                    FechaVenta = DateTime.Now,
+                    Subtotal = subtotal,
+                    Descuento = 0,
+                    Total = subtotal,
+                    MetodoPago = entrega.MetodoPago,
+                    TipoEntrega = entrega.TipoEntrega,
+                    DireccionEntrega = entrega.TipoEntrega == "Domicilio"
+                        ? entrega.Direccion
+                        : null,
+                    Estado = "Pendiente",
+                    VentaDetalles = detalles
+                };
+
+
+                _context.Ventas.Add(venta);
+
+                // 1. Crear la notificación para el comprador.
+                var notificacionComprador = new Notificacione
+                {
+                    IdUsuario = idUsuario.Value,
+                    Titulo = "Pedido registrado",
+                    Mensaje = "Tu pedido " + venta.NumeroOrden +
+                              " se registró correctamente. " +
+                              "El pago está pendiente mediante " +
+                              entrega.MetodoPago + ".",
+                    Tipo = "Compra",
+                    FechaEnvio = DateTime.Now,
+                    Leida = false,
+                    FechaLectura = null
+                };
+
+                _context.Notificaciones.Add(notificacionComprador);
+
+                // 2. Identificar los productos comprados.
+                var idsProductos = detalles
+                    .Select(d => d.IdProducto)
+                    .Distinct()
+                    .ToList();
+
+                // 3. Obtener los usuarios propietarios de los emprendimientos.
+                var emprendedores = await _context.Productos
+                    .AsNoTracking()
+                    .Where(p => idsProductos.Contains(p.IdProducto))
+                    .Select(p => p.IdEmprendimientoNavigation.IdUsuarioPropietario)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 4. Crear una notificación para cada emprendedor.
+                foreach (var idEmprendedor in emprendedores)
+                {
+                    var notificacionEmprendedor = new Notificacione
+                    {
+                        IdUsuario = idEmprendedor,
+                        Titulo = "Nuevo pedido recibido",
+                        Mensaje = "Se ha registrado un pedido de uno o más " +
+                                  "de tus productos. Número de pedido: " +
+                                  venta.NumeroOrden + ". " +
+                                  "Método de pago: " + entrega.MetodoPago + ".",
+                        Tipo = "Compra",
+                        FechaEnvio = DateTime.Now,
+                        Leida = false,
+                        FechaLectura = null
+                    };
+
+                    _context.Notificaciones.Add(notificacionEmprendedor);
+                }
+
+                // 5. Guardar la venta y todas las notificaciones juntas.
+                await _context.SaveChangesAsync();
+                await transaccion.CommitAsync();
+
+
+                HttpContext.Session.Remove("CarritoProductos");
+                HttpContext.Session.Remove("DatosEntregaCompra");
+
+                TempData["MensajeCompra"] =
+                    "¡Tu pedido se registró correctamente! El pago está pendiente.";
+
+                return RedirectToAction(
+                    nameof(DetalleCompra),
+                    new { id = venta.NumeroOrden });
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["ErrorCarrito"] =
+                    "No fue posible registrar el pedido. Inténtalo nuevamente.";
+
+                return RedirectToAction(nameof(Carrito));
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmacionPedido()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            string? datosEntrega = HttpContext.Session
+                .GetString("DatosEntregaCompra");
+
+            if (string.IsNullOrWhiteSpace(datosEntrega))
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            ProcesoCompraViewModel? entrega;
+
+            try
+            {
+                entrega = JsonSerializer.Deserialize<ProcesoCompraViewModel>(
+                    datosEntrega);
+            }
+            catch (JsonException)
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            if (entrega == null ||
+                (entrega.MetodoPago != "SINPE Móvil" &&
+                 entrega.MetodoPago != "Pago al retirar"))
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            var carrito = ObtenerCarrito();
+
+            if (!carrito.Any())
+            {
+                TempData["ErrorCarrito"] = "El carrito está vacío.";
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            decimal subtotal = 0;
+
+            foreach (var item in carrito)
+            {
+                var producto = await _context.Productos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p =>
+                        p.IdProducto == item.IdProducto);
+
+                if (producto == null ||
+                    producto.TipoPublicacion != "Producto" ||
+                    producto.Estado != "Publicado" ||
+                    item.Cantidad <= 0 ||
+                    producto.StockActual < item.Cantidad)
+                {
+                    TempData["ErrorCarrito"] =
+                        "Uno o más productos no están disponibles.";
+
+                    return RedirectToAction(nameof(Carrito));
+                }
+
+                subtotal += producto.Precio * item.Cantidad;
+            }
+
+            ViewBag.MetodoPago = entrega.MetodoPago;
+            ViewBag.TipoEntrega = entrega.TipoEntrega;
+            ViewBag.Total = subtotal;
+
+            return View();
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> PagoCompra()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var carrito = ObtenerCarrito();
+
+            if (!carrito.Any())
+            {
+                TempData["ErrorCarrito"] =
+                    "El carrito está vacío.";
+
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            decimal subtotal = 0;
+
+            // Consultar los precios y existencias actuales.
+            foreach (var item in carrito)
+            {
+                var producto = await _context.Productos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p =>
+                        p.IdProducto == item.IdProducto);
+
+                if (producto == null ||
+                    producto.TipoPublicacion != "Producto" ||
+                    producto.Estado != "Publicado" ||
+                    item.Cantidad <= 0 ||
+                    producto.StockActual < item.Cantidad)
+                {
+                    TempData["ErrorCarrito"] =
+                        "Uno o más productos no están disponibles. Revisa tu carrito.";
+
+                    return RedirectToAction(nameof(Carrito));
+                }
+
+                subtotal += producto.Precio * item.Cantidad;
+            }
+
+            PagoCompraViewModel modelo = new()
+            {
+                Subtotal = subtotal,
+                Descuento = 0,
+                TotalPagar = subtotal
+            };
+
+            return View(modelo);
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PagoCompra(
+            PagoCompraViewModel modelo)
+        {
+            // Verificar que el usuario tenga sesión activa.
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            // Verificar que existan datos de entrega.
+            string? datosEntrega = HttpContext.Session
+                .GetString("DatosEntregaCompra");
+
+            if (string.IsNullOrWhiteSpace(datosEntrega))
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            // Verificar que existan productos en el carrito.
+            var carrito = ObtenerCarrito();
+
+            if (!carrito.Any())
+            {
+                TempData["ErrorCarrito"] = "El carrito está vacío.";
+                return RedirectToAction(nameof(Carrito));
+            }
+
+            // Calcular el total con los precios actuales.
+            decimal subtotal = 0;
+
+            foreach (var item in carrito)
+            {
+                var producto = await _context.Productos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p =>
+                        p.IdProducto == item.IdProducto);
+
+                if (producto == null ||
+                    producto.TipoPublicacion != "Producto" ||
+                    producto.Estado != "Publicado" ||
+                    item.Cantidad <= 0 ||
+                    producto.StockActual < item.Cantidad)
+                {
+                    TempData["ErrorCarrito"] =
+                        "Uno o más productos no están disponibles.";
+
+                    return RedirectToAction(nameof(Carrito));
+                }
+
+                subtotal += producto.Precio * item.Cantidad;
+            }
+
+            modelo.Subtotal = subtotal;
+            modelo.Descuento = 0;
+            modelo.TotalPagar = subtotal;
+
+            // Validar que la tarjeta no esté vencida.
+            if (modelo.MesVencimiento.HasValue &&
+                modelo.AnioVencimiento.HasValue)
+            {
+                int mes = modelo.MesVencimiento.Value;
+                int anio = modelo.AnioVencimiento.Value;
+
+                if (anio < DateTime.Today.Year ||
+                    (anio == DateTime.Today.Year &&
+                     mes < DateTime.Today.Month))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.AnioVencimiento),
+                        "La tarjeta está vencida.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                modelo.NumeroTarjeta = string.Empty;
+                modelo.Cvv = string.Empty;
+                return View(modelo);
+            }
+
+            // Procesar el pago con la pasarela simulada.
+            ResultadoPago resultadoPago = _pagoService.ProcesarPago(
+                modelo.NumeroTarjeta,
+                modelo.TotalPagar);
+
+            if (!resultadoPago.Aprobado)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    resultadoPago.Mensaje);
+
+                modelo.NumeroTarjeta = string.Empty;
+                modelo.Cvv = string.Empty;
+
+                return View(modelo);
+            }
+
+            // Recuperar los datos de entrega guardados anteriormente.
+            ProcesoCompraViewModel? entrega;
+
+            try
+            {
+                entrega = JsonSerializer.Deserialize<ProcesoCompraViewModel>(
+                    datosEntrega);
+            }
+            catch (JsonException)
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            if (entrega == null ||
+                (entrega.TipoEntrega != "Retiro" &&
+                 entrega.TipoEntrega != "Domicilio") ||
+                (entrega.TipoEntrega == "Domicilio" &&
+                 string.IsNullOrWhiteSpace(entrega.Direccion)))
+            {
+                return RedirectToAction(nameof(ProcesoCompra));
+            }
+
+            // Esta pantalla procesa exclusivamente pagos con tarjeta.
+            if (entrega.MetodoPago != "Tarjeta de crédito o débito")
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Para continuar con esta pasarela, seleccione pago con tarjeta.");
+
+                modelo.NumeroTarjeta = string.Empty;
+                modelo.Cvv = string.Empty;
+
+                return View(modelo);
+            }
+
+            // Registrar venta e inventario en una misma transacción.
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync(
+                    System.Data.IsolationLevel.ReadCommitted);
+
+            try
+            {
+                var detalles = new List<VentaDetalle>();
+                decimal subtotalVenta = 0;
+
+                foreach (var item in carrito)
+                {
+                    var producto = await _context.Productos
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p =>
+                            p.IdProducto == item.IdProducto);
+
+                    if (producto == null ||
+                        producto.TipoPublicacion != "Producto" ||
+                        producto.Estado != "Publicado" ||
+                        item.Cantidad <= 0 ||
+                        producto.StockActual < item.Cantidad)
+                    {
+                        await transaccion.RollbackAsync();
+
+                        TempData["ErrorCarrito"] =
+                            "Uno o más productos no tienen existencias suficientes.";
+
+                        return RedirectToAction(nameof(Carrito));
+                    }
+
+                    bool descontado = await DescontarInventarioAsync(
+                        item.IdProducto,
+                        item.Cantidad);
+
+                    if (!descontado)
+                    {
+                        await transaccion.RollbackAsync();
+
+                        TempData["ErrorCarrito"] =
+                            "Las existencias cambiaron durante la compra.";
+
+                        return RedirectToAction(nameof(Carrito));
+                    }
+
+                    decimal precio = producto.Precio;
+                    subtotalVenta += precio * item.Cantidad;
+
+                    detalles.Add(new VentaDetalle
+                    {
+                        IdProducto = producto.IdProducto,
+                        Cantidad = item.Cantidad,
+                        PrecioUnitario = precio
+                    });
+                }
+
+                if (subtotalVenta != modelo.TotalPagar)
+                {
+                    await transaccion.RollbackAsync();
+
+                    TempData["ErrorCarrito"] =
+                        "El total de la compra cambió. Revisa los productos e intenta nuevamente.";
+
+                    return RedirectToAction(nameof(Carrito));
+                }
+
+                var venta = new Venta
+                {
+                    NumeroOrden = "CC-" +
+                        Guid.NewGuid().ToString("N")[..20].ToUpperInvariant(),
+
+                    IdUsuario = idUsuario.Value,
+                    FechaVenta = DateTime.Now,
+                    Subtotal = subtotalVenta,
+                    Descuento = 0,
+                    Total = subtotalVenta,
+                    MetodoPago = entrega.MetodoPago,
+                    TipoEntrega = entrega.TipoEntrega,
+                    DireccionEntrega = entrega.TipoEntrega == "Domicilio"
+                        ? entrega.Direccion
+                        : null,
+                    Estado = "Pendiente",
+                    VentaDetalles = detalles
+                };
+
+                _context.Ventas.Add(venta);
+
+                // Crear una notificación para el comprador.
+                var notificacionComprador = new Notificacione
+                {
+                    IdUsuario = idUsuario.Value,
+                    Titulo = "Compra registrada",
+                    Mensaje = "Tu pedido " + venta.NumeroOrden +
+                              " se registró correctamente. " +
+                              "Puedes consultar los detalles de tu compra.",
+                    Tipo = "Compra",
+                    FechaEnvio = DateTime.Now,
+                    Leida = false,
+                    FechaLectura = null
+                };
+
+                _context.Notificaciones.Add(notificacionComprador);
+
+
+                // Identificar los emprendimientos de los productos comprados.
+                var idsProductos = detalles
+                    .Select(d => d.IdProducto)
+                    .Distinct()
+                    .ToList();
+
+                // Obtener los emprendedores propietarios.
+                var emprendedores = await _context.Productos
+                    .AsNoTracking()
+                    .Where(p => idsProductos.Contains(p.IdProducto))
+                    .Select(p => p.IdEmprendimientoNavigation.IdUsuarioPropietario)
+                    .Distinct()
+                    .ToListAsync();
+
+                // Crear una notificación para cada emprendedor.
+                foreach (var idEmprendedor in emprendedores)
+                {
+                    var notificacionEmprendedor = new Notificacione
+                    {
+                        IdUsuario = idEmprendedor,
+                        Titulo = "Nueva venta registrada",
+                        Mensaje = "Se ha registrado una compra de uno o más de tus productos. " +
+                                  "Número de pedido: " + venta.NumeroOrden + ".",
+                        Tipo = "Compra",
+                        FechaEnvio = DateTime.Now,
+                        Leida = false,
+                        FechaLectura = null
+                    };
+
+                    _context.Notificaciones.Add(notificacionEmprendedor);
+                }
+
+
+                // Guardar la venta y la notificación juntas.
+                await _context.SaveChangesAsync();
+                await transaccion.CommitAsync();
+
+
+                // Limpiar la información temporal al finalizar la compra.
+                HttpContext.Session.Remove("CarritoProductos");
+                HttpContext.Session.Remove("DatosEntregaCompra");
+
+                TempData["MensajeCompra"] =
+    "¡Pago aprobado! Tu compra se registró correctamente.";
+
+                return RedirectToAction(
+                    nameof(DetalleCompra),
+                    new { id = venta.NumeroOrden });
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["ErrorCarrito"] =
+                    "No fue posible registrar la compra. Inténtalo nuevamente.";
+
+                return RedirectToAction(nameof(Carrito));
+            }
+
+        }
+
 
         [HttpGet]
         public IActionResult MisInscripciones()
@@ -811,55 +1887,43 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(Encuestas));
         }
 
-        [HttpGet]
-        public IActionResult Notificaciones()
-        {
-            List<NotificacionListadoViewModel> modelo =
-            [
-                new()
-        {
-            Id = 1,
-            Tipo = "Evento",
-            Titulo = "Inscripción confirmada",
-            Mensaje = "Tu inscripción a la Feria Creativa San Pedro fue confirmada.",
-            Fecha = "Hoy, 9:15 a. m.",
-            Icono = "bi-calendar-check-fill",
-            Leida = false
-        },
-        new()
-        {
-            Id = 2,
-            Tipo = "Compra",
-            Titulo = "Pedido en preparación",
-            Mensaje = "El pedido CC-1025 se encuentra en preparación.",
-            Fecha = "Ayer, 4:30 p. m.",
-            Icono = "bi-bag-check-fill",
-            Leida = false
-        },
-        new()
-        {
-            Id = 3,
-            Tipo = "Puntos",
-            Titulo = "Ganaste nuevos puntos",
-            Mensaje = "Se acreditaron 180 puntos a tu tarjeta Creativo Frecuente.",
-            Fecha = "2 de agosto",
-            Icono = "bi-star-fill",
-            Leida = false
-        },
-        new()
-        {
-            Id = 4,
-            Tipo = "Promoción",
-            Titulo = "Nueva promoción disponible",
-            Mensaje = "Canjea tus puntos por un descuento especial.",
-            Fecha = "1 de agosto",
-            Icono = "bi-megaphone-fill",
-            Leida = true
-        }
-            ];
 
-            return View(modelo);
+        [HttpGet]
+        public async Task<IActionResult> Notificaciones()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("InicioSesion", "Cuenta");
+            }
+
+            var notificaciones = await _context.Notificaciones
+                .Where(n => n.IdUsuario == idUsuario.Value)
+                .OrderByDescending(n => n.FechaEnvio)
+                .Select(n => new NotificacionListadoViewModel
+                {
+                    Id = (int)n.IdNotificacion,
+                    Tipo = n.Tipo,
+                    Titulo = n.Titulo,
+                    Mensaje = n.Mensaje,
+                    Fecha = n.FechaEnvio.ToString("dd/MM/yyyy HH:mm"),
+                    Icono = n.Tipo == "Compra"
+                        ? "bi-bag-check-fill"
+                        : n.Tipo == "Evento"
+                            ? "bi-calendar-check-fill"
+                            : n.Tipo == "Puntos"
+                                ? "bi-star-fill"
+                                : n.Tipo == "Promoción"
+                                    ? "bi-megaphone-fill"
+                                    : "bi-bell-fill",
+                    Leida = n.Leida
+                })
+                .ToListAsync();
+
+            return View(notificaciones);
         }
+
 
         [HttpGet]
         public IActionResult Preferencias()
