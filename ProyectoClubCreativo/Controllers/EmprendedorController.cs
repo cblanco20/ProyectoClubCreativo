@@ -3398,17 +3398,88 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Ventas()
+        public async Task<IActionResult> Ventas()
         {
+            await CargarVentasEmprendimientoAsync();
+
             return View(new ActualizarVentaViewModel());
+        }
+
+
+        private async Task CargarVentasEmprendimientoAsync()
+        {
+            int idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario")!.Value;
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario);
+
+            if (emprendimiento is null)
+            {
+                ViewBag.Ventas = new List<VentaEmprendedorViewModel>();
+                return;
+            }
+
+            var detalles = await _context.VentaDetalles
+                .AsNoTracking()
+                .Where(vd =>
+                    vd.IdProductoNavigation.IdEmprendimiento ==
+                    emprendimiento.IdEmprendimiento)
+                .Select(vd => new
+                {
+                    vd.IdVenta,
+                    vd.IdVentaNavigation.NumeroOrden,
+                    vd.IdVentaNavigation.FechaVenta,
+                    vd.IdVentaNavigation.Estado,
+                    vd.IdVentaNavigation.MetodoPago,
+                    Nombre = vd.IdVentaNavigation.IdUsuarioNavigation.Nombre,
+                    Apellido = vd.IdVentaNavigation.IdUsuarioNavigation.ApellidoPaterno,
+                    Correo = vd.IdVentaNavigation.IdUsuarioNavigation.Correo,
+                    Producto = vd.IdProductoNavigation.Nombre,
+                    vd.Cantidad,
+                    Monto = vd.Cantidad * vd.PrecioUnitario
+                })
+                .ToListAsync();
+
+            ViewBag.Ventas = detalles
+                .GroupBy(d => d.IdVenta)
+                .Select(g => new VentaEmprendedorViewModel
+                {
+                    IdVenta = g.Key,
+                    NumeroOrden = g.First().NumeroOrden,
+                    NombreComprador =
+                        g.First().Nombre + " " + g.First().Apellido,
+                    CorreoComprador = g.First().Correo,
+                    FechaVenta = g.First().FechaVenta,
+                    Estado = g.First().Estado,
+                    MetodoPago = g.First().MetodoPago,
+                    CantidadProductos = g.Sum(x => x.Cantidad),
+                    Productos = string.Join(
+                        ", ",
+                        g.Select(x => x.Cantidad > 1
+                            ? $"{x.Producto} (x{x.Cantidad})"
+                            : x.Producto)),
+                    Monto = g.Sum(x => x.Monto)
+                })
+                .OrderByDescending(v => v.FechaVenta)
+                .ToList();
         }
 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ActualizarEstadoVenta(
-            ActualizarVentaViewModel modelo)
+        public async Task<IActionResult> ActualizarEstadoVenta(
+    ActualizarVentaViewModel modelo)
         {
+            string[] estadosPermitidos =
+            {
+                "Pendiente", "Pagada", "En preparacion",
+                "Enviada", "Entregada", "Cancelada"
+            };
+
             if (!modelo.ConfirmaCambio)
             {
                 ModelState.AddModelError(
@@ -3417,9 +3488,70 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+            if (!string.IsNullOrWhiteSpace(modelo.NuevoEstado) &&
+                !estadosPermitidos.Contains(modelo.NuevoEstado))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevoEstado),
+                    "El estado seleccionado no es válido."
+                );
+            }
+
+            if (modelo.NuevoEstado == "Cancelada" &&
+                string.IsNullOrWhiteSpace(modelo.Observacion))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Observacion),
+                    "Debe indicar el motivo de la cancelación en la observación."
+                );
+            }
+
+            int idUsuario =
+                HttpContext.Session.GetInt32("IdUsuario")!.Value;
+
+            Emprendimiento? emprendimiento =
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario);
+
+            Venta? venta = emprendimiento is null
+                ? null
+                : await _context.Ventas
+                    .Include(v => v.VentasCancelada)
+                    .FirstOrDefaultAsync(v =>
+                        v.IdVenta == modelo.IdVenta &&
+                        v.VentaDetalles.Any(d =>
+                            d.IdProductoNavigation.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento));
+
+            if (venta is null)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "La venta seleccionada no existe o no pertenece a su emprendimiento."
+                );
+            }
+            else if (venta.Estado == "Cancelada")
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "La venta ya fue cancelada y no puede modificarse."
+                );
+            }
+            else if (venta.Estado == modelo.NuevoEstado)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevoEstado),
+                    "La venta ya se encuentra en ese estado."
+                );
+            }
+
             if (!ModelState.IsValid)
             {
                 ViewBag.AbrirModalVenta = true;
+
+                await CargarVentasEmprendimientoAsync();
 
                 return View(
                     "Ventas",
@@ -3427,9 +3559,44 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+            venta!.Estado = modelo.NuevoEstado;
+
+            if (modelo.NuevoEstado == "Cancelada")
+            {
+                venta.VentasCancelada = new VentasCancelada
+                {
+                    MotivoCancelacion = modelo.Observacion!.Trim(),
+                    FechaCancelacion = DateTime.Now
+                };
+            }
+
+            string estadoTexto =
+                modelo.NuevoEstado == "En preparacion"
+                    ? "En preparación"
+                    : modelo.NuevoEstado;
+
+            string mensaje =
+                $"Tu pedido {venta.NumeroOrden} cambió al estado «{estadoTexto}»." +
+                (string.IsNullOrWhiteSpace(modelo.Observacion)
+                    ? string.Empty
+                    : $" Observación del emprendedor: {modelo.Observacion.Trim()}");
+
+            _context.Notificaciones.Add(new Notificacione
+            {
+                IdUsuario = venta.IdUsuario,
+                Titulo = "Estado de tu pedido actualizado",
+                Mensaje = mensaje,
+                Tipo = "Compra",
+                FechaEnvio = DateTime.Now,
+                Leida = false,
+                FechaLectura = null
+            });
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajeVenta"] =
-                $"La orden {modelo.NumeroOrden} fue actualizada al estado " +
-                $"«{modelo.NuevoEstado}» correctamente.";
+                $"La orden {venta.NumeroOrden} fue actualizada al estado " +
+                $"«{estadoTexto}» y se notificó al comprador.";
 
             return RedirectToAction(nameof(Ventas));
         }
