@@ -2306,3 +2306,131 @@
         width: 100%;
     }
 }
+
+/* =========================================================
+   RESEÑAS DE PRODUCTOS
+   ========================================================= */
+
+.boton-calificar-producto {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 9px;
+    padding: 7px 14px;
+    color: var(--color-naranja);
+    background-color: #ffffff;
+    border: 1px solid var(--color-naranja);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+    .boton-calificar-producto:hover {
+        color: #ffffff;
+        background-color: var(--color-naranja);
+    }
+
+.modal-resena {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+    .modal-resena.visible {
+        display: flex;
+    }
+
+.fondo-modal-resena {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+.contenido-modal-resena {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    padding: 28px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border-radius: 20px;
+}
+
+    .contenido-modal-resena h2 {
+        margin: 6px 0 18px;
+        font-family: "Oswald", sans-serif;
+        font-size: 24px;
+    }
+
+.cerrar-modal-resena {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.etiqueta-campo-resena {
+    display: block;
+    margin: 16px 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.estrellas-seleccion {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 6px;
+}
+
+    .estrellas-seleccion input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .estrellas-seleccion label {
+        color: #d6d6d6;
+        font-size: 30px;
+        cursor: pointer;
+    }
+
+        .estrellas-seleccion input:checked ~ label,
+        .estrellas-seleccion label:hover,
+        .estrellas-seleccion label:hover ~ label {
+            color: #e6ad00;
+        }
+
+.campo-resena {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid var(--color-gris-medio);
+    border-radius: 13px;
+    resize: vertical;
+}
+
+.acciones-modal-resena {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.mensaje-error-resena {
+    margin-bottom: 14px;
+    padding: 12px 15px;
+    color: #991b1b;
+    background-color: #fee2e2;
+    border-radius: 13px;
+    font-size: 12px;
+}

@@ -11,7 +11,14 @@
         ?? "Sin categoría";
 
     string emprendimiento = Model.IdEmprendimientoNavigation?.NombreComercial
-        ?? "Emprendimiento";
+      ?? "Emprendimiento";
+
+    List<ProyectoClubCreativo.Models.ViewModels.ResenaPublicaViewModel> resenas =
+        ViewBag.Resenas as List<ProyectoClubCreativo.Models.ViewModels.ResenaPublicaViewModel>
+        ?? new();
+
+    double promedio =
+        ViewBag.PromedioValoracion is double valorPromedio ? valorPromedio : 0;
 }
 
 <section class="encabezado-detalle-emprendimiento">
@@ -211,6 +218,77 @@
             </a>
 
         </aside>
+
+    </div>
+</section>
+<section class="resenas-producto">
+    <div class="container">
+
+        <div class="cabecera-resenas-producto">
+
+            <h2>Calificaciones y comentarios</h2>
+
+            @if (resenas.Any())
+            {
+                <div class="promedio-resenas-producto">
+                    <strong>@promedio.ToString("0.0")</strong>
+
+                    <span class="estrellas-resena-producto">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <i class="bi @(i <= Math.Round(promedio) ? "bi-star-fill" : "bi-star")"></i>
+                        }
+                    </span>
+
+                    <small>
+                        @resenas.Count
+                        @(resenas.Count == 1 ? "calificación" : "calificaciones")
+                    </small>
+                </div>
+            }
+
+        </div>
+
+        @if (!resenas.Any())
+        {
+            <p class="sin-resenas-producto">
+                Este producto aún no tiene calificaciones.
+            </p>
+        }
+        else
+        {
+            <div class="lista-resenas-producto">
+
+                @foreach (var resena in resenas)
+                {
+                    <article class="tarjeta-resena-producto">
+
+                        <header>
+                            <strong>@resena.Autor</strong>
+
+                            <span class="estrellas-resena-producto">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="bi @(i <= resena.Valoracion ? "bi-star-fill" : "bi-star")"></i>
+                                }
+                            </span>
+                        </header>
+
+                        @if (!string.IsNullOrWhiteSpace(resena.Contenido))
+                        {
+                            <p>@resena.Contenido</p>
+                        }
+
+                        <small>
+                            @resena.Fecha.ToString("dd/MM/yyyy")
+                            @(resena.Editada ? "(editada)" : "")
+                        </small>
+
+                    </article>
+                }
+
+            </div>
+        }
 
     </div>
 </section>

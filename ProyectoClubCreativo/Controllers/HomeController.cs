@@ -151,11 +151,42 @@ namespace ProyectoClubCreativo.Controllers
                     p.Estado == "Publicado" &&
                     p.IdEmprendimientoNavigation.Activo &&
                     p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado");
-
             if (producto == null)
             {
                 return NotFound();
             }
+
+            var resenas = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c =>
+                    c.IdProducto == id &&
+                    c.Estado != "Eliminado" &&
+                    c.Valoracion != null)
+                .OrderByDescending(c => c.FechaEdicion ?? c.FechaPublicacion)
+                .Select(c => new
+                {
+                    Autor = c.IdUsuarioNavigation.Nombre,
+                    Valoracion = c.Valoracion!.Value,
+                    c.Contenido,
+                    Fecha = c.FechaEdicion ?? c.FechaPublicacion,
+                    Editada = c.FechaEdicion != null
+                })
+                .ToListAsync();
+
+            ViewBag.Resenas = resenas
+                .Select(r => new ResenaPublicaViewModel
+                {
+                    Autor = r.Autor,
+                    Valoracion = r.Valoracion,
+                    Contenido = r.Contenido,
+                    Fecha = r.Fecha,
+                    Editada = r.Editada
+                })
+                .ToList();
+
+            ViewBag.PromedioValoracion = resenas.Count > 0
+                ? Math.Round(resenas.Average(r => (double)r.Valoracion), 1)
+                : 0d;
 
             return View(producto);
         }

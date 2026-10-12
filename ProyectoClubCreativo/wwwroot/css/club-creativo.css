@@ -6843,3 +6843,74 @@ textarea {
     margin-bottom: 15px;
     cursor: not-allowed;
 }
+
+/* =========================================================
+   RESEÑAS DE PRODUCTO
+   ========================================================= */
+
+.resenas-producto {
+    padding: 50px 0;
+}
+
+.cabecera-resenas-producto {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+    .cabecera-resenas-producto h2 {
+        margin: 0;
+    }
+
+.promedio-resenas-producto {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .promedio-resenas-producto strong {
+        font-size: 2rem;
+    }
+
+    .promedio-resenas-producto small {
+        color: var(--color-gris-oscuro);
+    }
+
+.estrellas-resena-producto {
+    color: #e6ad00;
+}
+
+.lista-resenas-producto {
+    display: grid;
+    gap: 15px;
+}
+
+.tarjeta-resena-producto {
+    padding: 20px;
+    background-color: var(--color-gris-claro);
+    border-radius: var(--radio-medio);
+}
+
+    .tarjeta-resena-producto header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tarjeta-resena-producto p {
+        margin: 12px 0;
+        color: var(--color-gris-oscuro);
+        line-height: 1.6;
+    }
+
+    .tarjeta-resena-producto small {
+        color: #888888;
+    }
+
+.sin-resenas-producto {
+    color: var(--color-gris-oscuro);
+}

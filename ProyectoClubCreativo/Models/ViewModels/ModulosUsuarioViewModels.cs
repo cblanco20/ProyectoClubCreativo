@@ -24,6 +24,9 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public decimal Total { get; set; }
 
         public List<ProductoCompraViewModel> Productos { get; set; } = [];
+
+        public bool PuedeCalificar =>
+     Estado is "Pagada" or "En preparacion" or "Enviada" or "Entregada";
     }
 
     public class ProductoCompraViewModel
@@ -36,6 +39,9 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public decimal Precio { get; set; }
 
         public decimal Subtotal => Precio * Cantidad;
+
+        public byte? ValoracionPrevia { get; set; }
+        public string? ComentarioPrevio { get; set; }
     }
 
     public class CarritoUsuarioViewModel
@@ -216,5 +222,13 @@ namespace ProyectoClubCreativo.Models.ViewModels
         [Display(Name = "Frecuencia de correos")]
         [Required(ErrorMessage = "Seleccione una frecuencia.")]
         public string FrecuenciaCorreo { get; set; } = string.Empty;
+    }
+    public class ResenaPublicaViewModel
+    {
+        public string Autor { get; set; } = string.Empty;
+        public int Valoracion { get; set; }
+        public string Contenido { get; set; } = string.Empty;
+        public DateTime Fecha { get; set; }
+        public bool Editada { get; set; }
     }
 }

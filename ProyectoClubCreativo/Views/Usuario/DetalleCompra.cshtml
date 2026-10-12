@@ -3,6 +3,14 @@
 @{
     ViewData["Title"] = "Detalle de compra";
     Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+
+    string? errorResena = TempData["ErrorResena"] as string;
+
+    int? idProductoError =
+        TempData["ResenaIdProducto"] is int idError ? idError : null;
+
+    string contenidoError =
+        TempData["ResenaContenido"] as string ?? string.Empty;
 }
 
 @if (TempData["MensajeCompra"] is not null)
@@ -54,11 +62,27 @@
 
                     <img src="@producto.Imagen"
                          alt="@producto.Nombre" />
-
                     <div class="datos-producto-compra">
                         <h3>@producto.Nombre</h3>
                         <span>@producto.Emprendimiento</span>
                         <small>Cantidad: @producto.Cantidad</small>
+
+                        @if (Model.PuedeCalificar)
+                        {
+                            <button type="button"
+                                    class="boton-calificar-producto"
+                                    data-id="@producto.IdProducto"
+                                    data-nombre="@producto.Nombre"
+                                    data-valoracion="@(producto.ValoracionPrevia ?? 0)"
+                                    data-comentario="@producto.ComentarioPrevio">
+
+                                <i class="bi bi-star-fill"></i>
+                                @(producto.ValoracionPrevia is null
+                                    ? "Calificar producto"
+                                    : "Editar reseña")
+
+                            </button>
+                        }
                     </div>
 
                     <strong>
@@ -106,3 +130,208 @@
 
     </aside>
 </section>
+<!-- MODAL CALIFICAR PRODUCTO -->
+<div id="modalResena"
+     class="modal-resena"
+     aria-hidden="true">
+
+    <div id="fondoModalResena"
+         class="fondo-modal-resena">
+    </div>
+
+    <div class="contenido-modal-resena"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloModalResena">
+
+        <button type="button"
+                id="cerrarModalResena"
+                class="cerrar-modal-resena"
+                aria-label="Cerrar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+
+        <span class="etiqueta-pagina-usuario"
+              id="etiquetaModalResena">
+            Calificar producto
+        </span>
+
+        <h2 id="tituloModalResena">
+            <span id="nombreProductoResena">Producto</span>
+        </h2>
+
+        @if (!string.IsNullOrEmpty(errorResena))
+        {
+            <div class="mensaje-error-resena">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                @errorResena
+            </div>
+        }
+
+        <form asp-controller="Usuario"
+              asp-action="CalificarProducto"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="IdProducto"
+                   id="idProductoResena" />
+
+            <input type="hidden"
+                   name="NumeroOrden"
+                   value="@Model.NumeroOrden" />
+
+            <label class="etiqueta-campo-resena">Calificación</label>
+
+            <div class="estrellas-seleccion">
+                @for (int i = 5; i >= 1; i--)
+                {
+                    <input type="radio"
+                           name="Valoracion"
+                           id="estrella@(i)"
+                           value="@i" />
+
+                    <label for="estrella@(i)"
+                           title="@i de 5">
+                        <i class="bi bi-star-fill"></i>
+                    </label>
+                }
+            </div>
+
+            <label class="etiqueta-campo-resena"
+                   for="contenidoResena">
+                Comentario (opcional)
+            </label>
+
+            <textarea name="Contenido"
+                      id="contenidoResena"
+                      class="campo-resena"
+                      rows="4"
+                      maxlength="1500"
+                      placeholder="Cuenta tu experiencia con este producto..."></textarea>
+
+            <div class="acciones-modal-resena">
+
+                <button type="button"
+                        id="cancelarResena"
+                        class="boton-secundario-usuario">
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        id="botonEnviarResena"
+                        class="boton-accion-usuario">
+                    <i class="bi bi-send-fill"></i>
+                    Enviar comentario
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const modal =
+                document.getElementById("modalResena");
+
+            const campoProducto =
+                document.getElementById("idProductoResena");
+
+            const nombreProducto =
+                document.getElementById("nombreProductoResena");
+
+            const etiqueta =
+                document.getElementById("etiquetaModalResena");
+
+            const campoContenido =
+                document.getElementById("contenidoResena");
+
+            const botonEnviar =
+                document.getElementById("botonEnviarResena");
+
+            const estrellas =
+                document.querySelectorAll("input[name='Valoracion']");
+
+            const abrir = (boton) => {
+
+                const valoracion =
+                    parseInt(boton.dataset.valoracion || "0", 10);
+
+                const esEdicion = valoracion > 0;
+
+                campoProducto.value = boton.dataset.id;
+                nombreProducto.textContent = boton.dataset.nombre;
+                campoContenido.value = boton.dataset.comentario || "";
+
+                estrellas.forEach((e) => {
+                    e.checked = parseInt(e.value, 10) === valoracion;
+                });
+
+                etiqueta.textContent =
+                    esEdicion ? "Editar reseña" : "Calificar producto";
+
+                botonEnviar.lastChild.textContent =
+                    esEdicion ? " Guardar cambios" : " Enviar comentario";
+
+                modal.classList.add("visible");
+                modal.setAttribute("aria-hidden", "false");
+            };
+
+            const cerrar = () => {
+                modal.classList.remove("visible");
+                modal.setAttribute("aria-hidden", "true");
+            };
+
+            document
+                .querySelectorAll(".boton-calificar-producto")
+                .forEach((boton) => {
+                    boton.addEventListener("click", () => abrir(boton));
+                });
+
+            document
+                .getElementById("cerrarModalResena")
+                ?.addEventListener("click", cerrar);
+
+            document
+                .getElementById("cancelarResena")
+                ?.addEventListener("click", cerrar);
+
+            document
+                .getElementById("fondoModalResena")
+                ?.addEventListener("click", cerrar);
+
+            document.addEventListener("keydown", (evento) => {
+                if (evento.key === "Escape") {
+                    cerrar();
+                }
+            });
+
+            const idProductoError = @(idProductoError?.ToString() ?? "null");
+
+            if (idProductoError !== null) {
+
+                const botonError = document.querySelector(
+                    `.boton-calificar-producto[data-id='${idProductoError}']`
+                );
+
+                if (botonError) {
+                    abrir(botonError);
+
+                    estrellas.forEach((e) => { e.checked = false; });
+
+                    campoContenido.value =
+                        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(contenidoError));
+                }
+            }
+        });
+    </script>
+}

@@ -562,10 +562,130 @@ namespace ProyectoClubCreativo.Controllers
                     }).ToList()
             };
 
+            List<int> idsProductosCompra = modelo.Productos
+    .Select(p => p.IdProducto)
+    .ToList();
+
+            List<ComentariosResena> resenasPrevias =
+                await _context.ComentariosResenas
+                    .AsNoTracking()
+                    .Where(c =>
+                        c.IdUsuario == idUsuario.Value &&
+                        c.IdProducto != null &&
+                        idsProductosCompra.Contains(c.IdProducto.Value) &&
+                        c.Estado != "Eliminado")
+                    .ToListAsync();
+
+            foreach (ProductoCompraViewModel producto in modelo.Productos)
+            {
+                ComentariosResena? resenaPrevia =
+                    resenasPrevias.FirstOrDefault(r =>
+                        r.IdProducto == producto.IdProducto);
+
+                producto.ValoracionPrevia = resenaPrevia?.Valoracion;
+                producto.ComentarioPrevio = resenaPrevia?.Contenido;
+            }
             return View(modelo);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CalificarProducto(
+    ResenaProductoViewModel modelo)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return RegresarConErrorResena(
+                    modelo,
+                    ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .First());
+            }
+
+            string[] estadosCalificables =
+ {
+                "Pagada", "En preparacion", "Enviada", "Entregada"
+            };
+
+            bool compraCalificable = await _context.VentaDetalles
+                .AnyAsync(d =>
+                    d.IdProducto == modelo.IdProducto &&
+                    d.IdVentaNavigation.NumeroOrden == modelo.NumeroOrden &&
+                    d.IdVentaNavigation.IdUsuario == idUsuario.Value &&
+                    estadosCalificables.Contains(d.IdVentaNavigation.Estado));
+
+            if (!compraCalificable)
+            {
+                return RegresarConErrorResena(
+                    modelo,
+                    "Solo puedes calificar productos de compras con pago confirmado.");
+            }
+
+            string contenido = modelo.Contenido?.Trim() ?? string.Empty;
+
+            ComentariosResena? resena =
+                await _context.ComentariosResenas
+                    .FirstOrDefaultAsync(c =>
+                        c.IdUsuario == idUsuario.Value &&
+                        c.IdProducto == modelo.IdProducto &&
+                        c.Estado != "Eliminado");
+
+            bool esEdicion = resena is not null;
+
+            if (resena is null)
+            {
+                resena = new ComentariosResena
+                {
+                    IdUsuario = idUsuario.Value,
+                    IdProducto = modelo.IdProducto,
+                    Contenido = contenido,
+                    Valoracion = modelo.Valoracion,
+                    Estado = "Visible",
+                    CantidadReportes = 0,
+                    FechaPublicacion = DateTime.Now
+                };
+
+                _context.ComentariosResenas.Add(resena);
+            }
+            else
+            {
+                resena.Valoracion = modelo.Valoracion;
+                resena.Contenido = contenido;
+                resena.FechaEdicion = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeCompra"] = esEdicion
+                ? "Tu reseña fue actualizada correctamente."
+                : "¡Gracias! Tu calificación se registró correctamente.";
+
+            return RedirectToAction(
+                nameof(DetalleCompra),
+                new { id = modelo.NumeroOrden });
+        }
+
+
+        private IActionResult RegresarConErrorResena(
+            ResenaProductoViewModel modelo,
+            string mensaje)
+        {
+            TempData["ErrorResena"] = mensaje;
+            TempData["ResenaIdProducto"] = modelo.IdProducto;
+            TempData["ResenaContenido"] = modelo.Contenido ?? string.Empty;
+
+            return RedirectToAction(
+                nameof(DetalleCompra),
+                new { id = modelo.NumeroOrden });
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
