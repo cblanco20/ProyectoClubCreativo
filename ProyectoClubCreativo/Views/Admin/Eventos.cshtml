@@ -22,6 +22,13 @@
                 @foreach (var ev in Model.Eventos)
                 {
                     string clase = ev.Estado switch { "Programado" => "estado-activo", "Cancelado" => "estado-rechazado", _ => "estado-pendiente" };
+
+                    string mensajeEliminar = ev.EsPasado
+                        ? $"¿Eliminar el evento pasado «{ev.Nombre}»? Se retirará del historial de eventos activos."
+                        : ev.Inscritos > 0
+                            ? $"El evento «{ev.Nombre}» tiene {ev.Inscritos} usuario(s) registrado(s). Se les notificará la cancelación. ¿Desea continuar?"
+                            : $"¿Seguro que desea eliminar el evento «{ev.Nombre}»?";
+
                     <tr>
                         <td>@ev.Nombre</td>
                         <td>@ev.Fecha</td>
@@ -31,6 +38,17 @@
                         <td class="grupo-acciones-admin">
                             <a asp-action="ParticipantesEvento" asp-route-id="@ev.Id" class="boton-admin boton-admin-secundario">Ver</a>
                             <a asp-action="EditarEvento" asp-route-id="@ev.Id" class="boton-admin boton-admin-secundario">Editar</a>
+
+                            <form asp-action="EliminarEvento"
+                                  method="post"
+                                  style="display:inline;"
+                                  data-mensaje="@mensajeEliminar"
+                                  onsubmit="return confirm(this.dataset.mensaje);">
+                                <input type="hidden" name="id" value="@ev.Id" />
+                                <button type="submit" class="boton-admin boton-admin-secundario">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 }

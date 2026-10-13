@@ -262,19 +262,55 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Emprendimiento { get; set; } = "";
         public string Estado { get; set; } = "";
     }
-    
+
     public class EventoAdminViewModel
     {
         public int Id { get; set; }
+
+        [Required(ErrorMessage = "El nombre del evento es obligatorio.")]
+        [StringLength(150, ErrorMessage = "El nombre no puede superar los 150 caracteres.")]
         public string Nombre { get; set; } = "";
+
         public string Fecha { get; set; } = "";
+
+        [Required(ErrorMessage = "La fecha y hora de inicio son obligatorias.")]
+        [Display(Name = "Fecha y hora de inicio")]
+        public DateTime? FechaInicio { get; set; }
+
+        [Display(Name = "Fecha y hora de finalización")]
+        public DateTime? FechaFin { get; set; }
+
+        [Required(ErrorMessage = "La ubicación es obligatoria.")]
+        [StringLength(250, ErrorMessage = "La ubicación no puede superar los 250 caracteres.")]
+        [Display(Name = "Ubicación")]
         public string Ubicacion { get; set; } = "";
+
+        [Required(ErrorMessage = "La descripción es obligatoria.")]
+        [StringLength(1500, ErrorMessage = "La descripción no puede superar los 1500 caracteres.")]
+        [Display(Name = "Descripción")]
         public string Descripcion { get; set; } = "";
+
+        [Required(ErrorMessage = "Seleccione una categoría.")]
+        [Display(Name = "Categoría")]
+        public int? IdCategoria { get; set; }
+
+        [Range(1, 100000, ErrorMessage = "El cupo debe ser mayor a 0.")]
+        [Display(Name = "Cupo total")]
         public int CupoTotal { get; set; }
+
         public int Inscritos { get; set; }
+
+        public bool EsPasado { get; set; }
+
         public string Estado { get; set; } = "Programado";
+
         public bool QrGenerado { get; set; }
+
+        [Display(Name = "Emprendimientos participantes")]
+        public List<int> IdsEmprendimientos { get; set; } = [];
+
         public List<string> EmprendimientosAsignados { get; set; } = [];
+
         public List<ParticipanteEventoAdminViewModel> Participantes { get; set; } = [];
     }
 

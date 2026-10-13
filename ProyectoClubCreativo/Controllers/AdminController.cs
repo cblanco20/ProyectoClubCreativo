@@ -854,56 +854,455 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
         [HttpGet]
-        public IActionResult Eventos(string estado = "Todos")
+        public async Task<IActionResult> Eventos(string estado = "Todos")
         {
-            var eventos = ObtenerEventosDemo();
+            IQueryable<Evento> consulta = _context.Eventos
+                .AsNoTracking()
+                .Where(e => e.Estado != "Eliminado");
+
+            if (estado != "Todos")
+            {
+                consulta = consulta.Where(e => e.Estado == estado);
+            }
+
+            var eventos = await consulta
+                .OrderByDescending(e => e.FechaInicio)
+                .Select(e => new
+                {
+                    e.IdEvento,
+                    e.Nombre,
+                    e.FechaInicio,
+                    e.FechaFin,
+                    e.Ubicacion,
+                    e.Descripcion,
+                    e.CupoMaximo,
+                    e.Estado,
+                    Inscritos = e.InscripcionesEventos
+                        .Count(i => i.Estado != "Cancelada")
+                })
+                .ToListAsync();
+
+            DateTime ahora = DateTime.Now;
+
             return View(new ListadoEventosAdminViewModel
             {
                 FiltroEstado = estado,
-                Eventos = estado == "Todos" ? eventos : eventos.Where(e => e.Estado == estado).ToList()
+                Eventos = eventos
+                    .Select(e => new EventoAdminViewModel
+                    {
+                        Id = e.IdEvento,
+                        Nombre = e.Nombre,
+                        Fecha = e.FechaInicio.ToString("dd/MM/yyyy hh:mm tt"),
+                        Ubicacion = e.Ubicacion,
+                        Descripcion = e.Descripcion,
+                        CupoTotal = e.CupoMaximo ?? 0,
+                        Inscritos = e.Inscritos,
+                        Estado = e.Estado,
+                        EsPasado = e.Estado == "Finalizado" ||
+                                   (e.FechaFin ?? e.FechaInicio) < ahora
+                    })
+                    .ToList()
             });
         }
 
+        private async Task CargarOpcionesEventoAsync()
+        {
+            ViewBag.CategoriasEvento = await _context.Categorias
+                .AsNoTracking()
+                .Where(c => c.Modulo == "Eventos" && c.Activa)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
+
+            ViewBag.EmprendimientosEvento = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.EstadoAprobacion == "Aprobado")
+                .OrderBy(e => e.NombreComercial)
+                .ToListAsync();
+        }
+
+        private async Task ValidarDatosEventoAsync(
+            EventoAdminViewModel modelo,
+            List<int> idsEmprendimientos)
+        {
+            if (modelo.FechaInicio.HasValue &&
+                modelo.FechaFin.HasValue &&
+                modelo.FechaFin.Value < modelo.FechaInicio.Value)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.FechaFin),
+                    "La fecha de finalización no puede ser anterior a la fecha de inicio.");
+            }
+
+            if (modelo.IdCategoria.HasValue &&
+                !await _context.Categorias.AnyAsync(c =>
+                    c.IdCategoria == modelo.IdCategoria.Value &&
+                    c.Modulo == "Eventos" &&
+                    c.Activa))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdCategoria),
+                    "La categoría seleccionada no es válida.");
+            }
+
+            if (idsEmprendimientos.Count > 0)
+            {
+                int validos = await _context.Emprendimientos
+                    .CountAsync(e =>
+                        idsEmprendimientos.Contains(e.IdEmprendimiento) &&
+                        e.EstadoAprobacion == "Aprobado");
+
+                if (validos != idsEmprendimientos.Count)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.IdsEmprendimientos),
+                        "Alguno de los emprendimientos seleccionados no está disponible.");
+                }
+            }
+        }
+
         [HttpGet]
-        public IActionResult CrearEvento()
+        public async Task<IActionResult> CrearEvento()
         {
             ViewData["Titulo"] = "Crear evento";
+            await CargarOpcionesEventoAsync();
+
             return View("FormularioEvento", new EventoAdminViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearEvento(EventoAdminViewModel modelo)
+        public async Task<IActionResult> CrearEvento(EventoAdminViewModel modelo)
         {
             ViewData["Titulo"] = "Crear evento";
-            if (!ModelState.IsValid) return View("FormularioEvento", modelo);
-            TempData["MensajeAdmin"] = $"El evento \"{modelo.Nombre}\" fue creado correctamente.";
+
+            List<int> idsEmprendimientos =
+                modelo.IdsEmprendimientos.Distinct().ToList();
+
+            await ValidarDatosEventoAsync(modelo, idsEmprendimientos);
+
+            if (!ModelState.IsValid)
+            {
+                await CargarOpcionesEventoAsync();
+
+                return View("FormularioEvento", modelo);
+            }
+
+            Evento evento = new()
+            {
+                IdCategoria = modelo.IdCategoria,
+                Nombre = modelo.Nombre.Trim(),
+                Descripcion = modelo.Descripcion.Trim(),
+                FechaInicio = modelo.FechaInicio!.Value,
+                FechaFin = modelo.FechaFin,
+                Ubicacion = modelo.Ubicacion.Trim(),
+                CupoMaximo = modelo.CupoTotal,
+                Estado = "Programado",
+                FechaRegistro = DateTime.Now
+            };
+
+            foreach (int idEmprendimiento in idsEmprendimientos)
+            {
+                evento.ParticipacionesEventos.Add(new ParticipacionesEvento
+                {
+                    IdEmprendimiento = idEmprendimiento,
+                    Estado = "Aprobada",
+                    FechaSolicitud = DateTime.Now
+                });
+            }
+
+            _context.Eventos.Add(evento);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"El evento \"{evento.Nombre}\" fue creado correctamente.";
+
             return RedirectToAction(nameof(Eventos));
         }
 
         [HttpGet]
-        public IActionResult EditarEvento(int id = 1)
+        public async Task<IActionResult> EditarEvento(int id)
         {
             ViewData["Titulo"] = "Editar evento";
-            var evento = ObtenerEventosDemo().FirstOrDefault(e => e.Id == id) ?? new EventoAdminViewModel { Id = id };
-            return View("FormularioEvento", evento);
+
+            Evento? evento = await _context.Eventos
+                .AsNoTracking()
+                .Include(e => e.ParticipacionesEventos)
+                .FirstOrDefaultAsync(e => e.IdEvento == id);
+            if (evento is null || evento.Estado == "Eliminado")
+            {
+                TempData["ErrorAdmin"] =
+                    "El evento no está disponible. Es posible que haya sido eliminado.";
+
+                return RedirectToAction(nameof(Eventos));
+            }
+
+            await CargarOpcionesEventoAsync();
+
+            return View("FormularioEvento", new EventoAdminViewModel
+            {
+                Id = evento.IdEvento,
+                Nombre = evento.Nombre,
+                FechaInicio = evento.FechaInicio,
+                FechaFin = evento.FechaFin,
+                Ubicacion = evento.Ubicacion,
+                Descripcion = evento.Descripcion,
+                IdCategoria = evento.IdCategoria,
+                CupoTotal = evento.CupoMaximo ?? 0,
+                Estado = evento.Estado,
+                IdsEmprendimientos = evento.ParticipacionesEventos
+                    .Where(p => p.Estado == "Aprobada")
+                    .Select(p => p.IdEmprendimiento)
+                    .ToList()
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarEvento(EventoAdminViewModel modelo)
+        public async Task<IActionResult> EditarEvento(EventoAdminViewModel modelo)
         {
             ViewData["Titulo"] = "Editar evento";
-            if (!ModelState.IsValid) return View("FormularioEvento", modelo);
-            TempData["MensajeAdmin"] = $"El evento \"{modelo.Nombre}\" fue actualizado correctamente.";
+
+            Evento? evento = await _context.Eventos
+                .Include(e => e.ParticipacionesEventos)
+                .FirstOrDefaultAsync(e => e.IdEvento == modelo.Id);
+
+            if (evento is null || evento.Estado == "Eliminado")
+            {
+                TempData["ErrorAdmin"] =
+                    "El evento no está disponible. Es posible que haya sido eliminado.";
+
+                return RedirectToAction(nameof(Eventos));
+            }
+
+            List<int> idsEmprendimientos =
+                modelo.IdsEmprendimientos.Distinct().ToList();
+
+            await ValidarDatosEventoAsync(modelo, idsEmprendimientos);
+
+            string[] estadosPermitidos =
+                { "Programado", "Finalizado", evento.Estado };
+
+            if (!estadosPermitidos.Contains(modelo.Estado))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Estado),
+                    "El estado seleccionado no es válido.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await CargarOpcionesEventoAsync();
+
+                return View("FormularioEvento", modelo);
+            }
+
+            bool cambioFecha =
+                evento.FechaInicio != modelo.FechaInicio!.Value ||
+                evento.FechaFin != modelo.FechaFin;
+
+            evento.IdCategoria = modelo.IdCategoria;
+            evento.Nombre = modelo.Nombre.Trim();
+            evento.Descripcion = modelo.Descripcion.Trim();
+            evento.FechaInicio = modelo.FechaInicio.Value;
+            evento.FechaFin = modelo.FechaFin;
+            evento.Ubicacion = modelo.Ubicacion.Trim();
+            evento.CupoMaximo = modelo.CupoTotal;
+            evento.Estado = modelo.Estado;
+
+            foreach (int idEmprendimiento in idsEmprendimientos)
+            {
+                ParticipacionesEvento? participacion =
+                    evento.ParticipacionesEventos.FirstOrDefault(p =>
+                        p.IdEmprendimiento == idEmprendimiento);
+
+                if (participacion is null)
+                {
+                    evento.ParticipacionesEventos.Add(new ParticipacionesEvento
+                    {
+                        IdEmprendimiento = idEmprendimiento,
+                        Estado = "Aprobada",
+                        FechaSolicitud = DateTime.Now
+                    });
+                }
+                else
+                {
+                    participacion.Estado = "Aprobada";
+                }
+            }
+
+            foreach (ParticipacionesEvento participacion in
+                evento.ParticipacionesEventos.Where(p =>
+                    p.Estado == "Aprobada" &&
+                    !idsEmprendimientos.Contains(p.IdEmprendimiento)))
+            {
+                participacion.Estado = "Cancelada";
+            }
+
+            int notificados = 0;
+
+            if (cambioFecha)
+            {
+                List<int> idsUsuarios = await _context.InscripcionesEventos
+                    .Where(i =>
+                        i.IdEvento == evento.IdEvento &&
+                        (i.Estado == "Pendiente" || i.Estado == "Confirmada"))
+                    .Select(i => i.IdUsuario)
+                    .Distinct()
+                    .ToListAsync();
+
+                string mensaje =
+                    $"El evento «{evento.Nombre}» cambió su fecha u horario. " +
+                    $"Nuevo inicio: {evento.FechaInicio:dd/MM/yyyy hh:mm tt}." +
+                    (evento.FechaFin.HasValue
+                        ? $" Finaliza: {evento.FechaFin:dd/MM/yyyy hh:mm tt}."
+                        : string.Empty);
+
+                foreach (int idUsuario in idsUsuarios)
+                {
+                    _context.Notificaciones.Add(new Notificacione
+                    {
+                        IdUsuario = idUsuario,
+                        Titulo = "Cambio en un evento",
+                        Mensaje = mensaje,
+                        Tipo = "Evento",
+                        FechaEnvio = DateTime.Now,
+                        Leida = false,
+                        FechaLectura = null
+                    });
+                }
+
+                notificados = idsUsuarios.Count;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = notificados > 0
+                ? $"El evento \"{evento.Nombre}\" fue actualizado y se notificó a {notificados} usuario(s) registrado(s)."
+                : $"El evento \"{evento.Nombre}\" fue actualizado correctamente.";
+
             return RedirectToAction(nameof(Eventos));
         }
-
-        [HttpGet]
-        public IActionResult ParticipantesEvento(int id = 1)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarEvento(int id, string? motivo = null)
         {
-            var evento = ObtenerEventosDemo().FirstOrDefault(e => e.Id == id) ?? ObtenerEventosDemo().First();
-            return View(evento);
+            Evento? evento = await _context.Eventos
+                .Include(e => e.InscripcionesEventos)
+                .FirstOrDefaultAsync(e => e.IdEvento == id);
+
+            if (evento is null || evento.Estado == "Eliminado")
+            {
+                TempData["ErrorAdmin"] =
+                    "El evento no está disponible. Es posible que ya haya sido eliminado.";
+
+                return RedirectToAction(nameof(Eventos));
+            }
+
+            bool esPasado =
+                evento.Estado == "Finalizado" ||
+                (evento.FechaFin ?? evento.FechaInicio) < DateTime.Now;
+
+            int notificados = 0;
+
+            if (!esPasado && evento.Estado != "Cancelado")
+            {
+                List<InscripcionesEvento> inscripciones = evento.InscripcionesEventos
+                    .Where(i => i.Estado == "Pendiente" || i.Estado == "Confirmada")
+                    .ToList();
+
+                string motivoLimpio = motivo?.Trim() ?? string.Empty;
+
+                if (motivoLimpio.Length > 500)
+                {
+                    motivoLimpio = motivoLimpio[..500];
+                }
+
+                string mensaje =
+                    $"El evento «{evento.Nombre}» programado para " +
+                    $"{evento.FechaInicio:dd/MM/yyyy hh:mm tt} fue cancelado " +
+                    "por la organización de Club Creativo." +
+                    (motivoLimpio.Length > 0
+                        ? $" Motivo: {motivoLimpio}"
+                        : string.Empty);
+
+                foreach (InscripcionesEvento inscripcion in inscripciones)
+                {
+                    inscripcion.Estado = "Cancelada";
+
+                    _context.Notificaciones.Add(new Notificacione
+                    {
+                        IdUsuario = inscripcion.IdUsuario,
+                        Titulo = "Evento cancelado",
+                        Mensaje = mensaje,
+                        Tipo = "Evento",
+                        FechaEnvio = DateTime.Now,
+                        Leida = false,
+                        FechaLectura = null
+                    });
+                }
+
+                notificados = inscripciones
+                    .Select(i => i.IdUsuario)
+                    .Distinct()
+                    .Count();
+            }
+
+            evento.Estado = "Eliminado";
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = notificados > 0
+                ? $"El evento \"{evento.Nombre}\" fue eliminado y se notificó la cancelación a {notificados} usuario(s) registrado(s)."
+                : $"El evento \"{evento.Nombre}\" fue eliminado correctamente.";
+
+            return RedirectToAction(nameof(Eventos));
+        }
+        [HttpGet]
+        public async Task<IActionResult> ParticipantesEvento(int id)
+        {
+            Evento? evento = await _context.Eventos
+                .AsNoTracking()
+                .Include(e => e.ParticipacionesEventos)
+                    .ThenInclude(p => p.IdEmprendimientoNavigation)
+                .Include(e => e.InscripcionesEventos)
+                    .ThenInclude(i => i.IdUsuarioNavigation)
+                .FirstOrDefaultAsync(e => e.IdEvento == id);
+
+            if (evento is null || evento.Estado == "Eliminado")
+            {
+                TempData["ErrorAdmin"] =
+                    "El evento no está disponible. Es posible que haya sido eliminado.";
+
+                return RedirectToAction(nameof(Eventos));
+            }
+
+            return View(new EventoAdminViewModel
+            {
+                Id = evento.IdEvento,
+                Nombre = evento.Nombre,
+                Fecha = evento.FechaInicio.ToString("dd/MM/yyyy hh:mm tt"),
+                Ubicacion = evento.Ubicacion,
+                CupoTotal = evento.CupoMaximo ?? 0,
+                Inscritos = evento.InscripcionesEventos
+                    .Count(i => i.Estado != "Cancelada"),
+                Estado = evento.Estado,
+                EmprendimientosAsignados = evento.ParticipacionesEventos
+                    .Where(p => p.Estado == "Aprobada")
+                    .Select(p => p.IdEmprendimientoNavigation.NombreComercial)
+                    .OrderBy(n => n)
+                    .ToList(),
+                Participantes = evento.InscripcionesEventos
+                    .OrderByDescending(i => i.FechaInscripcion)
+                    .Select(i => new ParticipanteEventoAdminViewModel
+                    {
+                        Nombre = i.IdUsuarioNavigation.Nombre + " " +
+                                 i.IdUsuarioNavigation.ApellidoPaterno,
+                        Correo = i.IdUsuarioNavigation.Correo,
+                        Estado = i.Estado
+                    })
+                    .ToList()
+            });
         }
 
         [HttpPost]

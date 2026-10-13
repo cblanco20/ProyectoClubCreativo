@@ -991,3 +991,29 @@ transform:translateX(3px);
     .opcion-radio-admin input {
         width: auto;
     }
+
+.alerta-error-admin {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-radius: var(--radio-pequeno);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.resumen-validacion-admin ul {
+    margin: 0 0 16px;
+    padding: 12px 18px 12px 34px;
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-radius: var(--radio-pequeno);
+    font-size: 13px;
+}
+
+.resumen-validacion-admin.validation-summary-valid {
+    display: none;
+}

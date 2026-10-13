@@ -150,6 +150,12 @@
                     <i class="bi bi-check-circle-fill"></i> @TempData["MensajeAdmin"]
                 </div>
             }
+            @if (TempData["ErrorAdmin"] is not null)
+            {
+                <div class="alerta-error-admin">
+                    <i class="bi bi-exclamation-circle-fill"></i> @TempData["ErrorAdmin"]
+                </div>
+            }
             @RenderBody()
         </main>
     </div>
