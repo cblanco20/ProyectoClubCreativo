@@ -86,8 +86,60 @@ namespace ProyectoClubCreativo.Controllers
             ViewData["NombreEmprendimiento"] = string.IsNullOrWhiteSpace(name) ? "Orquídea" : name;
             return View();
         }
-        public IActionResult Eventos()
+        public async Task<IActionResult> Eventos(int? categoria)
         {
+            DateTime ahora = DateTime.Now;
+
+            IQueryable<Evento> consulta = _context.Eventos
+                .AsNoTracking()
+                .Where(e =>
+                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                    (e.FechaFin ?? e.FechaInicio) >= ahora);
+
+            if (categoria.HasValue)
+            {
+                consulta = consulta.Where(e => e.IdCategoria == categoria.Value);
+            }
+
+            var eventos = await consulta
+                .OrderBy(e => e.FechaInicio)
+                .Select(e => new
+                {
+                    e.IdEvento,
+                    e.Nombre,
+                    e.Descripcion,
+                    e.Ubicacion,
+                    e.ImagenUrl,
+                    e.FechaInicio,
+                    e.FechaFin,
+                    Categoria = e.IdCategoriaNavigation == null
+                        ? null
+                        : e.IdCategoriaNavigation.Nombre
+                })
+                .ToListAsync();
+
+            ViewBag.Eventos = eventos
+                .Select(e => new EventoPublicoViewModel
+                {
+                    IdEvento = e.IdEvento,
+                    Nombre = e.Nombre,
+                    Descripcion = e.Descripcion,
+                    Ubicacion = e.Ubicacion,
+                    ImagenUrl = e.ImagenUrl,
+                    FechaInicio = e.FechaInicio,
+                    FechaFin = e.FechaFin,
+                    Categoria = e.Categoria
+                })
+                .ToList();
+
+            ViewBag.CategoriasEvento = await _context.Categorias
+                .AsNoTracking()
+                .Where(c => c.Modulo == "Eventos" && c.Activa)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
+
+            ViewBag.CategoriaSeleccionada = categoria;
+
             return View();
         }
         public IActionResult Talleres()
@@ -190,10 +242,73 @@ namespace ProyectoClubCreativo.Controllers
 
             return View(producto);
         }
-        public IActionResult DetalleEvento(string name)
+        public async Task<IActionResult> DetalleEvento(int id)
         {
-            ViewData["NombreEvento"] = string.IsNullOrWhiteSpace(name) ? "Arte Inarrivo San Pedro" : name;
-            return View();
+            EventoPublicoViewModel? evento = await _context.Eventos
+                .AsNoTracking()
+                .Where(e =>
+                    e.IdEvento == id &&
+                    (e.Estado == "Programado" || e.Estado == "Activo"))
+                .Select(e => new EventoPublicoViewModel
+                {
+                    IdEvento = e.IdEvento,
+                    Nombre = e.Nombre,
+                    Descripcion = e.Descripcion,
+                    Ubicacion = e.Ubicacion,
+                    ImagenUrl = e.ImagenUrl,
+                    FechaInicio = e.FechaInicio,
+                    FechaFin = e.FechaFin,
+                    CupoMaximo = e.CupoMaximo,
+                    Categoria = e.IdCategoriaNavigation == null
+                        ? null
+                        : e.IdCategoriaNavigation.Nombre
+                })
+                .FirstOrDefaultAsync();
+
+            if (evento == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.Emprendimientos = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.ParticipacionesEventos.Any(p =>
+                    p.IdEvento == id && p.Estado == "Aprobada"))
+                .OrderBy(e => e.NombreComercial)
+                .ToListAsync();
+
+            DateTime ahora = DateTime.Now;
+
+            var otros = await _context.Eventos
+                .AsNoTracking()
+                .Where(e =>
+                    e.IdEvento != id &&
+                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                    (e.FechaFin ?? e.FechaInicio) >= ahora)
+                .OrderBy(e => e.FechaInicio)
+                .Take(2)
+                .Select(e => new
+                {
+                    e.IdEvento,
+                    e.Nombre,
+                    e.ImagenUrl,
+                    e.FechaInicio,
+                    e.FechaFin
+                })
+                .ToListAsync();
+
+            ViewBag.OtrosEventos = otros
+                .Select(e => new EventoPublicoViewModel
+                {
+                    IdEvento = e.IdEvento,
+                    Nombre = e.Nombre,
+                    ImagenUrl = e.ImagenUrl,
+                    FechaInicio = e.FechaInicio,
+                    FechaFin = e.FechaFin
+                })
+                .ToList();
+
+            return View(evento);
         }
         public IActionResult DetalleTaller(string name)
         {

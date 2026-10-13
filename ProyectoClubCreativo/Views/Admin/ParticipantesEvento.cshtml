@@ -20,28 +20,45 @@
             <span class="etiqueta-estado-admin estado-activo">@em</span>
         }
     </div>
-    <form asp-action="AsignarEmprendimiento" method="post" class="formulario-admin" style="max-width:420px; margin-bottom:22px;">
-        <input type="hidden" name="id" value="@Model.Id" />
-        <div class="grupo-formulario"><input type="text" name="nombreEmprendimiento" placeholder="Nombre del emprendimiento" required /></div>
-        <button type="submit" class="boton-admin boton-admin-secundario">Asignar</button>
-    </form>
+    <a asp-action="EditarEvento" asp-route-id="@Model.Id" class="boton-admin boton-admin-secundario" style="margin-bottom:22px;">
+        <i class="bi bi-pencil-square"></i> Gestionar emprendimientos
+    </a>
 
     <h3>Participantes</h3>
     <div class="tabla-admin-contenedor">
         <table class="tabla-admin">
-            <thead><tr><th>Nombre</th><th>Emprendimiento</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th></tr></thead>
             <tbody>
                 @foreach (var p in Model.Participantes)
                 {
-                    <tr><td>@p.Nombre</td><td>@p.Emprendimiento</td><td><span class="etiqueta-estado-admin @(p.Estado == "Confirmado" ? "estado-activo" : "estado-pendiente")">@p.Estado</span></td></tr>
+                    string clase = p.Estado switch
+                    {
+                        "Confirmada" or "Asistio" => "estado-activo",
+                        "Cancelada" or "NoAsistio" => "estado-rechazado",
+                        _ => "estado-pendiente"
+                    };
+
+                    <tr><td>@p.Nombre</td><td>@p.Correo</td><td><span class="etiqueta-estado-admin @clase">@p.Estado</span></td></tr>
+                }
+
+                @if (!Model.Participantes.Any())
+                {
+                    <tr><td colspan="3">Aún no hay usuarios inscritos en este evento.</td></tr>
                 }
             </tbody>
         </table>
     </div>
 
-    <form asp-action="CancelarEvento" method="post" class="formulario-admin" style="margin-top:22px;">
+    <form asp-action="EliminarEvento"
+          method="post"
+          class="formulario-admin"
+          style="margin-top:22px;"
+          onsubmit="return confirm('¿Cancelar y eliminar este evento? Se notificará a los usuarios registrados.');">
         <input type="hidden" name="id" value="@Model.Id" />
-        <div class="grupo-formulario"><label>Motivo de cancelación del evento</label><textarea name="motivo" rows="2" required></textarea></div>
+        <div class="grupo-formulario">
+            <label>Motivo de cancelación del evento (opcional)</label>
+            <textarea name="motivo" rows="2" maxlength="500"></textarea>
+        </div>
         <button type="submit" class="boton-admin boton-admin-peligro">Cancelar evento</button>
     </form>
 </article>

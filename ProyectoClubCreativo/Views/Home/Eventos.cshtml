@@ -1,6 +1,19 @@
-﻿@{
+﻿@using ProyectoClubCreativo.Models.Entities
+@using ProyectoClubCreativo.Models.ViewModels
+
+@{
     ViewData["Title"] = "Eventos";
     Layout = "_LayoutExterno";
+
+    List<EventoPublicoViewModel> eventos =
+        ViewBag.Eventos as List<EventoPublicoViewModel> ?? new();
+
+    List<Categoria> categorias =
+        ViewBag.CategoriasEvento as List<Categoria> ?? new();
+
+    int? categoriaSeleccionada = ViewBag.CategoriaSeleccionada as int?;
+
+    string imagenPorDefecto = Url.Content("~/images/hero-feria.jpg");
 }
 
 <!-- HERO -->
@@ -29,15 +42,17 @@
             <img src="~/images/hero-feria.jpg"
                  alt="Feria de emprendimientos de Club Creativo" />
 
-            <div class="tarjeta-flotante-eventos">
-                <i class="bi bi-calendar-heart-fill"></i>
+            @if (eventos.Any())
+            {
+                <div class="tarjeta-flotante-eventos">
+                    <i class="bi bi-calendar-heart-fill"></i>
 
-                <div>
-                    <strong>Próximo evento</strong>
-                    <span>15 y 16 de agosto</span>
+                    <div>
+                        <strong>Próximo evento</strong>
+                        <span>@eventos.First().FechaTexto</span>
+                    </div>
                 </div>
-            </div>
-        </div>
+            }
 
     </div>
 </section>
@@ -64,172 +79,117 @@
 </section>
 
 
-<!-- LISTADO DE EVENTOS -->
-<section class="eventos-listado" id="eventos-listado">
-    <div class="container">
+    <!-- LISTADO DE EVENTOS -->
+    <section class="eventos-listado" id="eventos-listado">
+        <div class="container">
 
-        <div class="grid-eventos-pagina">
+            @if (categorias.Any())
+            {
+                <div class="filtros-eventos">
 
-            <article class="tarjeta-evento-pagina">
-                <img src="~/images/evento-san-pedro.jpg"
-                     alt="Arte Inarrivo San Pedro" />
-
-                <div class="cuerpo-evento-pagina">
-                    <span class="fecha-evento-pagina">15 y 16 de agosto</span>
-
-                    <h3>Arte Inarrivo San Pedro</h3>
-
-                    <p>
-                        Una edición especial con arte, diseño y
-                        emprendimientos locales.
-                    </p>
-
-                    <div class="datos-evento-pagina">
-                        <span><i class="bi bi-geo-alt-fill"></i> San Pedro</span>
-                        <span><i class="bi bi-clock-fill"></i> 12:00 p. m.</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Arte Inarrivo San Pedro" class="enlace-evento-pagina">
-                        Ver evento
-                        <i class="bi bi-arrow-right"></i>
+                    <a asp-controller="Home"
+                       asp-action="Eventos"
+                       class="chip-filtro-evento @(categoriaSeleccionada is null ? "activo" : "")">
+                        Todos
                     </a>
+
+                    @foreach (Categoria categoria in categorias)
+                    {
+                        <a asp-controller="Home"
+                           asp-action="Eventos"
+                           asp-route-categoria="@categoria.IdCategoria"
+                           class="chip-filtro-evento @(categoriaSeleccionada == categoria.IdCategoria ? "activo" : "")">
+                            @categoria.Nombre
+                        </a>
+                    }
+
                 </div>
-            </article>
+            }
 
-            <article class="tarjeta-evento-pagina">
-                <img src="~/images/evento-santa-ana.jpg"
-                     alt="Feria Creativa Santa Ana" />
+            @if (!eventos.Any())
+            {
+                <div class="sin-eventos-pagina">
 
-                <div class="cuerpo-evento-pagina">
-                    <span class="fecha-evento-pagina">5 al 7 de septiembre</span>
+                    <i class="bi bi-calendar-x"></i>
 
-                    <h3>Feria Creativa Santa Ana</h3>
+                    @if (categoriaSeleccionada is null)
+                    {
+                        <h3>No hay eventos disponibles por el momento</h3>
 
-                    <p>
-                        Marcas creativas, productos únicos y actividades
-                        para toda la comunidad.
-                    </p>
+                        <p>
+                            Estamos preparando nuevas actividades.
+                            Vuelve pronto para conocerlas.
+                        </p>
+                    }
+                    else
+                    {
+                        <h3>No hay eventos disponibles en esta categoría</h3>
 
-                    <div class="datos-evento-pagina">
-                        <span><i class="bi bi-geo-alt-fill"></i> Santa Ana</span>
-                        <span><i class="bi bi-clock-fill"></i> 10:00 a. m.</span>
-                    </div>
+                        <p>
+                            Prueba con otra categoría o consulta todos los eventos.
+                        </p>
 
-                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Arte Inarrivo San Pedro" class="enlace-evento-pagina">
-                        Ver evento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
+                        <a asp-controller="Home"
+                           asp-action="Eventos"
+                           class="enlace-evento-pagina">
+                            Ver todos los eventos
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    }
+
                 </div>
-            </article>
+            }
+            else
+            {
+                <div class="grid-eventos-pagina">
 
-            <article class="tarjeta-evento-pagina">
-                <img src="~/images/evento-madres.jpg"
-                     alt="Edición especial Día de las Madres" />
+                    @foreach (EventoPublicoViewModel evento in eventos)
+                    {
+                        string descripcion = evento.Descripcion.Length > 140
+                            ? evento.Descripcion[..140].TrimEnd() + "…"
+                            : evento.Descripcion;
 
-                <div class="cuerpo-evento-pagina">
-                    <span class="fecha-evento-pagina">Edición especial</span>
+                        string imagen = string.IsNullOrWhiteSpace(evento.ImagenUrl)
+                            ? imagenPorDefecto
+                            : Url.Content(evento.ImagenUrl);
 
-                    <h3>Día de las Madres</h3>
+                        <article class="tarjeta-evento-pagina">
+                            <img src="@imagen"
+                                 alt="@evento.Nombre" />
 
-                    <p>
-                        Regalos, experiencias y talento local para
-                        celebrar a mamá.
-                    </p>
+                            <div class="cuerpo-evento-pagina">
+                                <span class="fecha-evento-pagina">@evento.FechaTexto</span>
 
-                    <div class="datos-evento-pagina">
-                        <span><i class="bi bi-geo-alt-fill"></i> Heredia</span>
-                        <span><i class="bi bi-clock-fill"></i> 11:00 a. m.</span>
-                    </div>
+                                @if (!string.IsNullOrWhiteSpace(evento.Categoria))
+                                {
+                                    <span class="categoria-evento-pagina">@evento.Categoria</span>
+                                }
 
-                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Arte Inarrivo San Pedro" class="enlace-evento-pagina">
-                        Ver evento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
+                                <h3>@evento.Nombre</h3>
+
+                                <p>@descripcion</p>
+
+                                <div class="datos-evento-pagina">
+                                    <span><i class="bi bi-geo-alt-fill"></i> @evento.Ubicacion</span>
+                                    <span><i class="bi bi-clock-fill"></i> @evento.HoraTexto</span>
+                                </div>
+
+                                <a asp-controller="Home"
+                                   asp-action="DetalleEvento"
+                                   asp-route-id="@evento.IdEvento"
+                                   class="enlace-evento-pagina">
+                                    Ver evento
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </article>
+                    }
+
                 </div>
-            </article>
-
-            <article class="tarjeta-evento-pagina">
-                <img src="~/images/convivencia.jpg"
-                     alt="Convivencia creativa de la comunidad" />
-
-                <div class="cuerpo-evento-pagina">
-                    <span class="fecha-evento-pagina">28 de septiembre</span>
-
-                    <h3>Convivencia Creativa MiVo</h3>
-
-                    <p>
-                        Una tarde para compartir en comunidad, conocer
-                        emprendimientos y disfrutar de música en vivo.
-                    </p>
-
-                    <div class="datos-evento-pagina">
-                        <span><i class="bi bi-geo-alt-fill"></i> Alajuela</span>
-                        <span><i class="bi bi-clock-fill"></i> 2:00 p. m.</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Arte Inarrivo San Pedro" class="enlace-evento-pagina">
-                        Ver evento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-evento-pagina">
-                <img src="~/images/feria-promociones.jpg"
-                     alt="Feria de emprendimientos con promociones" />
-
-                <div class="cuerpo-evento-pagina">
-                    <span class="fecha-evento-pagina">12 de octubre</span>
-
-                    <h3>Feria de Fin de Año Anticipada</h3>
-
-                    <p>
-                        Adelanto de las promociones de fin de año con
-                        productos de nuestros emprendimientos aliados.
-                    </p>
-
-                    <div class="datos-evento-pagina">
-                        <span><i class="bi bi-geo-alt-fill"></i> San José</span>
-                        <span><i class="bi bi-clock-fill"></i> 9:00 a. m.</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Arte Inarrivo San Pedro" class="enlace-evento-pagina">
-                        Ver evento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-evento-pagina">
-                <img src="~/images/acceso-feria.jpg"
-                     alt="Feria creativa nocturna" />
-
-                <div class="cuerpo-evento-pagina">
-                    <span class="fecha-evento-pagina">Próximamente</span>
-
-                    <h3>Feria Creativa Nocturna</h3>
-
-                    <p>
-                        Una nueva edición con exposiciones, música y
-                        emprendimientos bajo las estrellas.
-                    </p>
-
-                    <div class="datos-evento-pagina">
-                        <span><i class="bi bi-geo-alt-fill"></i> Por confirmar</span>
-                        <span><i class="bi bi-clock-fill"></i> 6:00 p. m.</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleEvento" asp-route-name="Arte Inarrivo San Pedro" class="enlace-evento-pagina">
-                        Ver evento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
+            }
 
         </div>
-
-    </div>
-</section>
+    </section>
 
 
 <!-- CTA FINAL -->

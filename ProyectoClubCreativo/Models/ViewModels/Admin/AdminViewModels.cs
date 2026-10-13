@@ -260,6 +260,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     {
         public string Nombre { get; set; } = "";
         public string Emprendimiento { get; set; } = "";
+        public string Correo { get; set; } = "";
         public string Estado { get; set; } = "";
     }
 
@@ -297,6 +298,11 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         [Range(1, 100000, ErrorMessage = "El cupo debe ser mayor a 0.")]
         [Display(Name = "Cupo total")]
         public int CupoTotal { get; set; }
+
+        [Display(Name = "Imagen del evento")]
+        public IFormFile? Imagen { get; set; }
+
+        public string? ImagenUrl { get; set; }
 
         public int Inscritos { get; set; }
 

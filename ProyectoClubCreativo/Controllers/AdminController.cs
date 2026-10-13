@@ -924,6 +924,24 @@ namespace ProyectoClubCreativo.Controllers
             EventoAdminViewModel modelo,
             List<int> idsEmprendimientos)
         {
+            if (modelo.Imagen is { Length: > 0 })
+            {
+                string extension =
+                    Path.GetExtension(modelo.Imagen.FileName).ToLowerInvariant();
+
+                if (!ExtensionesImagenEvento.Contains(extension))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Imagen),
+                        "La imagen debe ser JPG, PNG o WEBP.");
+                }
+                else if (modelo.Imagen.Length > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Imagen),
+                        "La imagen no puede superar los 5 MB.");
+                }
+            }
             if (modelo.FechaInicio.HasValue &&
                 modelo.FechaFin.HasValue &&
                 modelo.FechaFin.Value < modelo.FechaInicio.Value)
@@ -958,6 +976,27 @@ namespace ProyectoClubCreativo.Controllers
                         "Alguno de los emprendimientos seleccionados no está disponible.");
                 }
             }
+        }
+        private static readonly string[] ExtensionesImagenEvento =
+    { ".jpg", ".jpeg", ".png", ".webp" };
+
+        private async Task<string> GuardarImagenEventoAsync(IFormFile imagen)
+        {
+            string carpeta = Path.Combine(
+                _entornoWeb.WebRootPath, "uploads", "eventos");
+
+            Directory.CreateDirectory(carpeta);
+
+            string nombreArchivo =
+                $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName).ToLowerInvariant()}";
+
+            using (var flujo = new FileStream(
+                Path.Combine(carpeta, nombreArchivo), FileMode.Create))
+            {
+                await imagen.CopyToAsync(flujo);
+            }
+
+            return $"/uploads/eventos/{nombreArchivo}";
         }
 
         [HttpGet]
@@ -1010,6 +1049,11 @@ namespace ProyectoClubCreativo.Controllers
                 });
             }
 
+            if (modelo.Imagen is { Length: > 0 })
+            {
+                evento.ImagenUrl = await GuardarImagenEventoAsync(modelo.Imagen);
+            }
+
             _context.Eventos.Add(evento);
 
             await _context.SaveChangesAsync();
@@ -1050,6 +1094,7 @@ namespace ProyectoClubCreativo.Controllers
                 IdCategoria = evento.IdCategoria,
                 CupoTotal = evento.CupoMaximo ?? 0,
                 Estado = evento.Estado,
+                ImagenUrl = evento.ImagenUrl,
                 IdsEmprendimientos = evento.ParticipacionesEventos
                     .Where(p => p.Estado == "Aprobada")
                     .Select(p => p.IdEmprendimiento)
@@ -1109,6 +1154,11 @@ namespace ProyectoClubCreativo.Controllers
             evento.Ubicacion = modelo.Ubicacion.Trim();
             evento.CupoMaximo = modelo.CupoTotal;
             evento.Estado = modelo.Estado;
+
+            if (modelo.Imagen is { Length: > 0 })
+            {
+                evento.ImagenUrl = await GuardarImagenEventoAsync(modelo.Imagen);
+            }
 
             foreach (int idEmprendimiento in idsEmprendimientos)
             {
