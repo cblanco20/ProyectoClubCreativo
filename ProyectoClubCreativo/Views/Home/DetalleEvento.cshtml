@@ -93,9 +93,33 @@
                     </span>
                 </li>
             </ul>
-            <a href="#" class="boton-contacto-emprendimiento">
-                Inscribirme al evento
-            </a>
+            @if (TempData["ErrorEvento"] is string errorEvento)
+            {
+                <p style="color:#b91c1c; font-weight:600;">@errorEvento</p>
+            }
+
+            @if (Model.UsuarioRegistrado)
+            {
+                <p style="font-weight:600;"><i class="bi bi-check-circle-fill"></i> Ya estás registrado en este evento.</p>
+                <a asp-controller="Usuario" asp-action="MisInscripciones" class="boton-contacto-emprendimiento">Ver mis inscripciones</a>
+            }
+            else if (Model.CupoLleno)
+            {
+                <p style="color:#b91c1c; font-weight:600;">Cupo lleno</p>
+                <button type="button" class="boton-contacto-emprendimiento" disabled style="opacity:.5; cursor:not-allowed;">
+                    Registrarse en evento
+                </button>
+            }
+            else
+            {
+                <form asp-controller="Usuario" asp-action="RegistrarseEvento" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.IdEvento" />
+                    <button type="submit" class="boton-contacto-emprendimiento" style="border:0; width:100%; cursor:pointer;">
+                        Registrarse en evento
+                    </button>
+                </form>
+            }
         </aside>
     </div>
 </section>

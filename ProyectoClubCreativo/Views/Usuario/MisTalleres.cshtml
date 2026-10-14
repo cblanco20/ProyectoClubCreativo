@@ -1,0 +1,89 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.MisTalleresViewModel
+@{
+    ViewData["Title"] = "Mis talleres";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+
+    string ClaseFiltro(string f) => Model.Filtro == f ? "filtro-activo" : "";
+    string? mensaje = TempData["MensajeTaller"] as string;
+    string? error = TempData["ErrorTaller"] as string;
+}
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="mensaje-exito-perfil"><i class="bi bi-check-circle-fill"></i> @mensaje</div>
+}
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Actividades</span>
+        <h1 class="titulo-pagina-usuario">Mis talleres</h1>
+        <p class="descripcion-pagina-usuario">Consulta los talleres en los que estás registrado y sus fechas.</p>
+    </div>
+</div>
+
+@if (Model.Total > 0)
+{
+    <form method="get" asp-action="MisTalleres" class="filtros-modulo-usuario">
+        <button type="submit" name="filtro" value="Todos" class="@ClaseFiltro("Todos")">Todos</button>
+        <button type="submit" name="filtro" value="Proximos" class="@ClaseFiltro("Proximos")">Próximos</button>
+        <button type="submit" name="filtro" value="Finalizados" class="@ClaseFiltro("Finalizados")">Finalizados</button>
+    </form>
+}
+
+@if (Model.Total == 0)
+{
+    <div class="card shadow-sm" style="max-width:650px;">
+        <div class="card-body p-4">
+            <h2 class="h5">No tienes talleres registrados</h2>
+            <p>Explora los talleres disponibles y reserva tu cupo.</p>
+            <a asp-controller="Home" asp-action="Talleres" class="boton-accion-usuario">Explorar talleres</a>
+        </div>
+    </div>
+}
+else if (!Model.Talleres.Any())
+{
+    <p>No tienes talleres @(Model.Filtro == "Proximos" ? "próximos" : "finalizados").</p>
+}
+else
+{
+    <section class="cuadricula-inscripciones">
+        @foreach (var item in Model.Talleres)
+        {
+            string estadoClase = item.Estado == "Próximo" ? "estado-tabla estado-verde"
+                : item.Estado == "Cancelado" ? "estado-tabla estado-rojo" : "estado-tabla estado-gris";
+
+            <article class="tarjeta-inscripcion">
+                <img src="@(string.IsNullOrWhiteSpace(item.ImagenUrl) ? Url.Content("~/images/taller-ceramica.jpg") : Url.Content(item.ImagenUrl))" alt="@item.Nombre" />
+
+                <div class="contenido-inscripcion">
+                    <div class="cabecera-inscripcion">
+                        <span class="tipo-inscripcion">Taller</span>
+                        <span class="@estadoClase">@item.Estado</span>
+                    </div>
+
+                    <h2>@item.Nombre</h2>
+                    <p><i class="bi bi-calendar3"></i> @item.Fecha</p>
+                    <p><i class="bi bi-clock-fill"></i> @item.Horario</p>
+                    <p><i class="bi bi-geo-alt"></i> @item.Ubicacion</p>
+
+                    <div class="acciones-inscripcion">
+                        <a asp-controller="Home" asp-action="DetalleTaller" asp-route-id="@item.IdTaller">
+                            <button type="button">Ver información</button>
+                        </a>
+
+                        @if (item.Estado == "Próximo")
+                        {
+                            <a asp-action="ConfirmarCancelacionTaller" asp-route-id="@item.IdTaller">
+                                <button type="button" class="accion-peligro">Cancelar registro</button>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
+}

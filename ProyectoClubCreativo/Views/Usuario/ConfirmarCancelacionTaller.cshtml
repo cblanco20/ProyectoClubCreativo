@@ -1,0 +1,41 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.CancelarRegistroTallerViewModel
+@{
+    ViewData["Title"] = "Cancelar registro";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Talleres</span>
+        <h1 class="titulo-pagina-usuario">Cancelar registro</h1>
+    </div>
+</div>
+
+<section class="container py-3">
+    <div class="card shadow-sm" style="max-width:650px;">
+        <div class="card-body p-4">
+            <h2 class="h5">@Model.Nombre</h2>
+            <p><i class="bi bi-calendar3"></i> @Model.Fecha</p>
+            <p><i class="bi bi-clock-fill"></i> @Model.Horario</p>
+            <p><i class="bi bi-geo-alt"></i> @Model.Ubicacion</p>
+
+            @if (Model.MenosDe24Horas)
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Estás cancelando con menos de 24 horas de anticipación. Puedes hacerlo, pero avisa con tiempo la próxima vez para que otra persona pueda aprovechar el cupo.
+                </div>
+            }
+
+            <p>¿Seguro que deseas cancelar tu registro? El cupo quedará disponible para otras personas.</p>
+
+            <form asp-action="CancelarRegistroTaller" method="post" style="display:flex; gap:10px; flex-wrap:wrap;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.IdTaller" />
+                <input type="hidden" name="confirmar" value="true" />
+                <button type="submit" class="boton-accion-usuario">Sí, cancelar registro</button>
+                <a asp-action="MisTalleres" class="boton-secundario-usuario">No, mantener mi registro</a>
+            </form>
+        </div>
+    </div>
+</section>

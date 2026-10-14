@@ -21,6 +21,13 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public DateTime FechaInicio { get; set; }
         public int? CupoMaximo { get; set; }
 
+        public int Inscritos { get; set; }
+
+        public bool UsuarioRegistrado { get; set; }
+
+        public bool CupoLleno =>
+            CupoMaximo.HasValue && Inscritos >= CupoMaximo.Value;
+
         public string HorarioTexto =>
             FechaFin.HasValue && FechaFin.Value > FechaInicio
                 ? $"{HoraTexto} a {FechaFin.Value.ToString("h:mm tt", Cultura)}"

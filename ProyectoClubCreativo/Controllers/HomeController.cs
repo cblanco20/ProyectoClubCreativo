@@ -142,10 +142,80 @@ namespace ProyectoClubCreativo.Controllers
 
             return View();
         }
-        public IActionResult Talleres()
+        public async Task<IActionResult> Talleres()
         {
-            return View();
+            List<TallerPublicoViewModel> talleres =
+                await ConsultarTalleresPublicosAsync(null, 0);
+
+            return View(talleres);
         }
+
+        private async Task<List<TallerPublicoViewModel>> ConsultarTalleresPublicosAsync(
+            int? idTaller,
+            int idUsuario)
+        {
+            DateTime ahora = DateTime.Now;
+
+            IQueryable<Tallere> consulta = _context.Talleres
+                .AsNoTracking()
+                .Where(t =>
+                    t.Estado == ReglasTalleres.Programado &&
+                    t.FechaInicio != null &&
+                    (t.FechaFin ?? t.FechaInicio) >= ahora);
+
+            if (idTaller.HasValue)
+            {
+                consulta = consulta.Where(t => t.IdTaller == idTaller.Value);
+            }
+
+            var filas = await consulta
+                .OrderBy(t => t.FechaInicio)
+                .Select(t => new
+                {
+                    t.IdTaller,
+                    t.Nombre,
+                    t.Descripcion,
+                    t.Ubicacion,
+                    t.ImagenUrl,
+                    t.FechaInicio,
+                    t.FechaFin,
+                    t.CupoMaximo,
+                    t.ResponsableNombre,
+                    t.ResponsableCorreo,
+                    t.ResponsableTelefono,
+                    Categoria = t.IdCategoriaNavigation == null
+                        ? null
+                        : t.IdCategoriaNavigation.Nombre,
+                    Inscritos = t.InscripcionesTallers
+                        .Count(i => i.Estado != "Cancelada"),
+                    Registrado = idUsuario != 0 &&
+                        t.InscripcionesTallers.Any(i =>
+                            i.IdUsuario == idUsuario &&
+                            i.Estado != "Cancelada")
+                })
+                .ToListAsync();
+
+            return filas
+                .Select(t => new TallerPublicoViewModel
+                {
+                    IdTaller = t.IdTaller,
+                    Nombre = t.Nombre,
+                    Descripcion = t.Descripcion ?? string.Empty,
+                    Ubicacion = t.Ubicacion ?? string.Empty,
+                    ImagenUrl = t.ImagenUrl,
+                    FechaInicio = t.FechaInicio!.Value,
+                    FechaFin = t.FechaFin,
+                    CupoMaximo = t.CupoMaximo,
+                    Inscritos = t.Inscritos,
+                    Categoria = t.Categoria,
+                    ResponsableNombre = t.ResponsableNombre,
+                    ResponsableCorreo = t.ResponsableCorreo,
+                    ResponsableTelefono = t.ResponsableTelefono,
+                    UsuarioRegistrado = t.Registrado
+                })
+                .ToList();
+        }
+
         public IActionResult PreguntasFrecuentes()
         {
             return View();
@@ -244,6 +314,8 @@ namespace ProyectoClubCreativo.Controllers
         }
         public async Task<IActionResult> DetalleEvento(int id)
         {
+            int idUsuarioActual = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+
             EventoPublicoViewModel? evento = await _context.Eventos
                 .AsNoTracking()
                 .Where(e =>
@@ -259,6 +331,12 @@ namespace ProyectoClubCreativo.Controllers
                     FechaInicio = e.FechaInicio,
                     FechaFin = e.FechaFin,
                     CupoMaximo = e.CupoMaximo,
+                    Inscritos = e.InscripcionesEventos
+                        .Count(i => i.Estado != "Cancelada"),
+                    UsuarioRegistrado = idUsuarioActual != 0 &&
+                        e.InscripcionesEventos.Any(i =>
+                            i.IdUsuario == idUsuarioActual &&
+                            i.Estado != "Cancelada"),
                     Categoria = e.IdCategoriaNavigation == null
                         ? null
                         : e.IdCategoriaNavigation.Nombre
@@ -310,10 +388,24 @@ namespace ProyectoClubCreativo.Controllers
 
             return View(evento);
         }
-        public IActionResult DetalleTaller(string name)
+        public async Task<IActionResult> DetalleTaller(int id)
         {
-            ViewData["NombreTaller"] = string.IsNullOrWhiteSpace(name) ? "Cerámica para principiantes" : name;
-            return View();
+            int idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+
+            TallerPublicoViewModel? taller =
+                (await ConsultarTalleresPublicosAsync(id, idUsuario)).FirstOrDefault();
+
+            if (taller == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.OtrosTalleres = (await ConsultarTalleresPublicosAsync(null, 0))
+                .Where(t => t.IdTaller != id)
+                .Take(2)
+                .ToList();
+
+            return View(taller);
         }
         public IActionResult GaleriaMultimedia()
         {

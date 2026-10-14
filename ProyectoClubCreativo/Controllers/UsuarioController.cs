@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
+using ProyectoClubCreativo.Models;
 using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels;
 using ProyectoClubCreativo.Services;
@@ -48,13 +49,123 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction("IniciarSesion", "Cuenta");
             }
 
-            PanelUsuarioViewModel modelo = CrearPanelDemostrativo();
+            DateTime ahora = DateTime.Now;
+            int id = idUsuario.Value;
 
-            modelo.NombreUsuario = usuario.Nombre;
-            modelo.Correo = usuario.Correo;
-            modelo.FotoPerfil = string.IsNullOrWhiteSpace(usuario.FotoPerfilUrl)
-                ? "/images/logo.jpg"
-                : usuario.FotoPerfilUrl;
+            var eventos = await _context.InscripcionesEventos
+                .AsNoTracking()
+                .Where(i =>
+                    i.IdUsuario == id &&
+                    i.Estado != "Cancelada" &&
+                    i.IdEventoNavigation.FechaInicio >= ahora)
+                .OrderBy(i => i.IdEventoNavigation.FechaInicio)
+                .Take(3)
+                .Select(i => new
+                {
+                    i.IdEventoNavigation.Nombre,
+                    i.IdEventoNavigation.FechaInicio,
+                    i.IdEventoNavigation.Ubicacion,
+                    i.IdEventoNavigation.ImagenUrl
+                })
+                .ToListAsync();
+
+            var talleres = await _context.InscripcionesTallers
+                .AsNoTracking()
+                .Where(i =>
+                    i.IdUsuario == id &&
+                    i.Estado != "Cancelada" &&
+                    i.IdTallerNavigation.Estado == ReglasTalleres.Programado &&
+                    i.IdTallerNavigation.FechaInicio != null &&
+                    i.IdTallerNavigation.FechaInicio >= ahora)
+                .OrderBy(i => i.IdTallerNavigation.FechaInicio)
+                .Take(3)
+                .Select(i => new
+                {
+                    i.IdTallerNavigation.Nombre,
+                    FechaInicio = i.IdTallerNavigation.FechaInicio!.Value,
+                    i.Estado
+                })
+                .ToListAsync();
+
+            var pedidos = await _context.Ventas
+                .AsNoTracking()
+                .Where(v => v.IdUsuario == id)
+                .OrderByDescending(v => v.FechaVenta)
+                .Take(3)
+                .Select(v => new { v.NumeroOrden, v.FechaVenta, v.Total, v.Estado })
+                .ToListAsync();
+
+            var notificaciones = await _context.Notificaciones
+                .AsNoTracking()
+                .Where(n => n.IdUsuario == id)
+                .OrderByDescending(n => n.FechaEnvio)
+                .Take(3)
+                .Select(n => new { n.Tipo, n.Mensaje, n.FechaEnvio })
+                .ToListAsync();
+
+            PanelUsuarioViewModel modelo = new()
+            {
+                NombreUsuario = usuario.Nombre,
+                Correo = usuario.Correo,
+                FotoPerfil = string.IsNullOrWhiteSpace(usuario.FotoPerfilUrl)
+                    ? "/images/logo.jpg"
+                    : usuario.FotoPerfilUrl,
+                PuntosAcumulados = await _context.MovimientosPuntos
+                    .Where(m => m.IdUsuario == id)
+                    .SumAsync(m => (int?)m.Puntos) ?? 0,
+                CantidadFavoritos = await _context.Favoritos
+                    .CountAsync(f => f.IdUsuario == id),
+                NotificacionesPendientes = await _context.Notificaciones
+                    .CountAsync(n => n.IdUsuario == id && !n.Leida),
+
+                ProximosEventos = eventos
+                    .Select(e => new EventoUsuarioViewModel
+                    {
+                        Nombre = e.Nombre,
+                        Fecha = e.FechaInicio.ToString("d 'de' MMMM", CulturaCr),
+                        Ubicacion = e.Ubicacion,
+                        Imagen = string.IsNullOrWhiteSpace(e.ImagenUrl)
+                            ? "/images/hero-feria.jpg"
+                            : e.ImagenUrl
+                    })
+                    .ToList(),
+
+                TalleresReservados = talleres
+                    .Select(x => new TallerUsuarioViewModel
+                    {
+                        Nombre = x.Nombre,
+                        Fecha = x.FechaInicio.ToString("d 'de' MMMM", CulturaCr),
+                        Hora = x.FechaInicio.ToString("h:mm tt", CulturaCr),
+                        Estado = x.Estado
+                    })
+                    .ToList(),
+
+                PedidosRecientes = pedidos
+                    .Select(v => new PedidoUsuarioViewModel
+                    {
+                        NumeroOrden = v.NumeroOrden,
+                        Fecha = v.FechaVenta.ToString("d 'de' MMMM 'de' yyyy", CulturaCr),
+                        Total = v.Total,
+                        Estado = v.Estado
+                    })
+                    .ToList(),
+
+                Notificaciones = notificaciones
+                    .Select(n => new NotificacionUsuarioViewModel
+                    {
+                        Tipo = n.Tipo,
+                        Mensaje = n.Mensaje,
+                        Fecha = n.FechaEnvio.ToString("dd/MM/yyyy"),
+                        Icono = n.Tipo == "Compra"
+                            ? "bi-bag-check"
+                            : n.Tipo == "Evento"
+                                ? "bi-calendar-event"
+                                : n.Tipo == "Puntos"
+                                    ? "bi-star-fill"
+                                    : "bi-bell-fill"
+                    })
+                    .ToList()
+            };
 
             return View(modelo);
         }
@@ -313,101 +424,6 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction("IniciarSesion", "Cuenta");
         }
 
-        private static PanelUsuarioViewModel CrearPanelDemostrativo()
-        {
-            return new PanelUsuarioViewModel
-            {
-                NombreUsuario = "Maria",
-                Correo = "maria@ejemplo.com",
-                FotoPerfil = "/images/logo.jpg",
-                PuntosAcumulados = 1280,
-                CantidadFavoritos = 12,
-                NotificacionesPendientes = 4,
-
-                ProximosEventos =
-                [
-                    new EventoUsuarioViewModel
-                    {
-                        Nombre = "Arte Inarrivo San Pedro",
-                        Fecha = "15 y 16 de agosto",
-                        Ubicacion = "San Pedro",
-                        Imagen = "/images/evento-san-pedro.jpg"
-                    },
-                    new EventoUsuarioViewModel
-                    {
-                        Nombre = "Feria Creativa Santa Ana",
-                        Fecha = "5 al 7 de septiembre",
-                        Ubicacion = "Santa Ana",
-                        Imagen = "/images/evento-santa-ana.jpg"
-                    }
-                ],
-
-                TalleresReservados =
-                [
-                    new TallerUsuarioViewModel
-                    {
-                        Nombre = "Cerámica para principiantes",
-                        Fecha = "23 de agosto",
-                        Hora = "10:00 a. m.",
-                        Estado = "Confirmado"
-                    },
-                    new TallerUsuarioViewModel
-                    {
-                        Nombre = "Bordado creativo",
-                        Fecha = "30 de agosto",
-                        Hora = "2:00 p. m.",
-                        Estado = "Pendiente"
-                    }
-                ],
-
-                PedidosRecientes =
-                [
-                    new PedidoUsuarioViewModel
-                    {
-                        NumeroOrden = "CC-1025",
-                        Fecha = "2 de agosto de 2026",
-                        Total = 18500,
-                        Estado = "En preparación"
-                    },
-                    new PedidoUsuarioViewModel
-                    {
-                        NumeroOrden = "CC-1008",
-                        Fecha = "25 de julio de 2026",
-                        Total = 32000,
-                        Estado = "Entregado"
-                    }
-                ],
-
-                Notificaciones =
-                [
-                    new NotificacionUsuarioViewModel
-                    {
-                        Tipo = "Evento",
-                        Mensaje = "Tu inscripción al evento de San Pedro fue confirmada.",
-                        Fecha = "Hoy",
-                        Icono = "bi-calendar-event"
-                    },
-                    new NotificacionUsuarioViewModel
-                    {
-                        Tipo = "Compra",
-                        Mensaje = "El pedido CC-1025 se encuentra en preparación.",
-                        Fecha = "Ayer",
-                        Icono = "bi-bag-check"
-                    },
-                    new NotificacionUsuarioViewModel
-                    {
-                        Tipo = "Puntos",
-                        Mensaje = "Ganaste 180 puntos por tu última compra.",
-                        Fecha = "2 de agosto",
-                        Icono = "bi-star-fill"
-                    }
-                ]
-            };
-        }
-
-
-
-
         [HttpGet]
         public async Task<IActionResult> MisCompras(
             DateTime? fechaInicio,
@@ -421,19 +437,16 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction("IniciarSesion", "Cuenta");
             }
 
-            // Consultar las compras del usuario.
             var consulta = _context.Ventas
                 .AsNoTracking()
                 .Where(v => v.IdUsuario == idUsuario.Value);
 
-            // Filtrar por fecha inicial.
             if (fechaInicio.HasValue)
             {
                 consulta = consulta.Where(v =>
                     v.FechaVenta >= fechaInicio.Value.Date);
             }
 
-            // Filtrar por fecha final, incluyéndola.
             if (fechaFin.HasValue)
             {
                 DateTime fechaLimite = fechaFin.Value.Date.AddDays(1);
@@ -442,7 +455,6 @@ namespace ProyectoClubCreativo.Controllers
                     v.FechaVenta < fechaLimite);
             }
 
-            // Filtrar compras por emprendimiento.
             if (idEmprendimiento.HasValue)
             {
                 consulta = consulta.Where(v =>
@@ -466,8 +478,6 @@ namespace ProyectoClubCreativo.Controllers
                     : "Retiro"
             }).ToList();
 
-            // Obtener únicamente emprendimientos asociados
-            // a productos que el usuario haya comprado.
             var emprendimientos = await _context.VentaDetalles
                 .AsNoTracking()
                 .Where(d =>
@@ -1075,7 +1085,6 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            // Validar las opciones recibidas del formulario.
             if (modelo.TipoEntrega != "Retiro" &&
                 modelo.TipoEntrega != "Domicilio")
             {
@@ -1103,20 +1112,15 @@ namespace ProyectoClubCreativo.Controllers
             }
 
 
-            // Guardar temporalmente los datos de entrega.
-            // Todavía no se registra la venta ni se descuenta inventario.
             HttpContext.Session.SetString(
                 "DatosEntregaCompra",
                 JsonSerializer.Serialize(modelo));
 
-            // Si el usuario eligió tarjeta, continuar al formulario de pago.
             if (modelo.MetodoPago == "Tarjeta de crédito o débito")
             {
                 return RedirectToAction(nameof(PagoCompra));
             }
 
-            // SINPE Móvil y pago al retirar no necesitan
-            // ingresar datos de tarjeta.
             return RedirectToAction(nameof(ConfirmacionPedido));
         }
 
@@ -1259,7 +1263,6 @@ namespace ProyectoClubCreativo.Controllers
 
                 _context.Ventas.Add(venta);
 
-                // 1. Crear la notificación para el comprador.
                 var notificacionComprador = new Notificacione
                 {
                     IdUsuario = idUsuario.Value,
@@ -1276,13 +1279,11 @@ namespace ProyectoClubCreativo.Controllers
 
                 _context.Notificaciones.Add(notificacionComprador);
 
-                // 2. Identificar los productos comprados.
                 var idsProductos = detalles
                     .Select(d => d.IdProducto)
                     .Distinct()
                     .ToList();
 
-                // 3. Obtener los usuarios propietarios de los emprendimientos.
                 var emprendedores = await _context.Productos
                     .AsNoTracking()
                     .Where(p => idsProductos.Contains(p.IdProducto))
@@ -1290,7 +1291,6 @@ namespace ProyectoClubCreativo.Controllers
                     .Distinct()
                     .ToListAsync();
 
-                // 4. Crear una notificación para cada emprendedor.
                 foreach (var idEmprendedor in emprendedores)
                 {
                     var notificacionEmprendedor = new Notificacione
@@ -1310,7 +1310,6 @@ namespace ProyectoClubCreativo.Controllers
                     _context.Notificaciones.Add(notificacionEmprendedor);
                 }
 
-                // 5. Guardar la venta y todas las notificaciones juntas.
                 await _context.SaveChangesAsync();
                 await transaccion.CommitAsync();
 
@@ -1458,7 +1457,6 @@ namespace ProyectoClubCreativo.Controllers
 
             decimal subtotal = 0;
 
-            // Consultar los precios y existencias actuales.
             foreach (var item in carrito)
             {
                 var producto = await _context.Productos
@@ -1497,7 +1495,6 @@ namespace ProyectoClubCreativo.Controllers
         public async Task<IActionResult> PagoCompra(
             PagoCompraViewModel modelo)
         {
-            // Verificar que el usuario tenga sesión activa.
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
             if (!idUsuario.HasValue)
@@ -1516,7 +1513,6 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction("IniciarSesion", "Cuenta");
             }
 
-            // Verificar que existan datos de entrega.
             string? datosEntrega = HttpContext.Session
                 .GetString("DatosEntregaCompra");
 
@@ -1525,7 +1521,6 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(ProcesoCompra));
             }
 
-            // Verificar que existan productos en el carrito.
             var carrito = ObtenerCarrito();
 
             if (!carrito.Any())
@@ -1534,7 +1529,6 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(Carrito));
             }
 
-            // Calcular el total con los precios actuales.
             decimal subtotal = 0;
 
             foreach (var item in carrito)
@@ -1563,7 +1557,6 @@ namespace ProyectoClubCreativo.Controllers
             modelo.Descuento = 0;
             modelo.TotalPagar = subtotal;
 
-            // Validar que la tarjeta no esté vencida.
             if (modelo.MesVencimiento.HasValue &&
                 modelo.AnioVencimiento.HasValue)
             {
@@ -1587,7 +1580,6 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            // Procesar el pago con la pasarela simulada.
             ResultadoPago resultadoPago = _pagoService.ProcesarPago(
                 modelo.NumeroTarjeta,
                 modelo.TotalPagar);
@@ -1604,7 +1596,6 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            // Recuperar los datos de entrega guardados anteriormente.
             ProcesoCompraViewModel? entrega;
 
             try
@@ -1626,7 +1617,6 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(ProcesoCompra));
             }
 
-            // Esta pantalla procesa exclusivamente pagos con tarjeta.
             if (entrega.MetodoPago != "Tarjeta de crédito o débito")
             {
                 ModelState.AddModelError(
@@ -1639,7 +1629,6 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            // Registrar venta e inventario en una misma transacción.
             await using var transaccion =
                 await _context.Database.BeginTransactionAsync(
                     System.Data.IsolationLevel.ReadCommitted);
@@ -1726,7 +1715,6 @@ namespace ProyectoClubCreativo.Controllers
 
                 _context.Ventas.Add(venta);
 
-                // Crear una notificación para el comprador.
                 var notificacionComprador = new Notificacione
                 {
                     IdUsuario = idUsuario.Value,
@@ -1743,13 +1731,11 @@ namespace ProyectoClubCreativo.Controllers
                 _context.Notificaciones.Add(notificacionComprador);
 
 
-                // Identificar los emprendimientos de los productos comprados.
                 var idsProductos = detalles
                     .Select(d => d.IdProducto)
                     .Distinct()
                     .ToList();
 
-                // Obtener los emprendedores propietarios.
                 var emprendedores = await _context.Productos
                     .AsNoTracking()
                     .Where(p => idsProductos.Contains(p.IdProducto))
@@ -1757,7 +1743,6 @@ namespace ProyectoClubCreativo.Controllers
                     .Distinct()
                     .ToListAsync();
 
-                // Crear una notificación para cada emprendedor.
                 foreach (var idEmprendedor in emprendedores)
                 {
                     var notificacionEmprendedor = new Notificacione
@@ -1776,12 +1761,10 @@ namespace ProyectoClubCreativo.Controllers
                 }
 
 
-                // Guardar la venta y la notificación juntas.
                 await _context.SaveChangesAsync();
                 await transaccion.CommitAsync();
 
 
-                // Limpiar la información temporal al finalizar la compra.
                 HttpContext.Session.Remove("CarritoProductos");
                 HttpContext.Session.Remove("DatosEntregaCompra");
 
@@ -1805,54 +1788,513 @@ namespace ProyectoClubCreativo.Controllers
         }
 
 
-        [HttpGet]
-        public IActionResult MisInscripciones()
-        {
-            List<InscripcionUsuarioViewModel> modelo =
-            [
-                new()
-        {
-            Id = 1,
-            Tipo = "Evento",
-            Nombre = "Feria Creativa San Pedro",
-            Fecha = "15 y 16 de agosto",
-            Ubicacion = "San Pedro",
-            Estado = "Próximo",
-            Imagen = "/images/evento-san-pedro.jpg"
-        },
-        new()
-        {
-            Id = 2,
-            Tipo = "Taller",
-            Nombre = "Cerámica para principiantes",
-            Fecha = "23 de agosto, 10:00 a. m.",
-            Ubicacion = "Escazú",
-            Estado = "Próximo",
-            Imagen = "/images/taller-ceramica.jpg"
-        },
-        new()
-        {
-            Id = 3,
-            Tipo = "Evento",
-            Nombre = "Feria Creativa Heredia",
-            Fecha = "20 de julio",
-            Ubicacion = "Heredia",
-            Estado = "Finalizado",
-            Imagen = "/images/evento-madres.jpg"
-        },
-        new()
-        {
-            Id = 4,
-            Tipo = "Taller",
-            Nombre = "Ilustración botánica",
-            Fecha = "10 de julio",
-            Ubicacion = "San José",
-            Estado = "Cancelado",
-            Imagen = "/images/taller-bordado.jpg"
-        }
-            ];
+        private static readonly System.Globalization.CultureInfo CulturaCr = new("es-CR");
 
-            return View(modelo);
+        private static string FormatoFecha(DateTime fecha) =>
+            fecha.ToString("dddd d 'de' MMMM 'de' yyyy", CulturaCr);
+
+        private static string FormatoHorario(DateTime inicio, DateTime? fin) =>
+            fin.HasValue && fin.Value > inicio
+                ? $"{inicio.ToString("h:mm tt", CulturaCr)} a {fin.Value.ToString("h:mm tt", CulturaCr)}"
+                : inicio.ToString("h:mm tt", CulturaCr);
+
+        private async Task<(int? IdUsuario, IActionResult? Redireccion, string? Error)> ValidarSesionRegistroAsync()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return (null, RedirectToAction("IniciarSesion", "Cuenta"), null);
+            }
+
+            if (HttpContext.Session.GetString("RolUsuario") == "Administrador")
+            {
+                return (null, null, "Las cuentas de administración no pueden registrarse en actividades.");
+            }
+
+            bool activo = await _context.Usuarios.AnyAsync(u =>
+                u.IdUsuario == idUsuario.Value && u.Estado == "Activo");
+
+            if (!activo)
+            {
+                HttpContext.Session.Clear();
+
+                return (null, RedirectToAction("IniciarSesion", "Cuenta"), null);
+            }
+
+            return (idUsuario, null, null);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegistrarseEvento(int id)
+        {
+            var (idUsuario, redireccion, errorSesion) = await ValidarSesionRegistroAsync();
+
+            if (redireccion is not null)
+            {
+                return redireccion;
+            }
+
+            if (errorSesion is not null)
+            {
+                TempData["ErrorEvento"] = errorSesion;
+
+                return RedirectToAction("DetalleEvento", "Home", new { id });
+            }
+
+            await using var transaccion = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+            DateTime ahora = DateTime.Now;
+
+            Evento? evento = await _context.Eventos.FirstOrDefaultAsync(e =>
+                e.IdEvento == id &&
+                (e.Estado == "Programado" || e.Estado == "Activo") &&
+                (e.FechaFin ?? e.FechaInicio) >= ahora);
+
+            if (evento is null)
+            {
+                TempData["ErrorEvento"] = "El evento ya no está disponible.";
+
+                return RedirectToAction("Eventos", "Home");
+            }
+
+            InscripcionesEvento? existente = await _context.InscripcionesEventos
+                .FirstOrDefaultAsync(i =>
+                    i.IdEvento == id && i.IdUsuario == idUsuario!.Value);
+
+            if (existente is not null && ReglasTalleres.InscripcionActiva(existente.Estado))
+            {
+                TempData["ErrorEvento"] = "Ya estás registrado en este evento.";
+
+                return RedirectToAction("DetalleEvento", "Home", new { id });
+            }
+
+            if (evento.CupoMaximo.HasValue)
+            {
+                int ocupados = await _context.InscripcionesEventos
+                    .CountAsync(i => i.IdEvento == id && i.Estado != "Cancelada");
+
+                if (ocupados >= evento.CupoMaximo.Value)
+                {
+                    TempData["ErrorEvento"] = "Cupo lleno";
+
+                    return RedirectToAction("DetalleEvento", "Home", new { id });
+                }
+            }
+
+            if (existente is null)
+            {
+                _context.InscripcionesEventos.Add(new InscripcionesEvento
+                {
+                    IdEvento = id,
+                    IdUsuario = idUsuario!.Value,
+                    FechaInscripcion = ahora,
+                    Estado = ReglasTalleres.InscripcionConfirmada
+                });
+            }
+            else
+            {
+                existente.Estado = ReglasTalleres.InscripcionConfirmada;
+                existente.FechaInscripcion = ahora;
+            }
+
+            await _context.SaveChangesAsync();
+            await transaccion.CommitAsync();
+
+            return RedirectToAction(nameof(ConfirmacionInscripcion), new { tipo = "Evento", id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegistrarseTaller(int id)
+        {
+            var (idUsuario, redireccion, errorSesion) = await ValidarSesionRegistroAsync();
+
+            if (redireccion is not null)
+            {
+                return redireccion;
+            }
+
+            if (errorSesion is not null)
+            {
+                TempData["ErrorTaller"] = errorSesion;
+
+                return RedirectToAction("DetalleTaller", "Home", new { id });
+            }
+
+            await using var transaccion = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+            DateTime ahora = DateTime.Now;
+
+            Tallere? taller = await _context.Talleres.FirstOrDefaultAsync(t =>
+                t.IdTaller == id &&
+                t.Estado == ReglasTalleres.Programado &&
+                t.FechaInicio != null &&
+                (t.FechaFin ?? t.FechaInicio) >= ahora);
+
+            if (taller is null)
+            {
+                TempData["ErrorTaller"] = "El taller ya no está disponible.";
+
+                return RedirectToAction("Talleres", "Home");
+            }
+
+            InscripcionesTaller? existente = await _context.InscripcionesTallers
+                .FirstOrDefaultAsync(i =>
+                    i.IdTaller == id && i.IdUsuario == idUsuario!.Value);
+
+            if (existente is not null && ReglasTalleres.InscripcionActiva(existente.Estado))
+            {
+                TempData["ErrorTaller"] = "Ya estás registrado en este taller.";
+
+                return RedirectToAction("DetalleTaller", "Home", new { id });
+            }
+
+            int ocupados = await _context.InscripcionesTallers
+                .CountAsync(i => i.IdTaller == id && i.Estado != "Cancelada");
+
+            if (ocupados >= taller.CupoMaximo)
+            {
+                TempData["ErrorTaller"] = "Cupo completo";
+
+                return RedirectToAction("DetalleTaller", "Home", new { id });
+            }
+
+            if (existente is null)
+            {
+                _context.InscripcionesTallers.Add(new InscripcionesTaller
+                {
+                    IdTaller = id,
+                    IdUsuario = idUsuario!.Value,
+                    FechaInscripcion = ahora,
+                    Estado = ReglasTalleres.InscripcionConfirmada
+                });
+            }
+            else
+            {
+                existente.Estado = ReglasTalleres.InscripcionConfirmada;
+                existente.FechaInscripcion = ahora;
+            }
+
+            await _context.SaveChangesAsync();
+            await transaccion.CommitAsync();
+
+            return RedirectToAction(nameof(ConfirmacionInscripcion), new { tipo = "Taller", id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmacionInscripcion(string tipo, int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            if (tipo == "Evento")
+            {
+                Evento? evento = await _context.Eventos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdEvento == id &&
+                        e.InscripcionesEventos.Any(i =>
+                            i.IdUsuario == idUsuario.Value && i.Estado != "Cancelada"));
+
+                if (evento is null)
+                {
+                    return RedirectToAction(nameof(MisInscripciones));
+                }
+
+                return View(new ConfirmacionInscripcionViewModel
+                {
+                    Tipo = "Evento",
+                    IdActividad = evento.IdEvento,
+                    Nombre = evento.Nombre,
+                    Fecha = FormatoFecha(evento.FechaInicio),
+                    Horario = FormatoHorario(evento.FechaInicio, evento.FechaFin),
+                    Lugar = evento.Ubicacion
+                });
+            }
+
+            Tallere? taller = await _context.Talleres
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t =>
+                    t.IdTaller == id &&
+                    t.FechaInicio != null &&
+                    t.InscripcionesTallers.Any(i =>
+                        i.IdUsuario == idUsuario.Value && i.Estado != "Cancelada"));
+
+            if (taller is null)
+            {
+                return RedirectToAction(nameof(MisTalleres));
+            }
+
+            return View(new ConfirmacionInscripcionViewModel
+            {
+                Tipo = "Taller",
+                IdActividad = taller.IdTaller,
+                Nombre = taller.Nombre,
+                Fecha = FormatoFecha(taller.FechaInicio!.Value),
+                Horario = FormatoHorario(taller.FechaInicio.Value, taller.FechaFin),
+                Lugar = taller.Ubicacion ?? string.Empty,
+                ResponsableNombre = taller.ResponsableNombre,
+                ResponsableCorreo = taller.ResponsableCorreo,
+                ResponsableTelefono = taller.ResponsableTelefono
+            });
+        }
+
+        private static string EstadoActividad(string estadoActividad, DateTime inicio, DateTime? fin, DateTime ahora)
+        {
+            if (estadoActividad == ReglasTalleres.Cancelado)
+            {
+                return "Cancelado";
+            }
+
+            if (estadoActividad == ReglasTalleres.Finalizado || (fin ?? inicio) < ahora)
+            {
+                return "Finalizado";
+            }
+
+            return "Próximo";
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MisTalleres(string filtro = "Todos")
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var filas = await _context.InscripcionesTallers
+                .AsNoTracking()
+                .Where(i =>
+                    i.IdUsuario == idUsuario.Value &&
+                    i.Estado != "Cancelada" &&
+                    i.IdTallerNavigation.FechaInicio != null)
+                .Select(i => new
+                {
+                    i.IdTaller,
+                    i.IdTallerNavigation.Nombre,
+                    FechaInicio = i.IdTallerNavigation.FechaInicio!.Value,
+                    i.IdTallerNavigation.FechaFin,
+                    i.IdTallerNavigation.Ubicacion,
+                    i.IdTallerNavigation.ImagenUrl,
+                    i.IdTallerNavigation.ResponsableNombre,
+                    EstadoTaller = i.IdTallerNavigation.Estado
+                })
+                .ToListAsync();
+
+            DateTime ahora = DateTime.Now;
+
+            List<MiTallerViewModel> todos = filas
+                .Select(f => new MiTallerViewModel
+                {
+                    IdTaller = f.IdTaller,
+                    Nombre = f.Nombre,
+                    FechaInicio = f.FechaInicio,
+                    Fecha = FormatoFecha(f.FechaInicio),
+                    Horario = FormatoHorario(f.FechaInicio, f.FechaFin),
+                    Ubicacion = f.Ubicacion ?? string.Empty,
+                    ImagenUrl = f.ImagenUrl,
+                    ResponsableNombre = f.ResponsableNombre,
+                    Estado = EstadoActividad(f.EstadoTaller, f.FechaInicio, f.FechaFin, ahora)
+                })
+                .ToList();
+
+            IEnumerable<MiTallerViewModel> filtrados = filtro switch
+            {
+                "Proximos" => todos.Where(t => t.Estado == "Próximo").OrderBy(t => t.FechaInicio),
+                "Finalizados" => todos.Where(t => t.Estado == "Finalizado").OrderByDescending(t => t.FechaInicio),
+                _ => todos.OrderBy(t => t.Estado == "Próximo" ? 0 : 1).ThenBy(t => t.FechaInicio)
+            };
+
+            return View(new MisTalleresViewModel
+            {
+                Filtro = filtro is "Proximos" or "Finalizados" ? filtro : "Todos",
+                Total = todos.Count,
+                Talleres = filtrados.ToList()
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmarCancelacionTaller(int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Tallere? taller = await ObtenerTallerCancelableAsync(id, idUsuario.Value);
+
+            if (taller is null)
+            {
+                TempData["ErrorTaller"] = "Este registro ya no se puede cancelar.";
+
+                return RedirectToAction(nameof(MisTalleres));
+            }
+
+            DateTime inicio = taller.FechaInicio!.Value;
+
+            return View(new CancelarRegistroTallerViewModel
+            {
+                IdTaller = taller.IdTaller,
+                Nombre = taller.Nombre,
+                Fecha = FormatoFecha(inicio),
+                Horario = FormatoHorario(inicio, taller.FechaFin),
+                Ubicacion = taller.Ubicacion ?? string.Empty,
+                MenosDe24Horas = (inicio - DateTime.Now).TotalHours < ReglasTalleres.HorasLimiteCancelacion
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelarRegistroTaller(int id, bool confirmar = false)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            if (!confirmar)
+            {
+                return RedirectToAction(nameof(ConfirmarCancelacionTaller), new { id });
+            }
+
+            Tallere? taller = await ObtenerTallerCancelableAsync(id, idUsuario.Value);
+
+            if (taller is null)
+            {
+                TempData["ErrorTaller"] = "Este registro ya no se puede cancelar.";
+
+                return RedirectToAction(nameof(MisTalleres));
+            }
+
+            InscripcionesTaller inscripcion = await _context.InscripcionesTallers
+                .FirstAsync(i =>
+                    i.IdTaller == id &&
+                    i.IdUsuario == idUsuario.Value &&
+                    i.Estado != "Cancelada");
+
+            inscripcion.Estado = ReglasTalleres.InscripcionCancelada;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeTaller"] =
+                $"Cancelaste tu registro en «{taller.Nombre}». El cupo quedó disponible para otras personas.";
+
+            return RedirectToAction(nameof(MisTalleres));
+        }
+
+        private async Task<Tallere?> ObtenerTallerCancelableAsync(int idTaller, int idUsuario)
+        {
+            DateTime ahora = DateTime.Now;
+
+            return await _context.Talleres
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t =>
+                    t.IdTaller == idTaller &&
+                    t.Estado == ReglasTalleres.Programado &&
+                    t.FechaInicio != null &&
+                    t.FechaInicio > ahora &&
+                    t.InscripcionesTallers.Any(i =>
+                        i.IdUsuario == idUsuario && i.Estado != "Cancelada"));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MisInscripciones()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            DateTime ahora = DateTime.Now;
+
+            var eventos = await _context.InscripcionesEventos
+                .AsNoTracking()
+                .Where(i => i.IdUsuario == idUsuario.Value)
+                .Select(i => new
+                {
+                    i.IdEvento,
+                    i.IdEventoNavigation.Nombre,
+                    i.IdEventoNavigation.FechaInicio,
+                    i.IdEventoNavigation.FechaFin,
+                    i.IdEventoNavigation.Ubicacion,
+                    i.IdEventoNavigation.ImagenUrl,
+                    EstadoActividad = i.IdEventoNavigation.Estado,
+                    EstadoInscripcion = i.Estado
+                })
+                .ToListAsync();
+
+            var talleres = await _context.InscripcionesTallers
+                .AsNoTracking()
+                .Where(i =>
+                    i.IdUsuario == idUsuario.Value &&
+                    i.IdTallerNavigation.FechaInicio != null)
+                .Select(i => new
+                {
+                    i.IdTaller,
+                    i.IdTallerNavigation.Nombre,
+                    FechaInicio = i.IdTallerNavigation.FechaInicio!.Value,
+                    i.IdTallerNavigation.FechaFin,
+                    i.IdTallerNavigation.Ubicacion,
+                    i.IdTallerNavigation.ImagenUrl,
+                    EstadoActividad = i.IdTallerNavigation.Estado,
+                    EstadoInscripcion = i.Estado
+                })
+                .ToListAsync();
+
+            List<(DateTime Orden, InscripcionUsuarioViewModel Item)> lista = [];
+
+            foreach (var e in eventos)
+            {
+                lista.Add((e.FechaInicio, new InscripcionUsuarioViewModel
+                {
+                    Id = e.IdEvento,
+                    Tipo = "Evento",
+                    Nombre = e.Nombre,
+                    Fecha = e.FechaInicio.ToString("d 'de' MMMM, h:mm tt", CulturaCr),
+                    Ubicacion = e.Ubicacion,
+                    Estado = e.EstadoInscripcion == "Cancelada"
+                        ? "Cancelado"
+                        : EstadoActividad(e.EstadoActividad, e.FechaInicio, e.FechaFin, ahora),
+                    Imagen = string.IsNullOrWhiteSpace(e.ImagenUrl) ? "/images/hero-feria.jpg" : e.ImagenUrl
+                }));
+            }
+
+            foreach (var t in talleres)
+            {
+                lista.Add((t.FechaInicio, new InscripcionUsuarioViewModel
+                {
+                    Id = t.IdTaller,
+                    Tipo = "Taller",
+                    Nombre = t.Nombre,
+                    Fecha = t.FechaInicio.ToString("d 'de' MMMM, h:mm tt", CulturaCr),
+                    Ubicacion = t.Ubicacion ?? string.Empty,
+                    Estado = t.EstadoInscripcion == "Cancelada"
+                        ? "Cancelado"
+                        : EstadoActividad(t.EstadoActividad, t.FechaInicio, t.FechaFin, ahora),
+                    Imagen = string.IsNullOrWhiteSpace(t.ImagenUrl) ? "/images/taller-ceramica.jpg" : t.ImagenUrl
+                }));
+            }
+
+            return View(lista
+                .OrderByDescending(x => x.Orden)
+                .Select(x => x.Item)
+                .ToList());
         }
 
         [HttpGet]
@@ -2160,7 +2602,6 @@ namespace ProyectoClubCreativo.Controllers
                 .ToListAsync();
         }
 
-        // ---------- SOLICITUD PARA FORMAR PARTE DE CLUB CREATIVO ----------
         [HttpGet]
         public async Task<IActionResult> SolicitarEmprendimiento(int? idCategoria)
         {

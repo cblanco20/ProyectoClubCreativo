@@ -1,10 +1,11 @@
 ﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.ListadoTalleresAdminViewModel
+@using ProyectoClubCreativo.Models
 @{
     ViewData["Title"] = "Gestión de talleres"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
 <div class="pestanas-admin">
-    @foreach (var e in new[] { "Todos", "Programado", "Cancelado", "Finalizado" })
+    @foreach (var e in new[] { "Todos", "Borrador", "Programado", "Cancelado", "Finalizado" })
     {
         <a asp-action="Talleres" asp-route-estado="@e" class="pestana-admin @(Model.FiltroEstado == e ? "activa" : "")">@e</a>
     }
@@ -21,18 +22,34 @@
             <tbody>
                 @foreach (var t in Model.Talleres)
                 {
-                    string clase = t.CuposDisponibles == 0 ? "estado-pausado" : t.Estado switch { "Programado" => "estado-activo", "Cancelado" => "estado-rechazado", _ => "estado-pendiente" };
-                    string texto = t.CuposDisponibles == 0 ? "Cupo lleno" : t.Estado;
+                    bool activo = t.Estado == "Programado";
+                    bool lleno = activo && t.CuposTotales > 0 && t.CuposDisponibles == 0;
+                    bool pocos = activo && ReglasTalleres.QuedanPocosCupos(t.CuposDisponibles);
+                    string clase = lleno ? "estado-pausado" : t.Estado switch { "Programado" => "estado-activo", "Cancelado" => "estado-rechazado", _ => "estado-pendiente" };
+                    string texto = lleno ? "Cupo lleno" : t.Estado;
                     <tr>
                         <td>@t.Nombre</td>
                         <td>@t.Fecha</td>
-                        <td>@t.CuposDisponibles / @t.CuposTotales</td>
+                        <td>
+                            @t.Inscritos / @t.CuposTotales
+                            @if (pocos)
+                            {
+                                <br /><small style="color:#b45309;"><i class="bi bi-exclamation-triangle-fill"></i> Últimos cupos disponibles</small>
+                            }
+                        </td>
                         <td><span class="etiqueta-estado-admin @clase">@texto</span></td>
                         <td class="grupo-acciones-admin">
                             <a asp-action="InscritosTaller" asp-route-id="@t.Id" class="boton-admin boton-admin-secundario">Ver</a>
-                            <a asp-action="EditarTaller" asp-route-id="@t.Id" class="boton-admin boton-admin-secundario">Editar</a>
+                            @if (t.Estado == "Borrador" || t.Estado == "Programado")
+                            {
+                                <a asp-action="EditarTaller" asp-route-id="@t.Id" class="boton-admin boton-admin-secundario">Editar</a>
+                            }
                         </td>
                     </tr>
+                }
+                @if (Model.Talleres.Count == 0)
+                {
+                    <tr><td colspan="5">No hay talleres en este estado.</td></tr>
                 }
             </tbody>
         </table>

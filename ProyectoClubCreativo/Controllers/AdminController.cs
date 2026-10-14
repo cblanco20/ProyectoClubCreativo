@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
+using ProyectoClubCreativo.Models;
 using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels.Admin;
 using ProyectoClubCreativo.Services;
@@ -54,152 +55,332 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Panel(FiltroDashboardViewModel filtro)
+        public async Task<IActionResult> Panel(FiltroDashboardViewModel filtro)
         {
+            DateTime ahora = DateTime.Now;
+
+            var eventos = await _context.Eventos
+                .AsNoTracking()
+                .Where(e =>
+                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                    e.FechaInicio >= ahora)
+                .OrderBy(e => e.FechaInicio)
+                .Take(3)
+                .Select(e => new
+                {
+                    e.IdEvento,
+                    e.Nombre,
+                    e.FechaInicio,
+                    e.Ubicacion,
+                    e.CupoMaximo,
+                    Inscritos = e.InscripcionesEventos
+                        .Count(i => i.Estado != "Cancelada")
+                })
+                .ToListAsync();
+
+            var talleresProgramados = await _context.Talleres
+                .AsNoTracking()
+                .Where(t =>
+                    t.Estado == ReglasTalleres.Programado &&
+                    t.FechaInicio != null &&
+                    t.FechaInicio >= ahora)
+                .OrderBy(t => t.FechaInicio)
+                .Select(t => new
+                {
+                    t.IdTaller,
+                    t.Nombre,
+                    FechaInicio = t.FechaInicio!.Value,
+                    t.CupoMaximo,
+                    Inscritos = t.InscripcionesTallers
+                        .Count(i => i.Estado != "Cancelada")
+                })
+                .ToListAsync();
+
+            var registrosTaller = await _context.InscripcionesTallers
+                .AsNoTracking()
+                .OrderByDescending(i => i.FechaInscripcion)
+                .Take(4)
+                .Select(i => new
+                {
+                    i.FechaInscripcion,
+                    i.Estado,
+                    Persona = i.IdUsuarioNavigation.Nombre + " " + i.IdUsuarioNavigation.ApellidoPaterno,
+                    Actividad = i.IdTallerNavigation.Nombre
+                })
+                .ToListAsync();
+
+            var registrosEvento = await _context.InscripcionesEventos
+                .AsNoTracking()
+                .OrderByDescending(i => i.FechaInscripcion)
+                .Take(4)
+                .Select(i => new
+                {
+                    i.FechaInscripcion,
+                    i.Estado,
+                    Persona = i.IdUsuarioNavigation.Nombre + " " + i.IdUsuarioNavigation.ApellidoPaterno,
+                    Actividad = i.IdEventoNavigation.Nombre
+                })
+                .ToListAsync();
+
+            List<AlertaAdminViewModel> alertas = talleresProgramados
+                .Where(t => t.CupoMaximo > 0 &&
+                            t.CupoMaximo - t.Inscritos <= ReglasTalleres.UmbralUltimosCupos)
+                .Select(t => new AlertaAdminViewModel
+                {
+                    Tipo = "Cupos",
+                    Mensaje = t.CupoMaximo - t.Inscritos <= 0
+                        ? $"El taller \"{t.Nombre}\" alcanzó cupo lleno."
+                        : $"El taller \"{t.Nombre}\" tiene los últimos cupos disponibles.",
+                    Fecha = t.FechaInicio.ToString("dd/MM/yyyy"),
+                    Icono = "bi-people-fill",
+                    Nivel = t.CupoMaximo - t.Inscritos <= 0 ? "informativa" : "advertencia"
+                })
+                .ToList();
+
+            List<ActividadAdminViewModel> actividad = registrosTaller
+                .Select(r => (r.FechaInscripcion, r.Estado, r.Persona, r.Actividad, Tipo: "taller"))
+                .Concat(registrosEvento
+                    .Select(r => (r.FechaInscripcion, r.Estado, r.Persona, r.Actividad, Tipo: "evento")))
+                .OrderByDescending(r => r.FechaInscripcion)
+                .Take(4)
+                .Select(r => new ActividadAdminViewModel
+                {
+                    Mensaje = r.Estado == ReglasTalleres.InscripcionCancelada
+                        ? $"{r.Persona} canceló su registro en el {r.Tipo} \"{r.Actividad}\"."
+                        : $"{r.Persona} se registró en el {r.Tipo} \"{r.Actividad}\".",
+                    Fecha = r.FechaInscripcion.ToString("dd/MM/yyyy hh:mm tt"),
+                    Icono = "bi-person-plus-fill"
+                })
+                .ToList();
+
             DashboardAdminViewModel modelo = new()
             {
                 Filtro = filtro,
-                TotalUsuarios = 486,
-                EmprendimientosRegistrados = 57,
-                SolicitudesPendientes = 8,
-                ProductosActivos = 312,
-                VentasTotal = 4820500,
-                VariacionVentasPorcentaje = 12,
+                TotalUsuarios = await _context.Usuarios.CountAsync(),
 
-                VentasPorMes =
-                [
-                    new() { Etiqueta = "Mar", Valor = 45 },
-                    new() { Etiqueta = "Abr", Valor = 58 },
-                    new() { Etiqueta = "May", Valor = 50 },
-                    new() { Etiqueta = "Jun", Valor = 72 },
-                    new() { Etiqueta = "Jul", Valor = 65 },
-                    new() { Etiqueta = "Ago", Valor = 90 }
-                ],
+                ProximosEventos = eventos
+                    .Select(e => new EventoAdminViewModel
+                    {
+                        Id = e.IdEvento,
+                        Nombre = e.Nombre,
+                        Fecha = e.FechaInicio.ToString("dd/MM/yyyy"),
+                        Ubicacion = e.Ubicacion,
+                        CupoTotal = e.CupoMaximo ?? 0,
+                        Inscritos = e.Inscritos
+                    })
+                    .ToList(),
 
-                ProductosPorCategoria =
-                [
-                    new() { Etiqueta = "Arte e ilustración", Valor = 34 },
-                    new() { Etiqueta = "Accesorios", Valor = 26 },
-                    new() { Etiqueta = "Hogar y decoración", Valor = 20 },
-                    new() { Etiqueta = "Velas y aromas", Valor = 12 },
-                    new() { Etiqueta = "Otros", Valor = 8 }
-                ],
+                TalleresDisponibles = talleresProgramados
+                    .Take(3)
+                    .Select(t => new TallerAdminViewModel
+                    {
+                        Id = t.IdTaller,
+                        Nombre = t.Nombre,
+                        Fecha = t.FechaInicio.ToString("dd/MM/yyyy"),
+                        CupoTotal = t.CupoMaximo,
+                        Inscritos = t.Inscritos
+                    })
+                    .ToList(),
 
-                ProximosEventos =
-                [
-                    new() { Nombre = "Arte Inarrivo San Pedro", Fecha = "15 y 16 de agosto", Ubicacion = "San Pedro", Inscritos = 120 },
-                    new() { Nombre = "Feria Creativa Santa Ana", Fecha = "5 al 7 de septiembre", Ubicacion = "Santa Ana", Inscritos = 86 },
-                    new() { Nombre = "Feria Creativa Heredia", Fecha = "20 de septiembre", Ubicacion = "Heredia", Inscritos = 40 }
-                ],
-
-                TalleresDisponibles =
-                [
-                    new() { Nombre = "Cerámica para principiantes", Fecha = "23 de agosto", CuposDisponibles = 4, CuposTotales = 15 },
-                    new() { Nombre = "Bordado creativo", Fecha = "30 de agosto", CuposDisponibles = 9, CuposTotales = 12 },
-                    new() { Nombre = "Introducción al macramé", Fecha = "6 de septiembre", CuposDisponibles = 12, CuposTotales = 12 }
-                ],
-
-                Alertas =
-                [
-                    new() { Tipo = "Solicitudes", Mensaje = "Hay 8 solicitudes de emprendimiento pendientes de revisión.", Fecha = "Hoy", Icono = "bi-file-earmark-text-fill", Nivel = "advertencia" },
-                    new() { Tipo = "Suscripciones", Mensaje = "3 suscripciones vencen esta semana.", Fecha = "Hoy", Icono = "bi-credit-card-2-front-fill", Nivel = "advertencia" },
-                    new() { Tipo = "Productos", Mensaje = "2 productos fueron reportados por contenido inapropiado.", Fecha = "Ayer", Icono = "bi-flag-fill", Nivel = "critica" },
-                    new() { Tipo = "Cupos", Mensaje = "El taller \"Introducción al macramé\" alcanzó cupo lleno.", Fecha = "Ayer", Icono = "bi-people-fill", Nivel = "informativa" }
-                ],
-
-                ActividadReciente =
-                [
-                    new() { Mensaje = "Se aprobó el emprendimiento \"Luz Natural\".", Fecha = "Hoy, 10:20 a. m.", Icono = "bi-patch-check-fill" },
-                    new() { Mensaje = "Nuevo usuario registrado: Carla Ramírez.", Fecha = "Hoy, 9:05 a. m.", Icono = "bi-person-plus-fill" },
-                    new() { Mensaje = "Se creó el plan de suscripción \"Plan Premium\".", Fecha = "Ayer, 4:40 p. m.", Icono = "bi-gem" },
-                    new() { Mensaje = "Producto \"Aretes Orquídea\" marcado como revisado.", Fecha = "Ayer, 2:15 p. m.", Icono = "bi-box-seam-fill" }
-                ]
+                Alertas = alertas,
+                ActividadReciente = actividad
             };
 
             return View(modelo);
         }
 
         [HttpGet]
-        public IActionResult Usuarios(string? busqueda, string? rol)
+        public async Task<IActionResult> Usuarios(string? busqueda, string? rol)
         {
-            List<UsuarioAdminViewModel> usuarios = ObtenerUsuariosDemo();
+            IQueryable<Usuario> consulta = _context.Usuarios.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(busqueda))
             {
-                usuarios = usuarios
-                    .Where(u =>
-                        u.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ||
-                        u.Correo.Contains(busqueda, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                string termino = busqueda.Trim();
+
+                consulta = consulta.Where(u =>
+                    u.Nombre.Contains(termino) ||
+                    u.ApellidoPaterno.Contains(termino) ||
+                    u.Correo.Contains(termino));
             }
 
             if (!string.IsNullOrWhiteSpace(rol) && rol != "Todos")
             {
-                usuarios = usuarios.Where(u => u.Rol == rol).ToList();
+                consulta = consulta.Where(u =>
+                    u.UsuarioRoles.Any(ur => ur.IdRolNavigation.Nombre == rol));
             }
 
-            ListadoUsuariosAdminViewModel modelo = new()
+            var filas = await consulta
+                .OrderBy(u => u.Nombre)
+                .ThenBy(u => u.ApellidoPaterno)
+                .Select(u => new
+                {
+                    u.IdUsuario,
+                    u.Nombre,
+                    u.ApellidoPaterno,
+                    u.ApellidoMaterno,
+                    u.Correo,
+                    u.Estado,
+                    u.FechaRegistro,
+                    u.FotoPerfilUrl,
+                    Rol = u.UsuarioRoles
+                        .Select(ur => ur.IdRolNavigation.Nombre)
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return View(new ListadoUsuariosAdminViewModel
             {
                 Busqueda = busqueda,
                 RolFiltro = rol,
-                Usuarios = usuarios
-            };
-
-            return View(modelo);
+                Usuarios = filas
+                    .Select(u => new UsuarioAdminViewModel
+                    {
+                        Id = u.IdUsuario,
+                        Nombre = $"{u.Nombre} {u.ApellidoPaterno} {u.ApellidoMaterno}".Trim(),
+                        Correo = u.Correo,
+                        Rol = u.Rol ?? "Sin rol",
+                        Estado = u.Estado,
+                        FechaRegistro = u.FechaRegistro.ToString("dd/MM/yyyy"),
+                        Foto = string.IsNullOrWhiteSpace(u.FotoPerfilUrl)
+                            ? "/images/logo.jpg"
+                            : u.FotoPerfilUrl
+                    })
+                    .ToList()
+            });
         }
 
         [HttpGet]
-        public IActionResult PerfilUsuario(int id = 1)
+        public async Task<IActionResult> PerfilUsuario(int id)
         {
-            UsuarioAdminViewModel usuario =
-                ObtenerUsuariosDemo().FirstOrDefault(u => u.Id == id)
-                ?? ObtenerUsuariosDemo().First();
+            Usuario? usuario = await _context.Usuarios
+                .AsNoTracking()
+                .Include(u => u.IdProvinciaNavigation)
+                .Include(u => u.UsuarioRoles)
+                    .ThenInclude(ur => ur.IdRolNavigation)
+                .FirstOrDefaultAsync(u => u.IdUsuario == id);
 
-            PerfilUsuarioAdminViewModel modelo = new()
+            if (usuario is null)
             {
-                Id = usuario.Id,
-                Nombre = usuario.Nombre.Split(' ')[0],
-                Apellidos = string.Join(' ', usuario.Nombre.Split(' ').Skip(1)),
-                Correo = usuario.Correo,
-                Telefono = "8888-0000",
-                Provincia = "San José",
-                Rol = usuario.Rol,
-                Estado = usuario.Estado,
-                FechaRegistro = usuario.FechaRegistro,
-                Foto = usuario.Foto,
-                ComprasRealizadas = 6,
-                PuntosAcumulados = 1280
-            };
+                TempData["MensajeAdmin"] = "El usuario no existe.";
 
-            return View(modelo);
+                return RedirectToAction(nameof(Usuarios));
+            }
+
+            return View(new PerfilUsuarioAdminViewModel
+            {
+                Id = usuario.IdUsuario,
+                Nombre = usuario.Nombre,
+                Apellidos = $"{usuario.ApellidoPaterno} {usuario.ApellidoMaterno}".Trim(),
+                Correo = usuario.Correo,
+                Telefono = usuario.Telefono,
+                Provincia = usuario.IdProvinciaNavigation?.Nombre,
+                Rol = usuario.UsuarioRoles
+                    .Select(ur => ur.IdRolNavigation.Nombre)
+                    .FirstOrDefault() ?? "Usuario",
+                Estado = usuario.Estado,
+                FechaRegistro = usuario.FechaRegistro.ToString("dd/MM/yyyy"),
+                Foto = string.IsNullOrWhiteSpace(usuario.FotoPerfilUrl)
+                    ? "/images/logo.jpg"
+                    : usuario.FotoPerfilUrl,
+                ComprasRealizadas = await _context.Ventas
+                    .CountAsync(v => v.IdUsuario == id && v.Estado != "Cancelada"),
+                PuntosAcumulados = await _context.MovimientosPuntos
+                    .Where(m => m.IdUsuario == id)
+                    .SumAsync(m => (int?)m.Puntos) ?? 0
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult PerfilUsuario(PerfilUsuarioAdminViewModel modelo)
+        public async Task<IActionResult> PerfilUsuario(PerfilUsuarioAdminViewModel modelo)
         {
+            Usuario? usuario = await _context.Usuarios
+                .Include(u => u.UsuarioRoles)
+                .FirstOrDefaultAsync(u => u.IdUsuario == modelo.Id);
+
+            if (usuario is null)
+            {
+                TempData["MensajeAdmin"] = "El usuario no existe.";
+
+                return RedirectToAction(nameof(Usuarios));
+            }
+
+            string correo = modelo.Correo.Trim();
+
+            if (await _context.Usuarios.AnyAsync(u =>
+                    u.Correo == correo && u.IdUsuario != modelo.Id))
+            {
+                ModelState.AddModelError(nameof(modelo.Correo), "Ya existe otro usuario con ese correo.");
+            }
+
+            int? idSesion = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idSesion == modelo.Id &&
+                (modelo.Estado != "Activo" || modelo.Rol != "Administrador"))
+            {
+                ModelState.AddModelError(string.Empty, "No puedes desactivar tu propia cuenta ni quitarte el rol de administrador.");
+            }
+
+            Provincia? provincia = null;
+
+            if (!string.IsNullOrWhiteSpace(modelo.Provincia))
+            {
+                string nombreProvincia = modelo.Provincia.Trim();
+
+                provincia = await _context.Provincias
+                    .FirstOrDefaultAsync(p => p.Nombre == nombreProvincia);
+
+                if (provincia is null)
+                {
+                    ModelState.AddModelError(nameof(modelo.Provincia), "La provincia no es válida.");
+                }
+            }
+
+            Role? rol = await _context.Roles
+                .FirstOrDefaultAsync(r => r.Nombre == modelo.Rol && r.Activo);
+
+            if (rol is null)
+            {
+                ModelState.AddModelError(nameof(modelo.Rol), "El rol seleccionado no es válido.");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(modelo);
             }
 
+            string[] apellidos = modelo.Apellidos
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            usuario.Nombre = modelo.Nombre.Trim();
+            usuario.ApellidoPaterno = apellidos[0];
+            usuario.ApellidoMaterno = apellidos.Length > 1
+                ? string.Join(' ', apellidos.Skip(1))
+                : null;
+            usuario.Correo = correo;
+            usuario.Telefono = string.IsNullOrWhiteSpace(modelo.Telefono) ? null : modelo.Telefono.Trim();
+            usuario.IdProvincia = provincia?.IdProvincia;
+            usuario.Estado = modelo.Estado;
+
+            if (!usuario.UsuarioRoles.Any(ur => ur.IdRol == rol!.IdRol))
+            {
+                _context.UsuarioRoles.RemoveRange(usuario.UsuarioRoles);
+
+                _context.UsuarioRoles.Add(new UsuarioRole
+                {
+                    IdUsuario = usuario.IdUsuario,
+                    IdRol = rol!.IdRol,
+                    FechaAsignacion = DateTime.Now
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajeAdmin"] =
-                $"Los datos de {modelo.Nombre} se actualizaron correctamente (rol: {modelo.Rol}, estado: {modelo.Estado}).";
+                $"Los datos de {usuario.Nombre} se actualizaron correctamente.";
 
             return RedirectToAction(nameof(PerfilUsuario), new { id = modelo.Id });
-        }
-
-        private static List<UsuarioAdminViewModel> ObtenerUsuariosDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Maria Montero Cruz", Correo = "maria@ejemplo.com", Rol = "Usuario", Estado = "Activo", FechaRegistro = "12/01/2026" },
-                new() { Id = 2, Nombre = "Carla Ramírez Solís", Correo = "carla@ejemplo.com", Rol = "Usuario", Estado = "Activo", FechaRegistro = "03/08/2026" },
-                new() { Id = 3, Nombre = "Valentín Arce Mora", Correo = "valentin@gmail.com", Rol = "Emprendedor", Estado = "Activo", FechaRegistro = "20/05/2026" },
-                new() { Id = 4, Nombre = "Andrea Castro Vega", Correo = "andrea@ejemplo.com", Rol = "Emprendedor", Estado = "Inactivo", FechaRegistro = "14/03/2026" },
-                new() { Id = 5, Nombre = "Jossete Sánchez", Correo = "jossete.sanchez@clubcreativomivo.com", Rol = "Administrador", Estado = "Activo", FechaRegistro = "01/01/2026" },
-                new() { Id = 6, Nombre = "Luis Fernández Rojas", Correo = "luis@ejemplo.com", Rol = "Usuario", Estado = "Activo", FechaRegistro = "28/07/2026" }
-            ];
         }
 
         [HttpGet]
@@ -1391,64 +1572,417 @@ namespace ProyectoClubCreativo.Controllers
         new() { Id = 3, Nombre = "Feria Creativa Heredia", Fecha = "20 de septiembre", Ubicacion = "Heredia", CupoTotal = 60, Inscritos = 40, Estado = "Cancelado", QrGenerado = false, Participantes = [] }
             ];
         }
-        [HttpGet]
-        public IActionResult Talleres(string estado = "Todos")
+
+        private async Task CargarOpcionesTallerAsync()
         {
-            var talleres = ObtenerTalleresDemo();
+            ViewBag.CategoriasTaller = await _context.Categorias
+                .AsNoTracking()
+                .Where(c => c.Modulo == "Talleres" && c.Activa)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
+        }
+
+        private async Task<string> GuardarImagenTallerAsync(IFormFile imagen)
+        {
+            string carpeta = Path.Combine(
+                _entornoWeb.WebRootPath, "uploads", "talleres");
+
+            Directory.CreateDirectory(carpeta);
+
+            string nombreArchivo =
+                $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName).ToLowerInvariant()}";
+
+            using (var flujo = new FileStream(
+                Path.Combine(carpeta, nombreArchivo), FileMode.Create))
+            {
+                await imagen.CopyToAsync(flujo);
+            }
+
+            return $"/uploads/talleres/{nombreArchivo}";
+        }
+
+        private async Task ValidarTallerAsync(
+            TallerAdminViewModel modelo,
+            bool publicar,
+            int inscritosActivos)
+        {
+            if (modelo.Imagen is { Length: > 0 })
+            {
+                string extension =
+                    Path.GetExtension(modelo.Imagen.FileName).ToLowerInvariant();
+
+                if (!ExtensionesImagenEvento.Contains(extension))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Imagen), "La imagen debe ser JPG, PNG o WEBP.");
+                }
+                else if (modelo.Imagen.Length > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Imagen), "La imagen no puede superar los 5 MB.");
+                }
+            }
+
+            if (modelo.FechaInicio.HasValue &&
+                modelo.FechaFin.HasValue &&
+                modelo.FechaFin.Value < modelo.FechaInicio.Value)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.FechaFin),
+                    "La fecha de finalización no puede ser anterior a la fecha de inicio.");
+            }
+
+            if (modelo.IdCategoria.HasValue &&
+                !await _context.Categorias.AnyAsync(c =>
+                    c.IdCategoria == modelo.IdCategoria.Value &&
+                    c.Modulo == "Talleres" &&
+                    c.Activa))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdCategoria),
+                    "La categoría seleccionada no es válida.");
+            }
+
+            if (modelo.CupoTotal.HasValue && modelo.CupoTotal.Value < inscritosActivos)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.CupoTotal),
+                    $"El cupo máximo no puede ser menor a los {inscritosActivos} participante(s) ya registrado(s).");
+            }
+
+            if (!publicar)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(modelo.Descripcion))
+            {
+                ModelState.AddModelError(nameof(modelo.Descripcion), "La descripción es obligatoria para publicar.");
+            }
+
+            if (!modelo.FechaInicio.HasValue)
+            {
+                ModelState.AddModelError(nameof(modelo.FechaInicio), "La fecha y hora de inicio son obligatorias para publicar.");
+            }
+
+            if (string.IsNullOrWhiteSpace(modelo.Ubicacion))
+            {
+                ModelState.AddModelError(nameof(modelo.Ubicacion), "La ubicación es obligatoria para publicar.");
+            }
+
+            if (!modelo.CupoTotal.HasValue || modelo.CupoTotal.Value < 1)
+            {
+                ModelState.AddModelError(nameof(modelo.CupoTotal), "Defina un cupo máximo mayor a 0 para publicar.");
+            }
+
+            if (string.IsNullOrWhiteSpace(modelo.ResponsableNombre))
+            {
+                ModelState.AddModelError(nameof(modelo.ResponsableNombre), "Indique la persona responsable del taller.");
+            }
+        }
+
+        private static void AplicarDatosTaller(Tallere taller, TallerAdminViewModel modelo)
+        {
+            taller.Nombre = modelo.Nombre.Trim();
+            taller.Descripcion = string.IsNullOrWhiteSpace(modelo.Descripcion) ? null : modelo.Descripcion.Trim();
+            taller.FechaInicio = modelo.FechaInicio;
+            taller.FechaFin = modelo.FechaFin;
+            taller.Ubicacion = string.IsNullOrWhiteSpace(modelo.Ubicacion) ? null : modelo.Ubicacion.Trim();
+            taller.IdCategoria = modelo.IdCategoria;
+            taller.CupoMaximo = modelo.CupoTotal ?? 0;
+            taller.ResponsableNombre = string.IsNullOrWhiteSpace(modelo.ResponsableNombre) ? null : modelo.ResponsableNombre.Trim();
+            taller.ResponsableCorreo = string.IsNullOrWhiteSpace(modelo.ResponsableCorreo) ? null : modelo.ResponsableCorreo.Trim();
+            taller.ResponsableTelefono = string.IsNullOrWhiteSpace(modelo.ResponsableTelefono) ? null : modelo.ResponsableTelefono.Trim();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Talleres(string estado = "Todos")
+        {
+            IQueryable<Tallere> consulta = _context.Talleres.AsNoTracking();
+
+            if (estado != "Todos")
+            {
+                consulta = consulta.Where(t => t.Estado == estado);
+            }
+
+            var talleres = await consulta
+                .OrderByDescending(t => t.FechaInicio ?? t.FechaRegistro)
+                .Select(t => new
+                {
+                    t.IdTaller,
+                    t.Nombre,
+                    t.FechaInicio,
+                    t.FechaFin,
+                    t.CupoMaximo,
+                    t.Estado,
+                    Inscritos = t.InscripcionesTallers.Count(i => i.Estado != "Cancelada")
+                })
+                .ToListAsync();
+
+            DateTime ahora = DateTime.Now;
+
             return View(new ListadoTalleresAdminViewModel
             {
                 FiltroEstado = estado,
-                Talleres = estado == "Todos" ? talleres : talleres.Where(t => t.Estado == estado).ToList()
+                Talleres = talleres.Select(t => new TallerAdminViewModel
+                {
+                    Id = t.IdTaller,
+                    Nombre = t.Nombre,
+                    Fecha = t.FechaInicio.HasValue
+                        ? t.FechaInicio.Value.ToString("dd/MM/yyyy hh:mm tt")
+                        : "Sin fecha",
+                    CupoTotal = t.CupoMaximo,
+                    Inscritos = t.Inscritos,
+                    Estado = t.Estado,
+                    EsPasado = t.Estado == ReglasTalleres.Finalizado ||
+                               (t.FechaInicio.HasValue && (t.FechaFin ?? t.FechaInicio.Value) < ahora)
+                }).ToList()
             });
         }
 
         [HttpGet]
-        public IActionResult CrearTaller()
+        public async Task<IActionResult> CrearTaller()
         {
             ViewData["Titulo"] = "Crear taller";
+            await CargarOpcionesTallerAsync();
+
             return View("FormularioTaller", new TallerAdminViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearTaller(TallerAdminViewModel modelo)
+        public async Task<IActionResult> CrearTaller(TallerAdminViewModel modelo, string accion = "publicar")
         {
             ViewData["Titulo"] = "Crear taller";
-            if (!ModelState.IsValid) return View("FormularioTaller", modelo);
-            TempData["MensajeAdmin"] = $"El taller \"{modelo.Nombre}\" fue creado correctamente.";
+
+            bool publicar = accion != "borrador";
+
+            await ValidarTallerAsync(modelo, publicar, 0);
+
+            if (publicar &&
+                modelo.FechaInicio.HasValue &&
+                modelo.FechaInicio.Value < DateTime.Now)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.FechaInicio),
+                    "La fecha de inicio debe ser futura.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await CargarOpcionesTallerAsync();
+
+                return View("FormularioTaller", modelo);
+            }
+
+            Tallere taller = new()
+            {
+                Estado = publicar ? ReglasTalleres.Programado : ReglasTalleres.Borrador,
+                FechaRegistro = DateTime.Now
+            };
+
+            AplicarDatosTaller(taller, modelo);
+
+            if (modelo.Imagen is { Length: > 0 })
+            {
+                taller.ImagenUrl = await GuardarImagenTallerAsync(modelo.Imagen);
+            }
+
+            _context.Talleres.Add(taller);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = publicar
+                ? $"El taller \"{taller.Nombre}\" fue publicado correctamente."
+                : $"El taller \"{taller.Nombre}\" se guardó como borrador. No será visible hasta que lo publiques.";
+
             return RedirectToAction(nameof(Talleres));
         }
 
         [HttpGet]
-        public IActionResult EditarTaller(int id = 1)
+        public async Task<IActionResult> EditarTaller(int id)
         {
-            ViewData["Titulo"] = "Editar taller (cupos y datos)";
-            var taller = ObtenerTalleresDemo().FirstOrDefault(t => t.Id == id) ?? new TallerAdminViewModel { Id = id };
-            return View("FormularioTaller", taller);
+            ViewData["Titulo"] = "Editar taller";
+
+            Tallere? taller = await _context.Talleres
+                .AsNoTracking()
+                .Include(t => t.InscripcionesTallers)
+                .FirstOrDefaultAsync(t => t.IdTaller == id);
+
+            if (taller is null)
+            {
+                TempData["ErrorAdmin"] = "El taller no está disponible.";
+
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            if (taller.Estado == ReglasTalleres.Cancelado || taller.Estado == ReglasTalleres.Finalizado)
+            {
+                TempData["ErrorAdmin"] = $"Un taller {taller.Estado.ToLowerInvariant()} ya no se puede editar.";
+
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            await CargarOpcionesTallerAsync();
+
+            return View("FormularioTaller", new TallerAdminViewModel
+            {
+                Id = taller.IdTaller,
+                Nombre = taller.Nombre,
+                Descripcion = taller.Descripcion,
+                FechaInicio = taller.FechaInicio,
+                FechaFin = taller.FechaFin,
+                Ubicacion = taller.Ubicacion,
+                IdCategoria = taller.IdCategoria,
+                CupoTotal = taller.CupoMaximo,
+                ResponsableNombre = taller.ResponsableNombre,
+                ResponsableCorreo = taller.ResponsableCorreo,
+                ResponsableTelefono = taller.ResponsableTelefono,
+                ImagenUrl = taller.ImagenUrl,
+                Estado = taller.Estado,
+                Inscritos = taller.InscripcionesTallers.Count(i => i.Estado != "Cancelada")
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarTaller(TallerAdminViewModel modelo)
+        public async Task<IActionResult> EditarTaller(TallerAdminViewModel modelo, string accion = "guardar")
         {
-            ViewData["Titulo"] = "Editar taller (cupos y datos)";
-            if (!ModelState.IsValid) return View("FormularioTaller", modelo);
-            TempData["MensajeAdmin"] = $"El taller \"{modelo.Nombre}\" fue actualizado. Cupos disponibles: {modelo.CuposDisponibles}.";
+            ViewData["Titulo"] = "Editar taller";
+
+            Tallere? taller = await _context.Talleres
+                .Include(t => t.InscripcionesTallers)
+                .FirstOrDefaultAsync(t => t.IdTaller == modelo.Id);
+
+            if (taller is null ||
+                taller.Estado == ReglasTalleres.Cancelado ||
+                taller.Estado == ReglasTalleres.Finalizado)
+            {
+                TempData["ErrorAdmin"] = "El taller no está disponible para edición.";
+
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            bool eraBorrador = taller.Estado == ReglasTalleres.Borrador;
+            bool publicar = eraBorrador ? accion == "publicar" : true;
+            int inscritosActivos = taller.InscripcionesTallers.Count(i => i.Estado != "Cancelada");
+
+            await ValidarTallerAsync(modelo, publicar, inscritosActivos);
+
+            if (eraBorrador &&
+                publicar &&
+                modelo.FechaInicio.HasValue &&
+                modelo.FechaInicio.Value < DateTime.Now)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.FechaInicio),
+                    "La fecha de inicio debe ser futura.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                modelo.Estado = taller.Estado;
+                modelo.Inscritos = inscritosActivos;
+                modelo.ImagenUrl = taller.ImagenUrl;
+                await CargarOpcionesTallerAsync();
+
+                return View("FormularioTaller", modelo);
+            }
+
+            int cupoAnterior = taller.CupoMaximo;
+
+            AplicarDatosTaller(taller, modelo);
+
+            if (eraBorrador && publicar)
+            {
+                taller.Estado = ReglasTalleres.Programado;
+            }
+
+            if (modelo.Imagen is { Length: > 0 })
+            {
+                taller.ImagenUrl = await GuardarImagenTallerAsync(modelo.Imagen);
+            }
+
+            await _context.SaveChangesAsync();
+
+            if (eraBorrador)
+            {
+                TempData["MensajeAdmin"] = publicar
+                    ? $"El taller \"{taller.Nombre}\" fue publicado correctamente."
+                    : $"El borrador \"{taller.Nombre}\" fue guardado.";
+            }
+            else if (taller.CupoMaximo > cupoAnterior)
+            {
+                TempData["MensajeAdmin"] =
+                    $"El taller \"{taller.Nombre}\" fue actualizado. El cupo pasó de {cupoAnterior} a {taller.CupoMaximo}; " +
+                    $"quedan {taller.CupoMaximo - inscritosActivos} lugar(es) disponible(s).";
+            }
+            else
+            {
+                TempData["MensajeAdmin"] = $"El taller \"{taller.Nombre}\" fue actualizado correctamente.";
+            }
+
             return RedirectToAction(nameof(Talleres));
         }
 
         [HttpGet]
-        public IActionResult InscritosTaller(int id = 1)
+        public async Task<IActionResult> InscritosTaller(int id)
         {
-            var taller = ObtenerTalleresDemo().FirstOrDefault(t => t.Id == id) ?? ObtenerTalleresDemo().First();
-            return View(taller);
+            Tallere? taller = await _context.Talleres
+                .AsNoTracking()
+                .Include(t => t.InscripcionesTallers)
+                    .ThenInclude(i => i.IdUsuarioNavigation)
+                .FirstOrDefaultAsync(t => t.IdTaller == id);
+
+            if (taller is null)
+            {
+                TempData["ErrorAdmin"] = "El taller no está disponible.";
+
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            return View(new TallerAdminViewModel
+            {
+                Id = taller.IdTaller,
+                Nombre = taller.Nombre,
+                CupoTotal = taller.CupoMaximo,
+                Estado = taller.Estado,
+                Inscritos = taller.InscripcionesTallers.Count(i => i.Estado != "Cancelada"),
+                ListaInscritos = taller.InscripcionesTallers
+                    .Where(i => i.Estado != "Cancelada")
+                    .OrderBy(i => i.FechaInscripcion)
+                    .Select(i => new InscritoTallerAdminViewModel
+                    {
+                        Nombre = i.IdUsuarioNavigation.Nombre + " " + i.IdUsuarioNavigation.ApellidoPaterno,
+                        Correo = i.IdUsuarioNavigation.Correo,
+                        Estado = i.Estado,
+                        Fecha = i.FechaInscripcion.ToString("dd/MM/yyyy hh:mm tt")
+                    })
+                    .ToList()
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CancelarTaller(int id, string motivo)
+        public async Task<IActionResult> CancelarTaller(int id, string motivo)
         {
-            TempData["MensajeAdmin"] = $"El taller fue cancelado. Motivo: {motivo}";
+            Tallere? taller = await _context.Talleres.FirstOrDefaultAsync(t => t.IdTaller == id);
+
+            if (taller is null ||
+                taller.Estado == ReglasTalleres.Cancelado ||
+                taller.Estado == ReglasTalleres.Finalizado)
+            {
+                TempData["ErrorAdmin"] = "El taller no está disponible para cancelación.";
+
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            taller.Estado = ReglasTalleres.Cancelado;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"El taller \"{taller.Nombre}\" fue cancelado. Motivo: {motivo}";
+
             return RedirectToAction(nameof(Talleres));
         }
 
@@ -1460,16 +1994,6 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(InscritosTaller), new { id });
         }
 
-        private static List<TallerAdminViewModel> ObtenerTalleresDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Cerámica para principiantes", Fecha = "23 de agosto", CuposTotales = 15, CuposDisponibles = 4, Estado = "Programado", QrGenerado = true,
-            Inscritos = [ new() { Nombre = "Maria Montero Cruz", Correo = "maria@ejemplo.com", Estado = "Confirmado" } ] },
-        new() { Id = 2, Nombre = "Bordado creativo", Fecha = "30 de agosto", CuposTotales = 12, CuposDisponibles = 9, Estado = "Programado", QrGenerado = false, Inscritos = [] },
-        new() { Id = 3, Nombre = "Introducción al macramé", Fecha = "6 de septiembre", CuposTotales = 12, CuposDisponibles = 0, Estado = "Programado", QrGenerado = false, Inscritos = [] }
-            ];
-        }
         [HttpGet]
         public IActionResult Ventas(string estado = "Todas")
         {

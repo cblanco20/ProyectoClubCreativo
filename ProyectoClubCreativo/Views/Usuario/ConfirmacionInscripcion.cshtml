@@ -1,0 +1,56 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.ConfirmacionInscripcionViewModel
+@{
+    ViewData["Title"] = "Registro confirmado";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+    bool esTaller = Model.Tipo == "Taller";
+}
+
+<div class="mensaje-exito-perfil">
+    <i class="bi bi-check-circle-fill"></i>
+    ¡Registro confirmado! Ya tienes tu lugar en @(esTaller ? "el taller" : "el evento").
+</div>
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">@Model.Tipo</span>
+        <h1 class="titulo-pagina-usuario">@Model.Nombre</h1>
+    </div>
+</div>
+
+<section class="container py-3">
+    <div class="card shadow-sm" style="max-width:650px;">
+        <div class="card-body p-4">
+            <p><i class="bi bi-calendar3"></i> <strong>Fecha:</strong> @Model.Fecha</p>
+            <p><i class="bi bi-clock-fill"></i> <strong>Horario:</strong> @Model.Horario</p>
+            <p><i class="bi bi-geo-alt-fill"></i> <strong>Lugar:</strong> @Model.Lugar</p>
+
+            @if (esTaller && !string.IsNullOrWhiteSpace(Model.ResponsableNombre))
+            {
+                <hr />
+                <p><i class="bi bi-person-fill"></i> <strong>Persona responsable:</strong> @Model.ResponsableNombre</p>
+                @if (!string.IsNullOrWhiteSpace(Model.ResponsableCorreo))
+                {
+                    <p><i class="bi bi-envelope-fill"></i> <strong>Correo:</strong> @Model.ResponsableCorreo</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.ResponsableTelefono))
+                {
+                    <p><i class="bi bi-telephone-fill"></i> <strong>Teléfono:</strong> @Model.ResponsableTelefono</p>
+                }
+            }
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
+                @if (esTaller)
+                {
+                    <a asp-action="MisTalleres" class="boton-accion-usuario">Ver mis talleres</a>
+                }
+                else
+                {
+                    <a asp-action="MisInscripciones" class="boton-accion-usuario">Ver mis inscripciones</a>
+                }
+                <a asp-controller="Home" asp-action="@(esTaller ? "Talleres" : "Eventos")" class="boton-secundario-usuario">
+                    Seguir explorando
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

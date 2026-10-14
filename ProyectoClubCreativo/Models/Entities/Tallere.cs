@@ -11,9 +11,9 @@ public partial class Tallere
 
     public string Nombre { get; set; } = null!;
 
-    public string Descripcion { get; set; } = null!;
+    public string? Descripcion { get; set; }
 
-    public DateTime FechaInicio { get; set; }
+    public DateTime? FechaInicio { get; set; }
 
     public DateTime? FechaFin { get; set; }
 
@@ -24,6 +24,12 @@ public partial class Tallere
     public string? ImagenUrl { get; set; }
 
     public string Estado { get; set; } = null!;
+
+    public string? ResponsableNombre { get; set; }
+
+    public string? ResponsableCorreo { get; set; }
+
+    public string? ResponsableTelefono { get; set; }
 
     public DateTime FechaRegistro { get; set; }
 

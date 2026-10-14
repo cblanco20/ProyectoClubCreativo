@@ -1193,6 +1193,9 @@ public partial class ClubCreativoDbContext : DbContext
                 .HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.ImagenUrl).HasMaxLength(500);
             entity.Property(e => e.Nombre).HasMaxLength(150);
+            entity.Property(e => e.ResponsableCorreo).HasMaxLength(254);
+            entity.Property(e => e.ResponsableNombre).HasMaxLength(150);
+            entity.Property(e => e.ResponsableTelefono).HasMaxLength(30);
             entity.Property(e => e.Ubicacion).HasMaxLength(250);
 
             entity.HasOne(d => d.IdCategoriaNavigation).WithMany(p => p.Talleres)

@@ -1,6 +1,15 @@
-﻿@{
-    ViewData["Title"] = "Detalle de Taller";
+﻿@model ProyectoClubCreativo.Models.ViewModels.TallerPublicoViewModel
+@using ProyectoClubCreativo.Models.ViewModels
+@{
+    ViewData["Title"] = Model.Nombre;
     Layout = "_LayoutExterno";
+
+    string imagen = string.IsNullOrWhiteSpace(Model.ImagenUrl)
+        ? Url.Content("~/images/taller-ceramica.jpg")
+        : Url.Content(Model.ImagenUrl);
+
+    List<TallerPublicoViewModel> otros = ViewBag.OtrosTalleres as List<TallerPublicoViewModel> ?? new();
+    string? error = TempData["ErrorTaller"] as string;
 }
 
 <section class="encabezado-detalle-emprendimiento">
@@ -10,35 +19,24 @@
             <i class="bi bi-chevron-right"></i>
             <a asp-controller="Home" asp-action="Talleres">Talleres</a>
             <i class="bi bi-chevron-right"></i>
-            <span>@ViewData["NombreTaller"]</span>
+            <span>@Model.Nombre</span>
         </nav>
 
         <div class="perfil-detalle-emprendimiento">
-            <img src="~/images/taller-ceramica.jpg" alt="Foto del taller" class="logo-detalle-emprendimiento" />
+            <img src="@imagen" alt="Foto del taller" class="logo-detalle-emprendimiento" />
 
             <div class="informacion-perfil-emprendimiento">
-                <span class="categoria-detalle-emprendimiento">Taller práctico</span>
-                <h1>@ViewData["NombreTaller"]</h1>
-                <p class="resumen-detalle-emprendimiento">
-                    Aprendé las técnicas básicas del modelado y creá tu primera pieza en arcilla,
-                    en un espacio pequeño y con materiales incluidos.
-                </p>
+                @if (!string.IsNullOrWhiteSpace(Model.Categoria))
+                {
+                    <span class="categoria-detalle-emprendimiento">@Model.Categoria</span>
+                }
+                <h1>@Model.Nombre</h1>
                 <div class="datos-perfil-emprendimiento">
-                    <span><i class="bi bi-calendar3"></i> Sábado 23, 9:00 a. m.</span>
-                    <span><i class="bi bi-geo-alt-fill"></i> Escazú, San José</span>
-                    <span><i class="bi bi-people-fill"></i> Cupos disponibles</span>
+                    <span><i class="bi bi-calendar3"></i> @Model.FechaTexto, @Model.HoraTexto</span>
+                    <span><i class="bi bi-geo-alt-fill"></i> @Model.Ubicacion</span>
+                    <span><i class="bi bi-people-fill"></i> @Model.TextoDisponibilidad</span>
                 </div>
             </div>
-        </div>
-    </div>
-</section>
-
-<section class="galeria-detalle-emprendimiento">
-    <div class="container">
-        <div class="grid-galeria-emprendimiento">
-            <img src="~/images/taller-ceramica.jpg" alt="Taller, vista principal" />
-            <img src="~/images/taller-joyeria.jpg" alt="Materiales del taller" />
-            <img src="~/images/convivencia.jpg" alt="Participantes en el taller" />
         </div>
     </div>
 </section>
@@ -47,85 +45,90 @@
     <div class="container distribucion-detalle-emprendimiento">
         <article class="informacion-detalle-emprendimiento">
             <h2>Descripción del taller</h2>
-            <p>
-                Un espacio pensado para principiantes donde aprenderás las técnicas básicas del
-                modelado en arcilla, de la mano de una facilitadora con años de experiencia.
-            </p>
-            <p>
-                Al finalizar, cada participante se lleva su propia pieza terminada y horneada.
-            </p>
-
-            <h2>Materiales requeridos</h2>
-            <div class="grid-productos-emprendimiento">
-                <article class="producto-detalle-emprendimiento">
-                    <img src="~/images/taller-ceramica.jpg" alt="Arcilla" />
-                    <h3>Arcilla</h3>
-                    <p>Incluida en el precio del taller.</p>
-                </article>
-                <article class="producto-detalle-emprendimiento">
-                    <img src="~/images/taller-joyeria.jpg" alt="Herramientas" />
-                    <h3>Herramientas</h3>
-                    <p>El club las facilita durante la sesión.</p>
-                </article>
-                <article class="producto-detalle-emprendimiento">
-                    <img src="~/images/convivencia.jpg" alt="Delantal" />
-                    <h3>Delantal</h3>
-                    <p>Recomendado traer ropa cómoda.</p>
-                </article>
-            </div>
+            <p>@Model.Descripcion</p>
         </article>
 
         <aside class="tarjeta-contacto-emprendimiento">
             <h2>Detalles del taller</h2>
             <ul class="lista-contacto-emprendimiento">
-                <li><i class="bi bi-calendar3"></i><span>Sábado 23, 9:00 a. m.</span></li>
-                <li><i class="bi bi-person-fill"></i><span>Facilitadora: Ana Rodríguez</span></li>
-                <li><i class="bi bi-geo-alt-fill"></i><span>Escazú, San José</span></li>
-                <li><i class="bi bi-cash-coin"></i><span>₡12.000 por persona</span></li>
+                <li><i class="bi bi-calendar3"></i><span>@Model.FechaTexto</span></li>
+                <li><i class="bi bi-clock-fill"></i><span>@Model.HorarioTexto</span></li>
+                @if (!string.IsNullOrWhiteSpace(Model.ResponsableNombre))
+                {
+                    <li><i class="bi bi-person-fill"></i><span>Responsable: @Model.ResponsableNombre</span></li>
+                }
+                <li><i class="bi bi-geo-alt-fill"></i><span>@Model.Ubicacion</span></li>
+                <li><i class="bi bi-people-fill"></i><span>@Model.CuposDisponibles de @Model.CupoMaximo cupos disponibles</span></li>
             </ul>
-            <a href="#" class="boton-contacto-emprendimiento">
-                Reservar cupo
-            </a>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <p style="color:#b91c1c; font-weight:600;">@error</p>
+            }
+
+            @if (Model.PocosCupos && !Model.UsuarioRegistrado)
+            {
+                <p style="color:#b45309; font-weight:600;"><i class="bi bi-exclamation-triangle-fill"></i> Últimos cupos disponibles</p>
+            }
+
+            @if (Model.UsuarioRegistrado)
+            {
+                <p style="font-weight:600;"><i class="bi bi-check-circle-fill"></i> Ya estás registrado en este taller.</p>
+                <a asp-controller="Usuario" asp-action="MisTalleres" class="boton-contacto-emprendimiento">Ver mis talleres</a>
+            }
+            else if (Model.CupoLleno)
+            {
+                <p style="color:#b91c1c; font-weight:600;">Cupo completo</p>
+                <button type="button" class="boton-contacto-emprendimiento" disabled style="opacity:.5; cursor:not-allowed;">
+                    Registrarse en taller
+                </button>
+            }
+            else
+            {
+                <form asp-controller="Usuario" asp-action="RegistrarseTaller" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.IdTaller" />
+                    <button type="submit" class="boton-contacto-emprendimiento" style="border:0; width:100%; cursor:pointer;">
+                        Registrarse en taller
+                    </button>
+                </form>
+            }
         </aside>
     </div>
 </section>
 
-<section class="relacionados-detalle-emprendimiento">
-    <div class="container">
-        <div class="encabezado-relacionados-emprendimiento">
-            <div>
-                <span class="subtitulo-talleres">Nuestra oferta</span>
-                <h2>Otros talleres que te pueden interesar</h2>
+@if (otros.Any())
+{
+    <section class="relacionados-detalle-emprendimiento">
+        <div class="container">
+            <div class="encabezado-relacionados-emprendimiento">
+                <div>
+                    <span class="subtitulo-talleres">Nuestra oferta</span>
+                    <h2>Otros talleres que te pueden interesar</h2>
+                </div>
+                <a asp-controller="Home" asp-action="Talleres">
+                    Ver todos los talleres <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
-            <a asp-controller="Home" asp-action="Talleres">
-                Ver todos los talleres <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
 
-        <div class="grid-relacionados-emprendimiento">
-            <article class="tarjeta-relacionada-emprendimiento">
-                <img src="~/images/taller-bordado.jpg" alt="Bordado creativo" />
-                <div>
-                    <span>Domingo 24</span>
-                    <h3>Bordado creativo</h3>
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Bordado creativo">
-                        Ver taller <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-            <article class="tarjeta-relacionada-emprendimiento">
-                <img src="~/images/taller-velas.jpg" alt="Taller de velas" />
-                <div>
-                    <span>Próximamente</span>
-                    <h3>Velas aromáticas</h3>
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Velas aromáticas">
-                        Ver taller <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
+            <div class="grid-relacionados-emprendimiento">
+                @foreach (var otro in otros)
+                {
+                    <article class="tarjeta-relacionada-emprendimiento">
+                        <img src="@(string.IsNullOrWhiteSpace(otro.ImagenUrl) ? Url.Content("~/images/taller-bordado.jpg") : Url.Content(otro.ImagenUrl))" alt="@otro.Nombre" />
+                        <div>
+                            <span>@otro.FechaTexto</span>
+                            <h3>@otro.Nombre</h3>
+                            <a asp-controller="Home" asp-action="DetalleTaller" asp-route-id="@otro.IdTaller">
+                                Ver taller <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+}
 
 <section class="cta-detalle-emprendimiento">
     <div class="container">

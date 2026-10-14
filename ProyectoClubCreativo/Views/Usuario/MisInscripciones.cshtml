@@ -15,14 +15,10 @@
     </div>
 </div>
 
-<div class="filtros-modulo-usuario">
-    <button class="filtro-activo">Todas</button>
-    <button>Eventos</button>
-    <button>Talleres</button>
-    <button>Próximos</button>
-    <button>Finalizados</button>
-    <button>Cancelados</button>
-</div>
+@if (!Model.Any())
+{
+    <p>Aún no tienes inscripciones. Explora los <a asp-controller="Home" asp-action="Eventos">eventos</a> y <a asp-controller="Home" asp-action="Talleres">talleres</a> disponibles.</p>
+}
 
 <section class="cuadricula-inscripciones">
     @foreach (var item in Model)
@@ -64,16 +60,17 @@
                 </p>
 
                 <div class="acciones-inscripcion">
-                    <button type="button">
-                        Ver información
-                    </button>
+                    <a asp-controller="Home"
+                       asp-action="@(item.Tipo == "Taller" ? "DetalleTaller" : "DetalleEvento")"
+                       asp-route-id="@item.Id">
+                        <button type="button">Ver información</button>
+                    </a>
 
-                    @if (item.Estado == "Próximo")
+                    @if (item.Estado == "Próximo" && item.Tipo == "Taller")
                     {
-                        <button type="button"
-                                class="accion-peligro">
-                            Cancelar
-                        </button>
+                        <a asp-action="ConfirmarCancelacionTaller" asp-route-id="@item.Id">
+                            <button type="button" class="accion-peligro">Cancelar</button>
+                        </a>
                     }
                 </div>
 

@@ -1,6 +1,11 @@
 ﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.TallerAdminViewModel
+@using ProyectoClubCreativo.Models.Entities
 @{
-    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Taller"; Layout = "~/Views/Shared/_LayoutAdmin.cshtml"; bool esNuevo = Model.Id == 0;
+    ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Taller";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    bool esNuevo = Model.Id == 0;
+    bool esBorrador = esNuevo || Model.Estado == "Borrador";
+    List<Categoria> categorias = ViewBag.CategoriasTaller as List<Categoria> ?? new();
 }
 
 <a asp-action="Talleres" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver a talleres</a>
@@ -8,27 +13,89 @@
 <article class="bloque-admin" style="max-width:640px;">
     <div class="encabezado-bloque-admin"><h2><i class="bi bi-palette-fill"></i> @ViewData["Title"]</h2></div>
 
-    <form asp-action="@(esNuevo ? "CrearTaller" : "EditarTaller")" method="post" class="formulario-admin">
+    <form asp-action="@(esNuevo ? "CrearTaller" : "EditarTaller")" method="post" class="formulario-admin" enctype="multipart/form-data" novalidate>
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
-        <div asp-validation-summary="ModelOnly"></div>
+        <input type="hidden" asp-for="ImagenUrl" />
+        <input type="hidden" asp-for="Estado" />
+        <input type="hidden" asp-for="Inscritos" />
+        <div asp-validation-summary="All" class="resumen-validacion-admin"></div>
 
-        <div class="grupo-formulario"><label asp-for="Nombre"></label><input asp-for="Nombre" placeholder="Ej. Pintura en tela" /></div>
+        @if (!esNuevo && !esBorrador)
+        {
+            <p style="font-size:13px;">
+                Participantes registrados: <strong>@Model.Inscritos</strong>.
+                Puedes aumentar el cupo para habilitar más registros; no puede ser menor a los ya registrados.
+            </p>
+        }
+
+        <div class="grupo-formulario">
+            <label asp-for="Nombre"></label>
+            <input asp-for="Nombre" placeholder="Ej. Pintura en tela" />
+        </div>
+
         <div class="fila-formulario">
-            <div class="grupo-formulario"><label asp-for="Fecha"></label><input asp-for="Fecha" placeholder="Ej. 12 de octubre" /></div>
+            <div class="grupo-formulario"><label asp-for="FechaInicio"></label><input asp-for="FechaInicio" type="datetime-local" /></div>
+            <div class="grupo-formulario"><label asp-for="FechaFin"></label><input asp-for="FechaFin" type="datetime-local" /></div>
+        </div>
+
+        <div class="fila-formulario">
+            <div class="grupo-formulario"><label asp-for="Ubicacion"></label><input asp-for="Ubicacion" /></div>
             <div class="grupo-formulario">
-                <label asp-for="Estado"></label>
-                <select asp-for="Estado"><option>Programado</option><option>Cancelado</option><option>Finalizado</option></select>
+                <label asp-for="CupoTotal"></label>
+                <input asp-for="CupoTotal" type="number" min="@Model.Inscritos" />
             </div>
         </div>
-        <div class="fila-formulario">
-            <div class="grupo-formulario"><label asp-for="CuposTotales">Cupos totales</label><input asp-for="CuposTotales" type="number" /></div>
-            <div class="grupo-formulario"><label asp-for="CuposDisponibles">Cupos disponibles</label><input asp-for="CuposDisponibles" type="number" /></div>
-        </div>
+
+        @if (categorias.Any())
+        {
+            <div class="grupo-formulario">
+                <label asp-for="IdCategoria"></label>
+                <select asp-for="IdCategoria">
+                    <option value="">Sin categoría</option>
+                    @foreach (Categoria categoria in categorias)
+                    {
+                        <option value="@categoria.IdCategoria" selected="@(Model.IdCategoria == categoria.IdCategoria)">@categoria.Nombre</option>
+                    }
+                </select>
+            </div>
+        }
+
         <div class="grupo-formulario"><label asp-for="Descripcion"></label><textarea asp-for="Descripcion" rows="3"></textarea></div>
 
-        <button type="submit" class="boton-admin boton-admin-primario">
-            <i class="bi bi-check-circle-fill"></i> @(esNuevo ? "Crear taller" : "Guardar cambios")
-        </button>
+        <div class="grupo-formulario"><label asp-for="ResponsableNombre"></label><input asp-for="ResponsableNombre" /></div>
+        <div class="fila-formulario">
+            <div class="grupo-formulario"><label asp-for="ResponsableCorreo"></label><input asp-for="ResponsableCorreo" type="email" /></div>
+            <div class="grupo-formulario"><label asp-for="ResponsableTelefono"></label><input asp-for="ResponsableTelefono" /></div>
+        </div>
+
+        <div class="grupo-formulario">
+            <label asp-for="Imagen"></label>
+            @if (!string.IsNullOrWhiteSpace(Model.ImagenUrl))
+            {
+                <img src="@Url.Content(Model.ImagenUrl)" alt="Imagen actual del taller" style="display:block; max-width:220px; margin-bottom:10px; border-radius:12px;" />
+            }
+            <input asp-for="Imagen" type="file" accept=".jpg,.jpeg,.png,.webp" />
+            <small>Opcional. JPG, PNG o WEBP, máximo 5 MB.</small>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            @if (esBorrador)
+            {
+                <button type="submit" name="accion" value="publicar" class="boton-admin boton-admin-primario">
+                    <i class="bi bi-check-circle-fill"></i> Publicar taller
+                </button>
+                <button type="submit" name="accion" value="borrador" class="boton-admin boton-admin-secundario">
+                    <i class="bi bi-journal-text"></i> Guardar como borrador
+                </button>
+            }
+            else
+            {
+                <button type="submit" name="accion" value="guardar" class="boton-admin boton-admin-primario">
+                    <i class="bi bi-check-circle-fill"></i> Guardar cambios
+                </button>
+            }
+            <a asp-action="Talleres" class="boton-admin boton-admin-secundario"><i class="bi bi-x-circle"></i> Cancelar</a>
+        </div>
     </form>
 </article>

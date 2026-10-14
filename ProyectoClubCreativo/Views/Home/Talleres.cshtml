@@ -1,9 +1,9 @@
-﻿@{
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.TallerPublicoViewModel>
+@{
     ViewData["Title"] = "Talleres";
     Layout = "_LayoutExterno";
 }
 
-<!-- HERO -->
 <section class="hero-talleres">
     <div class="container hero-talleres-grid">
 
@@ -39,7 +39,6 @@
 </section>
 
 
-<!-- INTRODUCCIÓN -->
 <section class="introduccion-talleres">
     <div class="container">
 
@@ -60,187 +59,56 @@
 </section>
 
 
-<!-- LISTADO -->
 <section class="talleres-listado" id="talleres-listado">
     <div class="container">
 
-        <div class="grid-talleres-pagina">
+        @if (TempData["ErrorTaller"] is string errorTaller)
+        {
+            <p style="text-align:center; color:#b91c1c; font-weight:600;">@errorTaller</p>
+        }
 
-            <article class="tarjeta-taller-pagina">
-                <img src="~/images/taller-ceramica.jpg"
-                     alt="Taller de cerámica" />
+        @if (!Model.Any())
+        {
+            <p style="text-align:center;">Por ahora no hay talleres publicados. ¡Vuelve pronto!</p>
+        }
+        else
+        {
+            <div class="grid-talleres-pagina">
+                @foreach (var taller in Model)
+                {
+                    <article class="tarjeta-taller-pagina">
+                        <img src="@(string.IsNullOrWhiteSpace(taller.ImagenUrl) ? Url.Content("~/images/taller-ceramica.jpg") : Url.Content(taller.ImagenUrl))"
+                             alt="@taller.Nombre" />
 
-                <div class="cuerpo-taller-pagina">
-                    <span class="disponibilidad-taller-pagina">
-                        Cupos disponibles
-                    </span>
+                        <div class="cuerpo-taller-pagina">
+                            <span class="disponibilidad-taller-pagina"
+                                  style="@(taller.CupoLleno ? "background:#fde2e2;color:#b91c1c;" : taller.PocosCupos ? "background:#fef3c7;color:#b45309;" : "")">
+                                @taller.TextoDisponibilidad
+                            </span>
 
-                    <h3>Cerámica para principiantes</h3>
+                            <h3>@taller.Nombre</h3>
 
-                    <p>
-                        Aprendé las técnicas básicas del modelado y
-                        creá tu primera pieza en arcilla.
-                    </p>
+                            <p>@(taller.Descripcion.Length > 120 ? taller.Descripcion[..120].TrimEnd() + "…" : taller.Descripcion)</p>
 
-                    <div class="datos-taller-pagina">
-                        <span><i class="bi bi-calendar3"></i> Sábado 23</span>
-                        <span><i class="bi bi-geo-alt-fill"></i> Escazú</span>
-                    </div>
+                            <div class="datos-taller-pagina">
+                                <span><i class="bi bi-calendar3"></i> @taller.FechaTexto</span>
+                                <span><i class="bi bi-geo-alt-fill"></i> @taller.Ubicacion</span>
+                            </div>
 
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Cerámica para principiantes" class="enlace-taller-pagina">
-                        Reservar cupo
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-taller-pagina">
-                <img src="~/images/taller-bordado.jpg"
-                     alt="Taller de bordado creativo" />
-
-                <div class="cuerpo-taller-pagina">
-                    <span class="disponibilidad-taller-pagina">
-                        Cupos disponibles
-                    </span>
-
-                    <h3>Bordado creativo</h3>
-
-                    <p>
-                        Descubrí puntadas básicas y decorá tus propias
-                        prendas y accesorios.
-                    </p>
-
-                    <div class="datos-taller-pagina">
-                        <span><i class="bi bi-calendar3"></i> Domingo 24</span>
-                        <span><i class="bi bi-geo-alt-fill"></i> Santa Ana</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Cerámica para principiantes" class="enlace-taller-pagina">
-                        Reservar cupo
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-taller-pagina">
-                <img src="~/images/taller-velas.jpg"
-                     alt="Taller de velas artesanales" />
-
-                <div class="cuerpo-taller-pagina">
-                    <span class="disponibilidad-taller-pagina disponibilidad-taller-limitada">
-                        Cupos limitados
-                    </span>
-
-                    <h3>Velas artesanales</h3>
-
-                    <p>
-                        Elaborá tus propias velas con cera vegetal y
-                        aromas naturales.
-                    </p>
-
-                    <div class="datos-taller-pagina">
-                        <span><i class="bi bi-calendar3"></i> Sábado 30</span>
-                        <span><i class="bi bi-geo-alt-fill"></i> Heredia</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Cerámica para principiantes" class="enlace-taller-pagina">
-                        Reservar cupo
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-taller-pagina">
-                <img src="~/images/taller-joyeria.jpg"
-                     alt="Taller de joyería en arcilla" />
-
-                <div class="cuerpo-taller-pagina">
-                    <span class="disponibilidad-taller-pagina">
-                        Cupos disponibles
-                    </span>
-
-                    <h3>Joyería en arcilla</h3>
-
-                    <p>
-                        Creá aretes, pulseras y collares únicos usando
-                        arcilla polimérica.
-                    </p>
-
-                    <div class="datos-taller-pagina">
-                        <span><i class="bi bi-calendar3"></i> Domingo 31</span>
-                        <span><i class="bi bi-geo-alt-fill"></i> Alajuela</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Cerámica para principiantes" class="enlace-taller-pagina">
-                        Reservar cupo
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-taller-pagina">
-                <img src="~/images/producto-4.jpg"
-                     alt="Taller de ilustración y pintura" />
-
-                <div class="cuerpo-taller-pagina">
-                    <span class="disponibilidad-taller-pagina">
-                        Cupos disponibles
-                    </span>
-
-                    <h3>Ilustración y pintura</h3>
-
-                    <p>
-                        Explorá distintas técnicas de pintura y desarrollá
-                        tu propio estilo creativo.
-                    </p>
-
-                    <div class="datos-taller-pagina">
-                        <span><i class="bi bi-calendar3"></i> Sábado 6</span>
-                        <span><i class="bi bi-geo-alt-fill"></i> San José</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Cerámica para principiantes" class="enlace-taller-pagina">
-                        Reservar cupo
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-taller-pagina">
-                <img src="~/images/noticia-taller.jpg"
-                     alt="Taller de manualidades para principiantes" />
-
-                <div class="cuerpo-taller-pagina">
-                    <span class="disponibilidad-taller-pagina disponibilidad-taller-limitada">
-                        Cupos limitados
-                    </span>
-
-                    <h3>Manualidades desde cero</h3>
-
-                    <p>
-                        Un taller introductorio ideal para quienes quieren
-                        empezar a desarrollar su creatividad.
-                    </p>
-
-                    <div class="datos-taller-pagina">
-                        <span><i class="bi bi-calendar3"></i> Domingo 7</span>
-                        <span><i class="bi bi-geo-alt-fill"></i> San Pedro</span>
-                    </div>
-
-                    <a asp-controller="Home" asp-action="DetalleTaller" asp-route-name="Cerámica para principiantes" class="enlace-taller-pagina">
-                        Reservar cupo
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-        </div>
+                            <a asp-controller="Home" asp-action="DetalleTaller" asp-route-id="@taller.IdTaller" class="enlace-taller-pagina">
+                                @(taller.CupoLleno ? "Ver taller" : "Reservar cupo")
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
 
     </div>
 </section>
 
 
-<!-- BENEFICIOS -->
 <section class="beneficios-talleres">
     <div class="container">
 
@@ -299,7 +167,6 @@
 </section>
 
 
-<!-- CTA FINAL -->
 <section class="cta-talleres">
     <div class="container">
 

@@ -2,7 +2,6 @@
 
 namespace ProyectoClubCreativo.Models.ViewModels.Admin
 {
-    // ---------- ACCESO ----------
     public class AdminLoginViewModel
     {
         [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
@@ -15,7 +14,6 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Contrasena { get; set; } = string.Empty;
     }
 
-    // ---------- DASHBOARD ----------
     public class DashboardAdminViewModel
     {
         public int TotalUsuarios { get; set; }
@@ -76,7 +74,6 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Icono { get; set; } = "bi-clock-history";
     }
 
-    // ---------- USUARIOS ----------
     public class UsuarioAdminViewModel
     {
         public int Id { get; set; }
@@ -129,7 +126,6 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public int PuntosAcumulados { get; set; }
     }
 
-    // ---------- EMPRENDIMIENTOS ----------
     public class SolicitudEmprendimientoAdminViewModel
     {
         public int Id { get; set; }
@@ -165,7 +161,6 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Motivo { get; set; } = string.Empty;
     }
 
-    // ---------- SUSCRIPCIONES ----------
     public class PlanSuscripcionViewModel
     {
         public int Id { get; set; }
@@ -204,7 +199,6 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public int TotalPorVencer { get; set; }
     }
 
-    // ---------- PRODUCTOS ----------
     public class ProductoAdminViewModel
     {
         public int Id { get; set; }
@@ -330,19 +324,67 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Nombre { get; set; } = "";
         public string Correo { get; set; } = "";
         public string Estado { get; set; } = "";
+        public string Fecha { get; set; } = "";
     }
 
     public class TallerAdminViewModel
     {
         public int Id { get; set; }
+
+        [Required(ErrorMessage = "El nombre del taller es obligatorio.")]
+        [StringLength(150, ErrorMessage = "El nombre no puede superar los 150 caracteres.")]
         public string Nombre { get; set; } = "";
+
         public string Fecha { get; set; } = "";
-        public string Descripcion { get; set; } = "";
-        public int CuposTotales { get; set; }
-        public int CuposDisponibles { get; set; }
+
+        [Display(Name = "Fecha y hora de inicio")]
+        public DateTime? FechaInicio { get; set; }
+
+        [Display(Name = "Fecha y hora de finalización")]
+        public DateTime? FechaFin { get; set; }
+
+        [StringLength(250, ErrorMessage = "La ubicación no puede superar los 250 caracteres.")]
+        [Display(Name = "Ubicación")]
+        public string? Ubicacion { get; set; }
+
+        [StringLength(1500, ErrorMessage = "La descripción no puede superar los 1500 caracteres.")]
+        [Display(Name = "Descripción")]
+        public string? Descripcion { get; set; }
+
+        [Display(Name = "Categoría")]
+        public int? IdCategoria { get; set; }
+
+        [Range(0, 100000, ErrorMessage = "El cupo máximo debe ser un número válido.")]
+        [Display(Name = "Cupo máximo")]
+        public int? CupoTotal { get; set; }
+
+        [StringLength(150, ErrorMessage = "El nombre del responsable no puede superar los 150 caracteres.")]
+        [Display(Name = "Persona responsable")]
+        public string? ResponsableNombre { get; set; }
+
+        [EmailAddress(ErrorMessage = "Ingrese un correo válido para el responsable.")]
+        [StringLength(254)]
+        [Display(Name = "Correo del responsable")]
+        public string? ResponsableCorreo { get; set; }
+
+        [StringLength(30, ErrorMessage = "El teléfono no puede superar los 30 caracteres.")]
+        [Display(Name = "Teléfono del responsable")]
+        public string? ResponsableTelefono { get; set; }
+
+        [Display(Name = "Imagen del taller")]
+        public IFormFile? Imagen { get; set; }
+
+        public string? ImagenUrl { get; set; }
+
         public string Estado { get; set; } = "Programado";
         public bool QrGenerado { get; set; }
-        public List<InscritoTallerAdminViewModel> Inscritos { get; set; } = [];
+        public bool EsPasado { get; set; }
+
+        public int Inscritos { get; set; }
+        public int CuposTotales => CupoTotal ?? 0;
+        public int CuposDisponibles => Math.Max(CuposTotales - Inscritos, 0);
+
+        public List<InscritoTallerAdminViewModel> ListaInscritos { get; set; } = [];
     }
 
     public class ListadoTalleresAdminViewModel
