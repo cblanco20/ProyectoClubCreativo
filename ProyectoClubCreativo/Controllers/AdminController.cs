@@ -547,49 +547,31 @@ namespace ProyectoClubCreativo.Controllers
                 ? "Tu solicitud de emprendimiento fue aprobada - Club Creativo"
                 : "Resultado de tu solicitud de emprendimiento - Club Creativo";
 
-            string contenidoCorreo = aprobada
+            string titulo = aprobada
+                ? "¡Tu solicitud fue aprobada!"
+                : "Resultado de tu solicitud";
+
+            string cuerpo = aprobada
                 ? $@"
-            <h2>Club Creativo</h2>
-
-            <p>Hola {nombreDestinatario},</p>
-
-            <p>
-                ¡Buenas noticias! Tu solicitud para incorporar
-                «{emprendimiento.NombreComercial}» a Club Creativo
-                fue <strong>aprobada</strong>.
-            </p>
-
-            <p>
-                Ya puedes iniciar sesión con tu cuenta de emprendedor
-                para administrar tu perfil, productos y participación
-                en la plataforma.
-            </p>
-
-            <p>Club Creativo</p>
-        "
+                    <p>Hola {PlantillaCorreo.E(nombreDestinatario)},</p>
+                    <p>¡Buenas noticias! Tu solicitud para incorporar
+                       «<strong>{PlantillaCorreo.E(emprendimiento.NombreComercial)}</strong>» a Club Creativo fue <strong>aprobada</strong>.</p>
+                    <p>Ya puedes iniciar sesión con tu cuenta de emprendedor para administrar tu perfil, productos y participación en la plataforma.</p>"
                 : $@"
-            <h2>Club Creativo</h2>
+                    <p>Hola {PlantillaCorreo.E(nombreDestinatario)},</p>
+                    <p>Tu solicitud para incorporar «<strong>{PlantillaCorreo.E(emprendimiento.NombreComercial)}</strong>» a Club Creativo fue <strong>rechazada</strong>.</p>
+                    <p>Motivo indicado por el equipo revisor:</p>
+                    <p style=""background:#faf7ff;border-left:4px solid #a855c7;padding:12px 16px;border-radius:6px;"">{PlantillaCorreo.E(motivo)}</p>
+                    <p>Puedes iniciar sesión, corregir la información de tu emprendimiento y volver a enviarla para revisión.</p>";
 
-            <p>Hola {nombreDestinatario},</p>
+            string urlBase = $"{Request.Scheme}://{Request.Host}";
 
-            <p>
-                Tu solicitud para incorporar «{emprendimiento.NombreComercial}»
-                a Club Creativo fue <strong>rechazada</strong>.
-            </p>
-
-            <p>
-                Motivo indicado por el equipo revisor:
-            </p>
-
-            <p>«{motivo}»</p>
-
-            <p>
-                Puedes iniciar sesión, corregir la información de tu
-                emprendimiento y volver a enviarla para revisión.
-            </p>
-
-            <p>Club Creativo</p>
-        ";
+            string contenidoCorreo = PlantillaCorreo.Construir(
+                titulo: titulo,
+                cuerpoHtml: cuerpo,
+                textoBoton: "Iniciar sesión",
+                urlBoton: $"{urlBase}/Cuenta/IniciarSesion",
+                urlBase: urlBase);
 
             try
             {
