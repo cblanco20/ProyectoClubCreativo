@@ -159,9 +159,13 @@ namespace ProyectoClubCreativo.Controllers
             IQueryable<Tallere> consulta = _context.Talleres
                 .AsNoTracking()
                 .Where(t =>
-                    t.Estado == ReglasTalleres.Programado &&
                     t.FechaInicio != null &&
-                    (t.FechaFin ?? t.FechaInicio) >= ahora);
+                    ((t.Estado == ReglasTalleres.Programado &&
+                      (t.FechaFin ?? t.FechaInicio) >= ahora) ||
+                     (idTaller.HasValue &&
+                      idUsuario != 0 &&
+                      t.IdTaller == idTaller.Value &&
+                      t.InscripcionesTallers.Any(i => i.IdUsuario == idUsuario))));
 
             if (idTaller.HasValue)
             {
@@ -180,6 +184,7 @@ namespace ProyectoClubCreativo.Controllers
                     t.FechaInicio,
                     t.FechaFin,
                     t.CupoMaximo,
+                    t.Estado,
                     t.ResponsableNombre,
                     t.ResponsableCorreo,
                     t.ResponsableTelefono,
@@ -206,6 +211,7 @@ namespace ProyectoClubCreativo.Controllers
                     FechaInicio = t.FechaInicio!.Value,
                     FechaFin = t.FechaFin,
                     CupoMaximo = t.CupoMaximo,
+                    Estado = t.Estado,
                     Inscritos = t.Inscritos,
                     Categoria = t.Categoria,
                     ResponsableNombre = t.ResponsableNombre,

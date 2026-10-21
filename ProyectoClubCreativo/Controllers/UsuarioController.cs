@@ -2196,6 +2196,40 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(MisTalleres));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarTallerCancelado(int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            InscripcionesTaller? inscripcion = await _context.InscripcionesTallers
+                .Include(i => i.IdTallerNavigation)
+                .FirstOrDefaultAsync(i =>
+                    i.IdTaller == id &&
+                    i.IdUsuario == idUsuario.Value &&
+                    i.IdTallerNavigation.Estado == ReglasTalleres.Cancelado);
+
+            if (inscripcion is null)
+            {
+                TempData["ErrorTaller"] = "El taller no está disponible para eliminarlo.";
+
+                return RedirectToAction(nameof(MisTalleres));
+            }
+
+            _context.InscripcionesTallers.Remove(inscripcion);
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeTaller"] =
+                $"El taller cancelado «{inscripcion.IdTallerNavigation.Nombre}» fue eliminado de tus talleres.";
+
+            return RedirectToAction(nameof(MisTalleres));
+        }
+
         private async Task<Tallere?> ObtenerTallerCancelableAsync(int idTaller, int idUsuario)
         {
             DateTime ahora = DateTime.Now;

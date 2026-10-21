@@ -15,6 +15,7 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public DateTime FechaInicio { get; set; }
         public DateTime? FechaFin { get; set; }
         public int CupoMaximo { get; set; }
+        public string Estado { get; set; } = string.Empty;
         public int Inscritos { get; set; }
         public string? ResponsableNombre { get; set; }
         public string? ResponsableCorreo { get; set; }

@@ -81,6 +81,14 @@ else
                                 <button type="button" class="accion-peligro">Cancelar registro</button>
                             </a>
                         }
+                        else if (item.Estado == "Cancelado")
+                        {
+                            <form asp-action="EliminarTallerCancelado" method="post" onsubmit="return confirm('¿Quieres eliminar este taller cancelado de tus talleres?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.IdTaller" />
+                                <button type="submit" class="accion-peligro">Eliminar de mis talleres</button>
+                            </form>
+                        }
                     </div>
                 </div>
             </article>
