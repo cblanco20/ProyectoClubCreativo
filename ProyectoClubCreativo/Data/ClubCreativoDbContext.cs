@@ -112,6 +112,8 @@ public partial class ClubCreativoDbContext : DbContext
 
     public virtual DbSet<VentasCancelada> VentasCanceladas { get; set; }
 
+    public virtual DbSet<ConfiguracionPunto> ConfiguracionPuntos { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Auditorium>(entity =>
@@ -140,6 +142,22 @@ public partial class ClubCreativoDbContext : DbContext
             entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.Auditoria)
                 .HasForeignKey(d => d.IdUsuario)
                 .HasConstraintName("FK_Auditoria_Usuarios");
+        });
+
+        // HU-40: Configuración de puntos por compra
+        modelBuilder.Entity<ConfiguracionPunto>(entity =>
+        {
+            entity.HasKey(e => e.IdConfiguracion);
+
+            entity.ToTable("ConfiguracionPuntos");
+
+            entity.Property(e => e.ColonesPorPunto)
+                .HasColumnType("decimal(10, 2)")
+                .IsRequired();
+
+            entity.Property(e => e.FechaActualizacion)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
         });
 
         modelBuilder.Entity<CanjesRecompensa>(entity =>

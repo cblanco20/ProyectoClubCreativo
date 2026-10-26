@@ -4,8 +4,25 @@
 }
 
 <div class="pestanas-admin">
-    <a asp-action="PuntosRecompensas" asp-route-pestana="Recompensas" class="pestana-admin @(Model.Pestana == "Recompensas" ? "activa" : "")">Recompensas</a>
-    <a asp-action="PuntosRecompensas" asp-route-pestana="Movimientos" class="pestana-admin @(Model.Pestana == "Movimientos" ? "activa" : "")">Movimientos</a>
+
+    <a asp-action="PuntosRecompensas"
+       asp-route-pestana="Recompensas"
+       class="pestana-admin @(Model.Pestana == "Recompensas" ? "activa" : "")">
+        Recompensas
+    </a>
+
+    <a asp-action="PuntosRecompensas"
+       asp-route-pestana="Movimientos"
+       class="pestana-admin @(Model.Pestana == "Movimientos" ? "activa" : "")">
+        Movimientos
+    </a>
+
+    <a asp-action="PuntosRecompensas"
+       asp-route-pestana="Configuracion"
+       class="pestana-admin @(Model.Pestana == "Configuracion" ? "activa" : "")">
+        <i class="bi bi-gear-fill"></i> Configuración
+    </a>
+
 </div>
 
 @if (Model.Pestana == "Recompensas")
@@ -34,7 +51,7 @@
         </div>
     </article>
 }
-else
+else if (Model.Pestana == "Movimientos")
 {
     <article class="bloque-admin" style="max-width:520px; margin-bottom:22px;">
         <div class="encabezado-bloque-admin"><h2><i class="bi bi-sliders"></i> Asignar o ajustar puntos</h2></div>
@@ -69,4 +86,82 @@ else
             </table>
         </div>
     </article>
+}
+
+else if (Model.Pestana == "Configuracion")
+{
+    <article class="bloque-admin" style="max-width:600px;">
+
+        <div class="encabezado-bloque-admin">
+            <h2>
+                <i class="bi bi-gear-fill"></i>
+                Configuración de puntos
+            </h2>
+        </div>
+
+        <div class="formulario-admin">
+
+            <div class="grupo-formulario">
+                <label>Tasa de conversión actual</label>
+
+                <p>
+                    Por cada
+                    <strong>₡@Model.ColonesPorPunto.ToString("N2")</strong>
+                    de compra, el usuario obtiene
+                    <strong>1 punto</strong>.
+                </p>
+            </div>
+
+            <form asp-action="GuardarConfiguracionPuntos"
+                  asp-controller="Admin"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="grupo-formulario">
+                    <label for="ColonesPorPunto">
+                        Colones necesarios para obtener 1 punto
+                    </label>
+
+                    <input type="number"
+                           id="ColonesPorPunto"
+                           name="ColonesPorPunto"
+                           min="0.01"
+                           step="0.01"
+                           value="@Model.ColonesPorPunto.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                           required />
+
+                    <small>
+                        Ejemplo: Si escribe 500, el usuario ganará
+                        1 punto por cada ₡500 de compra.
+                    </small>
+                </div>
+
+                <button type="submit"
+                        class="boton-admin boton-admin-primario">
+                    <i class="bi bi-check-lg"></i>
+                    Guardar configuración
+                </button>
+
+            </form>
+
+        </div>
+
+    </article>
+}
+
+@if (TempData["Exito"] != null)
+{
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        @TempData["Exito"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        @TempData["Error"]
+    </div>
 }

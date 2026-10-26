@@ -2029,12 +2029,65 @@ namespace ProyectoClubCreativo.Controllers
         [HttpGet]
         public IActionResult PuntosRecompensas(string pestana = "Recompensas")
         {
+            var configuracion = _context.ConfiguracionPuntos
+                .OrderByDescending(c => c.IdConfiguracion)
+                .FirstOrDefault();
+
             return View(new PuntosRecompensasAdminViewModel
             {
                 Pestana = pestana,
                 Recompensas = ObtenerRecompensasDemo(),
-                Movimientos = ObtenerMovimientosDemo()
+                Movimientos = ObtenerMovimientosDemo(),
+                ColonesPorPunto = configuracion?.ColonesPorPunto ?? 1000m
             });
+        }
+
+        // HU-40: Guardar configuración de puntos
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GuardarConfiguracionPuntos(
+            decimal ColonesPorPunto)
+        {
+            // Validar que la tasa sea mayor a cero
+            if (ColonesPorPunto <= 0 || ColonesPorPunto > 99999999.99m)
+            {
+                TempData["Error"] =
+                    "La tasa de conversión debe ser mayor a cero y estar dentro del rango permitido.";
+
+                return RedirectToAction("PuntosRecompensas",
+                    new { pestana = "Configuracion" });
+            }
+
+            // Obtener la configuración actual
+            var configuracion = await _context.ConfiguracionPuntos
+                .OrderByDescending(c => c.IdConfiguracion)
+                .FirstOrDefaultAsync();
+
+            if (configuracion == null)
+            {
+                // Crear la configuración si todavía no existe
+                configuracion = new ConfiguracionPunto
+                {
+                    ColonesPorPunto = ColonesPorPunto,
+                    FechaActualizacion = DateTime.Now
+                };
+
+                _context.ConfiguracionPuntos.Add(configuracion);
+            }
+            else
+            {
+                // Actualizar la configuración existente
+                configuracion.ColonesPorPunto = ColonesPorPunto;
+                configuracion.FechaActualizacion = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] =
+                "La configuración de puntos se guardó correctamente.";
+
+            return RedirectToAction("PuntosRecompensas",
+                new { pestana = "Configuracion" });
         }
 
         [HttpGet]

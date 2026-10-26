@@ -414,8 +414,13 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     public class PuntosRecompensasAdminViewModel
     {
         public string Pestana { get; set; } = "Recompensas";
+
         public List<RecompensaAdminViewModel> Recompensas { get; set; } = [];
+
         public List<MovimientoPuntosAdminViewModel> Movimientos { get; set; } = [];
+
+        // HU-40: Configuración de puntos por compra
+        public decimal ColonesPorPunto { get; set; }
     }
 
     public class AjustarPuntosViewModel
