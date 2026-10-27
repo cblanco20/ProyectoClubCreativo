@@ -27,6 +27,8 @@ public partial class Venta
 
     public string Estado { get; set; } = null!;
 
+    public string EstadoPago { get; set; } = "Pendiente";
+
     public virtual Usuario IdUsuarioNavigation { get; set; } = null!;
 
     public virtual ICollection<MovimientosPunto> MovimientosPuntos { get; set; } = new List<MovimientosPunto>();

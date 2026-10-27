@@ -3539,6 +3539,21 @@ namespace ProyectoClubCreativo.Controllers
                     "La venta ya fue cancelada y no puede modificarse."
                 );
             }
+
+            else if (modelo.NuevoEstado == "Cancelada" &&
+         await _context.VentaDetalles
+             .AnyAsync(d =>
+                 d.IdVenta == venta.IdVenta &&
+                 d.IdProductoNavigation.IdEmprendimiento !=
+                     emprendimiento!.IdEmprendimiento))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevoEstado),
+                    "Esta compra incluye productos de otros emprendimientos. " +
+                    "No puede cancelarse toda la orden desde este emprendimiento."
+                );
+            }
+
             else if (venta.Estado == modelo.NuevoEstado)
             {
                 ModelState.AddModelError(
@@ -3568,6 +3583,34 @@ namespace ProyectoClubCreativo.Controllers
                     MotivoCancelacion = modelo.Observacion!.Trim(),
                     FechaCancelacion = DateTime.Now
                 };
+
+                var puntosAcumulados = await _context.MovimientosPuntos
+                    .AsNoTracking()
+                    .Where(m =>
+                        m.IdVenta == venta.IdVenta &&
+                        m.TipoMovimiento == "Acumulacion")
+                    .SumAsync(m => (int?)m.Puntos) ?? 0;
+
+                var existeReversion = await _context.MovimientosPuntos
+                    .AnyAsync(m =>
+                        m.IdVenta == venta.IdVenta &&
+                        m.TipoMovimiento == "Reversion");
+
+                if (puntosAcumulados > 0 && !existeReversion)
+                {
+                    var movimientoReversion = new MovimientosPunto
+                    {
+                        IdUsuario = venta.IdUsuario,
+                        TipoMovimiento = "Reversion",
+                        Puntos = -puntosAcumulados,
+                        Motivo = "Reversión de puntos por cancelación de la compra "
+                            + venta.NumeroOrden,
+                        IdVenta = venta.IdVenta,
+                        FechaMovimiento = DateTime.Now
+                    };
+
+                    _context.MovimientosPuntos.Add(movimientoReversion);
+                }
             }
 
             string estadoTexto =

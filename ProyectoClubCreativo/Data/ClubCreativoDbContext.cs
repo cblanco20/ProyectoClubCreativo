@@ -1350,6 +1350,10 @@ public partial class ClubCreativoDbContext : DbContext
             entity.Property(e => e.Estado)
                 .HasMaxLength(30)
                 .HasDefaultValue("Pendiente");
+            entity.Property(e => e.EstadoPago)
+    .HasMaxLength(20)
+    .IsRequired()
+    .HasDefaultValue("Pendiente");
             entity.Property(e => e.FechaVenta)
                 .HasPrecision(0)
                 .HasDefaultValueSql("(sysdatetime())");

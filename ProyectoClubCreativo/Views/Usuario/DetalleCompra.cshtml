@@ -112,6 +112,30 @@
                 <span>Total</span>
                 <strong>₡@Model.Total.ToString("N0")</strong>
             </div>
+
+            @if (Model.Estado == "Cancelada")
+            {
+                <div class="puntos-ganados-compra">
+                    <span>
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Puntos de compra cancelada
+                    </span>
+
+                    <strong>Sin puntos acumulados</strong>
+                </div>
+            }
+            else if (Model.PuntosGanados > 0)
+            {
+                <div class="puntos-ganados-compra">
+                    <span>
+                        <i class="bi bi-star-fill"></i>
+                        Puntos ganados
+                    </span>
+
+                    <strong>+@Model.PuntosGanados puntos</strong>
+                </div>
+            }
+
         </div>
 
         <div class="tarjeta-modulo-usuario informacion-entrega">

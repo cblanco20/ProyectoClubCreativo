@@ -536,6 +536,15 @@ namespace ProyectoClubCreativo.Controllers
                 return NotFound();
             }
 
+            int puntosGanados = await _context.MovimientosPuntos
+     .AsNoTracking()
+     .Where(m =>
+         m.IdVenta == venta.IdVenta &&
+         m.IdUsuario == idUsuario.Value &&
+         (m.TipoMovimiento == "Acumulacion" ||
+          m.TipoMovimiento == "Reversion"))
+     .SumAsync(m => (int?)m.Puntos) ?? 0;
+
             DetalleCompraUsuarioViewModel modelo = new()
             {
                 NumeroOrden = venta.NumeroOrden,
@@ -553,6 +562,7 @@ namespace ProyectoClubCreativo.Controllers
                 Subtotal = venta.Subtotal,
                 Descuento = venta.Descuento,
                 Total = venta.Total,
+                PuntosGanados = puntosGanados,
 
                 Productos = venta.VentaDetalles.Select(d =>
      new ProductoCompraViewModel
@@ -1694,6 +1704,21 @@ namespace ProyectoClubCreativo.Controllers
                     return RedirectToAction(nameof(Carrito));
                 }
 
+                var configuracionPuntos = await _context.ConfiguracionPuntos
+    .AsNoTracking()
+    .OrderByDescending(c => c.FechaActualizacion)
+    .FirstOrDefaultAsync();
+
+                if (configuracionPuntos == null ||
+                    configuracionPuntos.ColonesPorPunto <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "No existe una configuración válida para los puntos.");
+                }
+
+                int puntosGanados = (int)Math.Floor(
+                    subtotalVenta / configuracionPuntos.ColonesPorPunto);
+
                 var venta = new Venta
                 {
                     NumeroOrden = "CC-" +
@@ -1710,10 +1735,26 @@ namespace ProyectoClubCreativo.Controllers
                         ? entrega.Direccion
                         : null,
                     Estado = "Pendiente",
+                    EstadoPago = "Aprobado",
                     VentaDetalles = detalles
                 };
 
                 _context.Ventas.Add(venta);
+
+                if (puntosGanados > 0)
+                {
+                    var movimientoPuntos = new MovimientosPunto
+                    {
+                        IdUsuario = idUsuario.Value,
+                        TipoMovimiento = "Acumulacion",
+                        Puntos = puntosGanados,
+                        Motivo = "Puntos ganados por la compra " + venta.NumeroOrden,
+                        FechaMovimiento = DateTime.Now,
+                        IdVentaNavigation = venta
+                    };
+
+                    _context.MovimientosPuntos.Add(movimientoPuntos);
+                }
 
                 var notificacionComprador = new Notificacione
                 {

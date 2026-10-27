@@ -23,6 +23,8 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public decimal Descuento { get; set; }
         public decimal Total { get; set; }
 
+        public int PuntosGanados { get; set; }
+
         public List<ProductoCompraViewModel> Productos { get; set; } = [];
 
         public bool PuedeCalificar =>
