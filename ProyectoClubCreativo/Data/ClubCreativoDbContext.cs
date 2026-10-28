@@ -462,6 +462,9 @@ public partial class ClubCreativoDbContext : DbContext
                 .HasPrecision(0)
                 .HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.ImagenUrl).HasMaxLength(500);
+            // HU-41: Código QR vigente del evento.
+            entity.Property(e => e.CodigoQrEvento)
+                .HasColumnType("uniqueidentifier");
             entity.Property(e => e.Nombre).HasMaxLength(150);
             entity.Property(e => e.Ubicacion).HasMaxLength(250);
 

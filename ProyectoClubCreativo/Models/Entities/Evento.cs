@@ -27,6 +27,9 @@ public partial class Evento
 
     public DateTime FechaRegistro { get; set; }
 
+    // HU-41: Identificador del código QR vigente del evento.
+    public Guid? CodigoQrEvento { get; set; }
+
     public virtual ICollection<ComentariosResena> ComentariosResenas { get; set; } = new List<ComentariosResena>();
 
     public virtual ICollection<Favorito> Favoritos { get; set; } = new List<Favorito>();

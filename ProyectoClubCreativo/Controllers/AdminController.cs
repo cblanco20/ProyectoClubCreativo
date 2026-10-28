@@ -5,6 +5,7 @@ using ProyectoClubCreativo.Models;
 using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels.Admin;
 using ProyectoClubCreativo.Services;
+using QRCoder;
 
 namespace ProyectoClubCreativo.Controllers
 {
@@ -1199,7 +1200,11 @@ namespace ProyectoClubCreativo.Controllers
                 Ubicacion = modelo.Ubicacion.Trim(),
                 CupoMaximo = modelo.CupoTotal,
                 Estado = "Programado",
-                FechaRegistro = DateTime.Now
+                FechaRegistro = DateTime.Now,
+
+                // HU-41: Generar automáticamente el identificador QR del evento.
+    CodigoQrEvento = Guid.NewGuid()
+
             };
 
             foreach (int idEmprendimiento in idsEmprendimientos)
@@ -2218,7 +2223,7 @@ namespace ProyectoClubCreativo.Controllers
                 Nombre = evento.Nombre,
                 Tipo = "Evento",
                 Fecha = evento.FechaInicio.ToString("dd/MM/yyyy"),
-                QrGenerado = false,
+                QrGenerado = evento.CodigoQrEvento.HasValue,
                 Asistentes = asistentes
             };
 
@@ -2227,25 +2232,152 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult GenerarQrAsistencia(int id)
+        public async Task<IActionResult> GenerarQrAsistencia(int id)
         {
-            TempData["MensajeAdmin"] = "El código QR de asistencia fue generado correctamente.";
+            Evento? evento = await _context.Eventos
+                .FirstOrDefaultAsync(e =>
+                    e.IdEvento == id &&
+                    e.Estado != "Eliminado");
+
+            if (evento == null)
+            {
+                TempData["ErrorAdmin"] = "El evento no existe o no está disponible.";
+                return RedirectToAction(nameof(AsistenciaQr));
+            }
+
+            if (evento.CodigoQrEvento.HasValue)
+            {
+                TempData["MensajeAdmin"] = "Este evento ya tiene un código QR generado.";
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // HU-41: Generar el identificador QR del evento.
+            evento.CodigoQrEvento = Guid.NewGuid();
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = "El código QR del evento fue generado correctamente.";
+
             return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RegenerarQrAsistencia(int id)
+        public async Task<IActionResult> RegenerarQrAsistencia(int id)
         {
-            TempData["MensajeAdmin"] = "El código QR fue regenerado. El anterior ya no es válido.";
+            Evento? evento = await _context.Eventos
+                .FirstOrDefaultAsync(e =>
+                    e.IdEvento == id &&
+                    e.Estado != "Eliminado");
+
+            if (evento == null)
+            {
+                TempData["ErrorAdmin"] = "El evento no existe o no está disponible.";
+                return RedirectToAction(nameof(AsistenciaQr));
+            }
+
+            if (!evento.CodigoQrEvento.HasValue)
+            {
+                TempData["ErrorAdmin"] = "Este evento todavía no tiene un código QR generado.";
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // HU-41: Reemplazar el identificador QR anterior por uno nuevo.
+            evento.CodigoQrEvento = Guid.NewGuid();
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = "El código QR del evento fue regenerado correctamente.";
+
             return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
         }
 
         [HttpGet]
-        public IActionResult DescargarQrAsistencia(int id)
+        public async Task<IActionResult> DescargarQrAsistencia(int id)
         {
-            return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            Evento? evento = await _context.Eventos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdEvento == id &&
+                    e.Estado != "Eliminado");
+
+            if (evento == null)
+            {
+                TempData["ErrorAdmin"] = "El evento no existe o no está disponible.";
+                return RedirectToAction(nameof(AsistenciaQr));
+            }
+
+            if (!evento.CodigoQrEvento.HasValue)
+            {
+                TempData["ErrorAdmin"] = "Este evento todavía no tiene un código QR generado.";
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // HU-41: Crear el contenido del QR con el identificador del evento
+            // y su código único vigente.
+            string contenidoQr = Url.Action(
+                "VerificarQrEvento",
+                "Admin",
+                new
+                {
+                    id = evento.IdEvento,
+                    codigo = evento.CodigoQrEvento.Value
+                },
+                Request.Scheme
+            )!;
+
+            // Generar la imagen PNG mediante QRCoder.
+            using QRCodeGenerator generador = new();
+
+            using QRCodeData datosQr = generador.CreateQrCode(
+                contenidoQr,
+                QRCodeGenerator.ECCLevel.Q
+            );
+
+            PngByteQRCode codigoQr = new(datosQr);
+
+            byte[] imagenQr = codigoQr.GetGraphic(20);
+
+            return File(
+                imagenQr,
+                "image/png",
+                $"QR_Evento_{evento.IdEvento}.png"
+            );
         }
+
+        [HttpGet]
+        public async Task<IActionResult> VerificarQrEvento(int id, Guid codigo)
+        {
+            Evento? evento = await _context.Eventos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdEvento == id &&
+                    e.Estado != "Eliminado");
+
+            if (evento == null)
+            {
+                return Content(
+                    "El evento no existe o no está disponible.",
+                    "text/plain; charset=utf-8"
+                );
+            }
+
+            // HU-41: Comprobar que el QR escaneado sea el vigente.
+            if (!evento.CodigoQrEvento.HasValue ||
+                evento.CodigoQrEvento.Value != codigo)
+            {
+                return Content(
+                    "Este código QR ya no es válido.",
+                    "text/plain; charset=utf-8"
+                );
+            }
+
+            return Content(
+                $"Código QR válido para el evento: {evento.Nombre}",
+                "text/plain; charset=utf-8"
+            );
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ValidarAsistencia(int id, string codigoQr)
