@@ -2411,6 +2411,24 @@ namespace ProyectoClubCreativo.Controllers
 
             int saldoPuntos = movimientos.Sum(m => m.Puntos);
 
+
+            var recompensas = await _context.Recompensas
+                .AsNoTracking()
+                .Where(r => r.Activa)
+                .OrderBy(r => r.CostoPuntos)
+                .Select(r => new RecompensaViewModel
+                {
+                    Id = r.IdRecompensa,
+                    Nombre = r.Nombre,
+                    Descripcion = r.Descripcion ?? "",
+                    CostoPuntos = r.CostoPuntos,
+                    Icono = r.Icono ?? "bi-gift-fill",
+                    Disponible = saldoPuntos >= r.CostoPuntos
+                })
+                .ToListAsync();
+
+
+
             PuntosRecompensasViewModel modelo = new()
             {
                 NombreUsuario = usuario.Nombre,
@@ -2419,41 +2437,106 @@ namespace ProyectoClubCreativo.Controllers
 
                 Movimientos = movimientos,
 
-                Recompensas =
-                [
-                    new()
-            {
-                Id = 1,
-                Nombre = "10 % de descuento",
-                Descripcion = "Aplicable en una compra seleccionada.",
-                CostoPuntos = 500,
-                Icono = "bi-percent",
-                Disponible = saldoPuntos >= 500
-            },
-            new()
-            {
-                Id = 2,
-                Nombre = "Entrada especial",
-                Descripcion = "Acceso prioritario a una feria.",
-                CostoPuntos = 900,
-                Icono = "bi-ticket-perforated-fill",
-                Disponible = saldoPuntos >= 900
-            },
-            new()
-            {
-                Id = 3,
-                Nombre = "Taller gratuito",
-                Descripcion = "Canje por un taller participante.",
-                CostoPuntos = 1500,
-                Icono = "bi-palette-fill",
-                Disponible = saldoPuntos >= 1500
-            }
-                ]
+                Recompensas = recompensas
             };
 
             return View(modelo);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CanjearRecompensa(int idRecompensa)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            await using var transaccion = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+            try
+            {
+                bool usuarioActivo = await _context.Usuarios
+                    .AnyAsync(u => u.IdUsuario == idUsuario.Value
+                                && u.Estado == "Activo");
+
+                if (!usuarioActivo)
+                {
+                    await transaccion.RollbackAsync();
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("IniciarSesion", "Cuenta");
+                }
+
+                var recompensa = await _context.Recompensas
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.IdRecompensa == idRecompensa
+                                           && r.Activa);
+
+                if (recompensa == null)
+                {
+                    await transaccion.RollbackAsync();
+
+                    TempData["Error"] = "La recompensa no está disponible.";
+                    return RedirectToAction(nameof(PuntosRecompensas));
+                }
+
+                int saldoPuntos = await _context.MovimientosPuntos
+                    .Where(m => m.IdUsuario == idUsuario.Value)
+                    .SumAsync(m => (int?)m.Puntos) ?? 0;
+
+                if (saldoPuntos < recompensa.CostoPuntos)
+                {
+                    await transaccion.RollbackAsync();
+
+                    int puntosFaltantes = recompensa.CostoPuntos - saldoPuntos;
+
+                    TempData["Error"] =
+                        $"No tienes puntos suficientes. Te faltan {puntosFaltantes} puntos.";
+
+                    return RedirectToAction(nameof(PuntosRecompensas));
+                }
+
+                var canje = new CanjesRecompensa
+                {
+                    IdUsuario = idUsuario.Value,
+                    IdRecompensa = recompensa.IdRecompensa,
+                    PuntosUtilizados = recompensa.CostoPuntos,
+                    FechaCanje = DateTime.Now,
+                    Estado = "Canjeado"
+                };
+
+                _context.CanjesRecompensas.Add(canje);
+
+                var movimiento = new MovimientosPunto
+                {
+                    IdUsuario = idUsuario.Value,
+                    TipoMovimiento = "Canje",
+                    Puntos = -recompensa.CostoPuntos,
+                    Motivo = $"Canje de recompensa: {recompensa.Nombre}",
+                    FechaMovimiento = DateTime.Now
+                };
+
+                _context.MovimientosPuntos.Add(movimiento);
+
+                await _context.SaveChangesAsync();
+                await transaccion.CommitAsync();
+
+                TempData["Exito"] =
+                    $"Canjeaste correctamente la recompensa \"{recompensa.Nombre}\" por {recompensa.CostoPuntos} puntos.";
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["Error"] =
+                    "No se pudo completar el canje. Inténtalo nuevamente.";
+            }
+
+            return RedirectToAction(nameof(PuntosRecompensas));
+        }
 
         [HttpGet]
         public IActionResult Favoritos()
