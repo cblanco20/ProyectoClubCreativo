@@ -434,6 +434,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Nombre { get; set; } = "";
         public string Correo { get; set; } = "";
         public bool Presente { get; set; }
+        public int IdUsuario { get; set; }
     }
 
     public class ActividadQrAdminViewModel

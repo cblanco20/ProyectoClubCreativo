@@ -2159,16 +2159,70 @@ namespace ProyectoClubCreativo.Controllers
             ];
         }
         [HttpGet]
-        public IActionResult AsistenciaQr()
+        public async Task<IActionResult> AsistenciaQr()
         {
-            return View(ObtenerActividadesQrDemo());
-        }
+            List<ActividadQrAdminViewModel> actividades =
+                await _context.Eventos
+                    .AsNoTracking()
+                    .Where(e => e.Estado != "Eliminado")
+                    .OrderByDescending(e => e.FechaInicio)
+                    .Select(e => new ActividadQrAdminViewModel
+                    {
+                        Id = e.IdEvento,
+                        Nombre = e.Nombre,
+                        Tipo = "Evento",
+                        Fecha = e.FechaInicio.ToString("dd/MM/yyyy"),
+                        QrGenerado = false
+                    })
+                    .ToListAsync();
 
+            return View(actividades);
+        }
         [HttpGet]
-        public IActionResult DetalleAsistenciaQr(int id = 1)
+        public async Task<IActionResult> DetalleAsistenciaQr(int id)
         {
-            var actividad = ObtenerActividadesQrDemo().FirstOrDefault(a => a.Id == id) ?? ObtenerActividadesQrDemo().First();
-            return View(actividad);
+            Evento? evento = await _context.Eventos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdEvento == id &&
+                    e.Estado != "Eliminado");
+
+            if (evento == null)
+            {
+                TempData["ErrorAdmin"] = "El evento no existe o no está disponible.";
+
+                return RedirectToAction(nameof(AsistenciaQr));
+            }
+
+            List<AsistenteQrAdminViewModel> asistentes =
+                await _context.InscripcionesEventos
+                    .AsNoTracking()
+                    .Where(i =>
+                        i.IdEvento == id &&
+                        i.Estado == "Confirmada")
+                    .Select(i => new AsistenteQrAdminViewModel
+                    {
+                        IdUsuario = i.IdUsuario,
+                        Nombre = i.IdUsuarioNavigation.Nombre + " " +
+                                 i.IdUsuarioNavigation.ApellidoPaterno,
+                        Correo = i.IdUsuarioNavigation.Correo,
+                        Presente = _context.RegistrosAsistencia.Any(a =>
+                            a.IdUsuario == i.IdUsuario &&
+                            a.IdEvento == id)
+                    })
+                    .ToListAsync();
+
+            ActividadQrAdminViewModel modelo = new()
+            {
+                Id = evento.IdEvento,
+                Nombre = evento.Nombre,
+                Tipo = "Evento",
+                Fecha = evento.FechaInicio.ToString("dd/MM/yyyy"),
+                QrGenerado = false,
+                Asistentes = asistentes
+            };
+
+            return View(modelo);
         }
 
         [HttpPost]
@@ -2192,26 +2246,150 @@ namespace ProyectoClubCreativo.Controllers
         {
             return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ValidarAsistencia(int id, string correo)
+        public async Task<IActionResult> ValidarAsistencia(int id, string codigoQr)
         {
-            TempData["MensajeAdmin"] = $"Se registró la asistencia de {correo}.";
-            return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
-        }
+            // 1. Comprobar el formato del código QR
+            if (!Guid.TryParse(codigoQr, out Guid codigo))
+            {
+                TempData["ErrorAdmin"] = "El código QR ingresado no es válido.";
 
-        private static List<ActividadQrAdminViewModel> ObtenerActividadesQrDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Arte Inarrivo San Pedro", Tipo = "Evento", Fecha = "15 y 16 de agosto", QrGenerado = true,
-            Asistentes = [ new() { Nombre = "Maria Montero Cruz", Correo = "maria@ejemplo.com", Presente = true },
-                           new() { Nombre = "Carla Ramírez Solís", Correo = "carla@ejemplo.com", Presente = false } ] },
-        new() { Id = 2, Nombre = "Cerámica para principiantes", Tipo = "Taller", Fecha = "23 de agosto", QrGenerado = true,
-            Asistentes = [ new() { Nombre = "Luis Fernández Rojas", Correo = "luis@ejemplo.com", Presente = false } ] },
-        new() { Id = 3, Nombre = "Feria Creativa Santa Ana", Tipo = "Evento", Fecha = "5 al 7 de septiembre", QrGenerado = false, Asistentes = [] }
-            ];
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // 2. Buscar el código QR en la base de datos
+            var qrUsuario = await _context.CodigosQrusuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Codigo == codigo && q.Activo);
+
+            // 3. Comprobar que exista y esté activo
+            if (qrUsuario == null)
+            {
+                TempData["ErrorAdmin"] =
+                    "El código QR no existe o se encuentra inactivo.";
+
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // 4. Comprobar que el usuario esté inscrito al evento
+            bool inscripcionConfirmada = await _context.InscripcionesEventos
+                .AsNoTracking()
+                .AnyAsync(i =>
+                    i.IdUsuario == qrUsuario.IdUsuario &&
+                    i.IdEvento == id &&
+                    i.Estado == "Confirmada");
+
+            if (!inscripcionConfirmada)
+            {
+                TempData["ErrorAdmin"] =
+                    "El usuario no tiene una inscripción confirmada para este evento.";
+
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // 5. Comprobar que el evento exista y esté disponible
+            var evento = await _context.Eventos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.IdEvento == id);
+
+            if (evento == null || evento.Estado == "Eliminado")
+            {
+                TempData["ErrorAdmin"] =
+                    "El evento no existe o no está disponible.";
+
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // 6. Comprobar que el evento esté dentro de su fecha y horario
+            DateTime fechaActual = DateTime.Now;
+
+            if (fechaActual < evento.FechaInicio ||
+                (evento.FechaFin.HasValue && fechaActual > evento.FechaFin.Value))
+            {
+                TempData["ErrorAdmin"] =
+                    "No se puede registrar la asistencia porque el evento está fuera de su fecha u horario.";
+
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // 7. Comprobar que el usuario no tenga una asistencia registrada
+            bool asistenciaExistente = await _context.RegistrosAsistencia
+                .AsNoTracking()
+                .AnyAsync(a =>
+                    a.IdUsuario == qrUsuario.IdUsuario &&
+                    a.IdEvento == id);
+
+            if (asistenciaExistente)
+            {
+                TempData["ErrorAdmin"] =
+                    "Este usuario ya tiene una asistencia registrada para este evento.";
+
+                return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+            }
+
+            // 8. Preparar el registro de asistencia del usuario
+            var nuevaAsistencia = new RegistrosAsistencium
+            {
+                IdUsuario = qrUsuario.IdUsuario,
+                IdEvento = id,
+                IdTaller = null,
+                TipoAsistencia = "Evento",
+                FechaHora = fechaActual,
+                RegistradoPorQr = true,
+                Observacion = "Asistencia validada mediante código QR."
+            };
+
+            // 9. Preparar los 10 puntos por asistencia al evento
+            var nuevoMovimiento = new MovimientosPunto
+            {
+                IdUsuario = qrUsuario.IdUsuario,
+                TipoMovimiento = "Acumulacion",
+                Puntos = 10,
+                Motivo = "Asistencia al evento: " + evento.Nombre,
+                IdVenta = null,
+                FechaMovimiento = fechaActual
+            };
+
+            // 10. Guardar la asistencia y los puntos en una misma transacción
+            await using var transaccion = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // Guardar primero la asistencia
+                _context.RegistrosAsistencia.Add(nuevaAsistencia);
+                await _context.SaveChangesAsync();
+
+                // Relacionar los puntos con la asistencia registrada
+                nuevoMovimiento.IdAsistencia = nuevaAsistencia.IdAsistencia;
+
+                // Guardar los 10 puntos
+                _context.Set<MovimientosPunto>().Add(nuevoMovimiento);
+                await _context.SaveChangesAsync();
+
+                // Confirmar ambas operaciones
+                await transaccion.CommitAsync();
+
+                TempData["MensajeAdmin"] =
+                    "Asistencia registrada correctamente. Se otorgaron 10 puntos al usuario.";
+            }
+            catch (DbUpdateException)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["ErrorAdmin"] =
+                    "No se pudo registrar la asistencia. Es posible que el usuario ya tenga una asistencia registrada para este evento.";
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["ErrorAdmin"] =
+                    "Ocurrió un error al registrar la asistencia y los puntos.";
+            }
+
+            return RedirectToAction(nameof(DetalleAsistenciaQr), new { id });
+
         }
 
         [HttpGet]

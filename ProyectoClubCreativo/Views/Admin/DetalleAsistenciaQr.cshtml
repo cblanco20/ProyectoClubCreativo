@@ -36,9 +36,20 @@
                             @if (!p.Presente)
                             {
                                 <form asp-action="ValidarAsistencia" method="post">
+                                    @Html.AntiForgeryToken()
+
                                     <input type="hidden" name="id" value="@Model.Id" />
-                                    <input type="hidden" name="correo" value="@p.Correo" />
-                                    <button class="boton-admin boton-admin-exito">Validar</button>
+
+                                    <input type="text"
+                                           name="codigoQr"
+                                           placeholder="Código QR del usuario"
+                                           required
+                                           class="form-control"
+                                           style="margin-bottom:8px;" />
+
+                                    <button type="submit" class="boton-admin boton-admin-exito">
+                                        Validar QR
+                                    </button>
                                 </form>
                             }
                         </td>
