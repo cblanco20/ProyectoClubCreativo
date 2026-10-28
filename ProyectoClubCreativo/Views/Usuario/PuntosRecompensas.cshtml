@@ -93,30 +93,51 @@
         <h2>Historial de puntos</h2>
     </div>
 
-    <div class="lista-movimientos-puntos">
+    
+        <div class="lista-movimientos-puntos">
 
-        @foreach (var movimiento in Model.Movimientos)
-        {
-            string clasePuntos =
-                movimiento.Puntos > 0
-                    ? "puntos-positivos"
-                    : "puntos-negativos";
+            @if (Model.Movimientos.Any())
+            {
+                @foreach (var movimiento in Model.Movimientos)
+                {
+                    string clasePuntos =
+                        movimiento.Puntos > 0
+                            ? "puntos-positivos"
+                            : "puntos-negativos";
 
-            <div class="movimiento-puntos">
+                    <div class="movimiento-puntos">
 
-                <div>
-                    <strong>@movimiento.Descripcion</strong>
-                    <span>@movimiento.Fecha.ToString("dd/MM/yyyy")</span>
+                        <div>
+                            <strong>@movimiento.Descripcion</strong>
+                            <span>@movimiento.Fecha.ToString("dd/MM/yyyy")</span>
+                        </div>
+
+                        <strong class="@clasePuntos">
+                            @(movimiento.Puntos > 0 ? "+" : "")
+                            @movimiento.Puntos
+                        </strong>
+
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="bi bi-star fs-2 text-muted"></i>
+
+                    <p class="mt-3 mb-1">
+                        Todavía no tienes puntos acumulados.
+                    </p>
+
+                    <p class="text-muted mb-0">
+                        Cuando ganes puntos por tus compras o
+                        participación en actividades, podrás
+                        consultar aquí tu historial.
+                    </p>
                 </div>
+            }
 
-                <strong class="@clasePuntos">
-                    @(movimiento.Puntos > 0 ? "+" : "")
-                    @movimiento.Puntos
-                </strong>
+        </div>
 
-            </div>
-        }
-
-    </div>
 
 </section>

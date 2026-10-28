@@ -2372,39 +2372,52 @@ namespace ProyectoClubCreativo.Controllers
                 .ToList());
         }
 
+
         [HttpGet]
-        public IActionResult PuntosRecompensas()
+        public async Task<IActionResult> PuntosRecompensas()
         {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (usuario is null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var movimientos = await _context.MovimientosPuntos
+                .AsNoTracking()
+                .Where(m => m.IdUsuario == idUsuario.Value)
+                .OrderByDescending(m => m.FechaMovimiento)
+                .ThenByDescending(m => m.IdMovimientoPuntos)
+                .Select(m => new MovimientoPuntosViewModel
+                {
+                    Fecha = m.FechaMovimiento,
+                    Descripcion = m.Motivo,
+                    Puntos = m.Puntos,
+                    Tipo = m.TipoMovimiento
+                })
+                .ToListAsync();
+
+            int saldoPuntos = movimientos.Sum(m => m.Puntos);
+
             PuntosRecompensasViewModel modelo = new()
             {
-                NombreUsuario = "Maria",
-                SaldoPuntos = 1280,
-                CodigoCliente = "CC-MARIA-1280",
+                NombreUsuario = usuario.Nombre,
+                SaldoPuntos = saldoPuntos,
+                CodigoCliente = $"CC-{usuario.IdUsuario}",
 
-                Movimientos =
-                [
-                    new()
-            {
-                Fecha = new DateTime(2026, 8, 2),
-                Descripcion = "Compra CC-1025",
-                Puntos = 180,
-                Tipo = "Ganados"
-            },
-            new()
-            {
-                Fecha = new DateTime(2026, 7, 25),
-                Descripcion = "Compra CC-1008",
-                Puntos = 320,
-                Tipo = "Ganados"
-            },
-            new()
-            {
-                Fecha = new DateTime(2026, 7, 18),
-                Descripcion = "Canje de descuento",
-                Puntos = -250,
-                Tipo = "Canjeados"
-            }
-                ],
+                Movimientos = movimientos,
 
                 Recompensas =
                 [
@@ -2415,7 +2428,7 @@ namespace ProyectoClubCreativo.Controllers
                 Descripcion = "Aplicable en una compra seleccionada.",
                 CostoPuntos = 500,
                 Icono = "bi-percent",
-                Disponible = true
+                Disponible = saldoPuntos >= 500
             },
             new()
             {
@@ -2424,7 +2437,7 @@ namespace ProyectoClubCreativo.Controllers
                 Descripcion = "Acceso prioritario a una feria.",
                 CostoPuntos = 900,
                 Icono = "bi-ticket-perforated-fill",
-                Disponible = true
+                Disponible = saldoPuntos >= 900
             },
             new()
             {
@@ -2433,13 +2446,14 @@ namespace ProyectoClubCreativo.Controllers
                 Descripcion = "Canje por un taller participante.",
                 CostoPuntos = 1500,
                 Icono = "bi-palette-fill",
-                Disponible = false
+                Disponible = saldoPuntos >= 1500
             }
                 ]
             };
 
             return View(modelo);
         }
+
 
         [HttpGet]
         public IActionResult Favoritos()
