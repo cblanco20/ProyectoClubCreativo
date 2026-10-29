@@ -804,6 +804,7 @@ public partial class ClubCreativoDbContext : DbContext
                 .HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.FechaLectura).HasPrecision(0);
             entity.Property(e => e.Mensaje).HasMaxLength(1000);
+            entity.Property(e => e.NumeroOrden).HasMaxLength(50);
             entity.Property(e => e.Tipo).HasMaxLength(50);
             entity.Property(e => e.Titulo).HasMaxLength(150);
 

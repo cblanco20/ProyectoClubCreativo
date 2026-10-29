@@ -196,6 +196,7 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public string Fecha { get; set; } = string.Empty;
         public string Icono { get; set; } = string.Empty;
         public bool Leida { get; set; }
+        public string? NumeroOrden { get; set; }
     }
 
     public class PreferenciasNotificacionViewModel

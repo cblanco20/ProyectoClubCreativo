@@ -20,6 +20,7 @@ public partial class Notificacione
     public bool Leida { get; set; }
 
     public DateTime? FechaLectura { get; set; }
+    public string? NumeroOrden { get; set; }
 
     public virtual Usuario IdUsuarioNavigation { get; set; } = null!;
 }

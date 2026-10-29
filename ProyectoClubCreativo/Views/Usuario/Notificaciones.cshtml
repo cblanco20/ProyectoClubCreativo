@@ -49,6 +49,20 @@
                 <h2>@notificacion.Titulo</h2>
                 <p>@notificacion.Mensaje</p>
                 <small>@notificacion.Fecha</small>
+
+                @if (notificacion.Tipo == "Compra" &&
+                     !string.IsNullOrWhiteSpace(notificacion.NumeroOrden))
+                {
+                    <div class="mt-2">
+                        <a asp-controller="Usuario"
+                           asp-action="DetalleCompra"
+                           asp-route-id="@notificacion.NumeroOrden"
+                           class="boton-secundario-usuario">
+                            <i class="bi bi-receipt"></i>
+                            Ver detalle de compra
+                        </a>
+                    </div>
+                }
             </div>
 
             <button type="button"

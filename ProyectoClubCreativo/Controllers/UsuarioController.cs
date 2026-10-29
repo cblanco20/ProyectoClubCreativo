@@ -1276,6 +1276,7 @@ namespace ProyectoClubCreativo.Controllers
                 var notificacionComprador = new Notificacione
                 {
                     IdUsuario = idUsuario.Value,
+                    NumeroOrden = venta.NumeroOrden,
                     Titulo = "Pedido registrado",
                     Mensaje = "Tu pedido " + venta.NumeroOrden +
                               " se registró correctamente. " +
@@ -1596,6 +1597,23 @@ namespace ProyectoClubCreativo.Controllers
 
             if (!resultadoPago.Aprobado)
             {
+                var notificacionRechazo = new Notificacione
+                {
+                    IdUsuario = idUsuario.Value,
+                    Titulo = "Pago rechazado",
+                    Mensaje = "No fue posible completar tu compra porque " +
+                              "el pago fue rechazado. " +
+                              "Monto del intento: ₡" + modelo.TotalPagar.ToString("N2") + ". " +
+                              "Verifica los datos de tu tarjeta e inténtalo nuevamente.",
+                    Tipo = "Compra",
+                    FechaEnvio = DateTime.Now,
+                    Leida = false,
+                    FechaLectura = null
+                };
+
+                _context.Notificaciones.Add(notificacionRechazo);
+                await _context.SaveChangesAsync();
+
                 ModelState.AddModelError(
                     string.Empty,
                     resultadoPago.Mensaje);
@@ -1756,13 +1774,20 @@ namespace ProyectoClubCreativo.Controllers
                     _context.MovimientosPuntos.Add(movimientoPuntos);
                 }
 
+                var nombresProductos = carrito
+                    .Select(p => $"{p.Nombre} (x{p.Cantidad})");
+
                 var notificacionComprador = new Notificacione
                 {
                     IdUsuario = idUsuario.Value,
-                    Titulo = "Compra registrada",
-                    Mensaje = "Tu pedido " + venta.NumeroOrden +
-                              " se registró correctamente. " +
-                              "Puedes consultar los detalles de tu compra.",
+                    NumeroOrden = venta.NumeroOrden,
+                    Titulo = "¡Compra confirmada!",
+                    Mensaje = "Tu pago fue aprobado correctamente. " +
+                              "Número de orden: " + venta.NumeroOrden + ". " +
+                              "Productos: " + string.Join(", ", nombresProductos) + ". " +
+                              "Monto total: ₡" + venta.Total.ToString("N2") + ". " +
+                              "Fecha: " + venta.FechaVenta.ToString("dd/MM/yyyy HH:mm") + ". " +
+                              "Estado del pedido: " + venta.Estado + ".",
                     Tipo = "Compra",
                     FechaEnvio = DateTime.Now,
                     Leida = false,
@@ -3382,6 +3407,7 @@ namespace ProyectoClubCreativo.Controllers
                 {
                     Id = (int)n.IdNotificacion,
                     Tipo = n.Tipo,
+                    NumeroOrden = n.NumeroOrden,
                     Titulo = n.Titulo,
                     Mensaje = n.Mensaje,
                     Fecha = n.FechaEnvio.ToString("dd/MM/yyyy HH:mm"),
