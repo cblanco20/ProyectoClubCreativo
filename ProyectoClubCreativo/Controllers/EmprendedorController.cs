@@ -13,15 +13,18 @@ namespace ProyectoClubCreativo.Controllers
         private readonly ClubCreativoDbContext _context;
         private readonly IWebHostEnvironment _entornoWeb;
         private readonly PagoService _pagoService;
+        private readonly CorreoService _correoService;
 
         public EmprendedorController(
     ClubCreativoDbContext context,
     IWebHostEnvironment entornoWeb,
-    PagoService pagoService)
+    PagoService pagoService,
+    CorreoService correoService)
         {
             _context = context;
             _entornoWeb = entornoWeb;
             _pagoService = pagoService;
+            _correoService = correoService;
         }
 
         public override async Task OnActionExecutionAsync(
@@ -474,6 +477,111 @@ namespace ProyectoClubCreativo.Controllers
             return View(modelo);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReenviarNotificacionSolicitud()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .Include(e => e.IdUsuarioPropietarioNavigation)
+                .Include(e => e.MotivosRechazos)
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value);
+
+            if (emprendimiento is null ||
+                (emprendimiento.EstadoAprobacion != "Aprobado" &&
+                 emprendimiento.EstadoAprobacion != "Rechazado"))
+            {
+                TempData["MensajeError"] =
+                    "No existe una resolución disponible para reenviar.";
+
+                return RedirectToAction(nameof(EstadoSolicitud));
+            }
+
+            string? correoDestino =
+                emprendimiento.IdUsuarioPropietarioNavigation?.Correo;
+
+            if (string.IsNullOrWhiteSpace(correoDestino))
+            {
+                TempData["MensajeError"] =
+                    "No se encontró un correo registrado para enviar la notificación.";
+
+                return RedirectToAction(nameof(EstadoSolicitud));
+            }
+
+            bool aprobada = emprendimiento.EstadoAprobacion == "Aprobado";
+
+            string? motivo = emprendimiento.MotivosRechazos
+                .OrderByDescending(m => m.FechaRechazo)
+                .FirstOrDefault()?.Motivo;
+
+            string nombreDestinatario =
+                emprendimiento.IdUsuarioPropietarioNavigation?.Nombre
+                ?? "emprendedor";
+
+            string asunto = aprobada
+                ? "Tu solicitud de emprendimiento fue aprobada - Club Creativo"
+                : "Resultado de tu solicitud de emprendimiento - Club Creativo";
+
+            string titulo = aprobada
+                ? "¡Tu solicitud fue aprobada!"
+                : "Resultado de tu solicitud";
+
+            string cuerpo = aprobada
+                ? $@"<p>Hola {PlantillaCorreo.E(nombreDestinatario)},</p>
+             <p>¡Buenas noticias! Tu solicitud para incorporar
+             «<strong>{PlantillaCorreo.E(emprendimiento.NombreComercial)}</strong>»
+             a Club Creativo fue <strong>aprobada</strong>.</p>
+             <p>Ya puedes iniciar sesión con tu cuenta de emprendedor para
+             administrar tu perfil, productos y participación en la plataforma.</p>"
+                : $@"<p>Hola {PlantillaCorreo.E(nombreDestinatario)},</p>
+             <p>Tu solicitud para incorporar
+             «<strong>{PlantillaCorreo.E(emprendimiento.NombreComercial)}</strong>»
+             a Club Creativo fue <strong>rechazada</strong>.</p>
+             <p>Motivo indicado por el equipo revisor:</p>
+             <p style=""background:#faf7ff;border-left:4px solid #a855c7;padding:12px 16px;border-radius:6px;"">
+                 {PlantillaCorreo.E(motivo)}
+             </p>
+             <p>Puedes iniciar sesión, corregir la información de tu
+             emprendimiento y volver a enviarla para revisión.</p>";
+
+            string urlBase = $"{Request.Scheme}://{Request.Host}";
+
+            string contenidoCorreo = PlantillaCorreo.Construir(
+                titulo: titulo,
+                cuerpoHtml: cuerpo,
+                textoBoton: "Iniciar sesión",
+                urlBoton: $"{urlBase}/Cuenta/IniciarSesion",
+                urlBase: urlBase
+            );
+
+            try
+            {
+                await _correoService.EnviarCorreoAsync(
+                    correoDestino,
+                    asunto,
+                    contenidoCorreo
+                );
+
+                TempData["MensajeSolicitud"] =
+                    "La notificación fue reenviada correctamente a tu correo electrónico.";
+            }
+            catch
+            {
+                TempData["MensajeError"] =
+                    "No fue posible reenviar la notificación. Intenta nuevamente.";
+            }
+
+            return RedirectToAction(nameof(EstadoSolicitud));
+        }
+
         [HttpGet]
         public async Task<IActionResult> PerfilEmprendimiento()
         {
@@ -577,6 +685,8 @@ namespace ProyectoClubCreativo.Controllers
 
             return View(modelo);
         }
+
+
         [HttpGet]
         public async Task<IActionResult> EditarEmprendimiento()
         {

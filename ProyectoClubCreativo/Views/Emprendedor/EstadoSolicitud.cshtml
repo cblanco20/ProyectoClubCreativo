@@ -37,6 +37,14 @@
     </div>
 }
 
+@if (TempData["MensajeError"] is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        @TempData["MensajeError"]
+    </div>
+}
+
 <section class="cabecera-vista-emprendedor">
 
     <div>
@@ -457,6 +465,22 @@
             Corregir solicitud
 
         </a>
+        @if (solicitudResuelta)
+        {
+            <form asp-controller="Emprendedor"
+                  asp-action="ReenviarNotificacionSolicitud"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <button type="submit"
+                        class="boton-secundario-estado">
+                    <i class="bi bi-envelope-arrow-up"></i>
+                    Reenviar notificación por correo
+                </button>
+
+            </form>
+        }
 
         <a asp-controller="Emprendedor"
            asp-action="Panel"
