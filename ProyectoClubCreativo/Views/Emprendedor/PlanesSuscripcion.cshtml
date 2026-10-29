@@ -72,328 +72,375 @@
     @Html.AntiForgeryToken()
 
     <div asp-validation-summary="All"
-     class="resumen-validacion-emprendedor">
- </div>
-
- @if (!ViewData.ModelState.IsValid)
-{
-    <div style="background:white; color:red; padding:15px; border:2px solid red; margin:15px 0;">
-        <strong>ERRORES DE VALIDACIÓN:</strong>
-
-        @foreach (var item in ViewData.ModelState)
-        {
-            foreach (var error in item.Value.Errors)
-            {
-                <p>
-                    Campo: @item.Key |
-                    Error: @(string.IsNullOrWhiteSpace(error.ErrorMessage)
-                        ? error.Exception?.Message
-                        : error.ErrorMessage)
-                </p>
-            }
-        }
+         class="resumen-validacion-emprendedor"
+         style="display: none;">
     </div>
-}
-
 
 
     @if (Model.Planes.Count > 0)
     {
-        <section class="grid-planes-suscripcion">
+        <div id="pasoSeleccionPlan">
+            <div style="margin-bottom: 20px;">
+                <span class="subtitulo-emprendedor">PASO 1 DE 2</span>
 
-            @foreach (var plan in Model.Planes)
-            {
-                <label class="tarjeta-plan-emprendedor">
+                <h2 style="margin: 8px 0; font-size: 22px;">
+                    Selecciona tu plan
+                </h2>
 
-                    <input asp-for="IdPlanSeleccionado"
-                           type="radio"
-                           value="@plan.IdPlan"
-                           class="selector-plan-oculto" />
+                <p style="color: #777; margin: 0;">
+                    Explora los planes disponibles y elige el que mejor
+                    se adapte a las necesidades de tu emprendimiento.
+                </p>
+            </div>
+            <section class="grid-planes-suscripcion">
+                <style>
+                                .grid-planes-suscripcion {
+                                    align-items: start;
+                                }
 
-                    <span class="indicador-seleccion-plan">
-                        <i class="bi bi-check-lg"></i>
-                    </span>
+                                    .grid-planes-suscripcion .tarjeta-plan-emprendedor {
+                                        height: auto;
+                                        min-height: 0;
+                                        display: flex;
+                                        flex-direction: column;
+                                    }
 
+                                    .grid-planes-suscripcion .boton-seleccionar-plan {
+                                        margin-top: 20px;
+                                    }
+                                    /* Resaltar el plan seleccionado */
+                                    .grid-planes-suscripcion .tarjeta-plan-emprendedor:has( .selector-plan-oculto:checked ) {
+                                        background-color: #f3ecfc;
+                                        border: 2px solid #a77bd8;
+                                        box-shadow: 0 6px 18px rgba(139, 92, 190, 0.12);
+                                    }
 
-                    <div class="cabecera-plan-emprendedor">
+                                    /* Ocultar el indicador de check */
+                                    .grid-planes-suscripcion .indicador-seleccion-plan {
+                                        display: none;
+                                    }
 
-                        <span class="icono-plan-suscripcion">
-                            <i class="bi bi-gem"></i>
+                                    /* Destacar el botón del plan seleccionado */
+                                    .grid-planes-suscripcion .tarjeta-plan-emprendedor:has( .selector-plan-oculto:checked ) .boton-seleccionar-plan {
+                                        background-color: #e6d7f8;
+                                        color: #7138b4;
+                                        border-color: #a77bd8;
+                                    }
+                </style>
+
+                @foreach (var plan in Model.Planes)
+                {
+                    <label class="tarjeta-plan-emprendedor">
+
+                        <input asp-for="IdPlanSeleccionado"
+                               type="radio"
+                               value="@plan.IdPlan"
+                               class="selector-plan-oculto" />
+
+                        <span class="indicador-seleccion-plan">
+                            <i class="bi bi-check-lg"></i>
                         </span>
 
-                        <span class="etiqueta-plan-suscripcion">
-                            Plan disponible
-                        </span>
 
-                    </div>
+                        <div class="cabecera-plan-emprendedor">
 
+                            <span class="icono-plan-suscripcion">
+                                <i class="bi bi-gem"></i>
+                            </span>
 
-                    <div class="nombre-plan-emprendedor">
+                            <span class="etiqueta-plan-suscripcion">
+                                Plan disponible
+                            </span>
 
-                        <h2>@plan.Nombre</h2>
-
-                        @if (!string.IsNullOrWhiteSpace(plan.Descripcion))
-                        {
-                            <p>
-                                @plan.Descripcion
-                            </p>
-                        }
-
-                    </div>
+                        </div>
 
 
-                    <div class="precio-plan-emprendedor">
+                        <div class="nombre-plan-emprendedor">
 
-                        @if (plan.Precio == 0)
-                        {
-                            <strong>Gratis</strong>
-                        }
-                        else
-                        {
-                            <strong>₡@plan.Precio.ToString("N0")</strong>
-                        }
+                            <h2>@plan.Nombre</h2>
 
-                        <span>
-                            @plan.Periodicidad
-                        </span>
-
-                    </div>
-
-
-                    @if (!string.IsNullOrWhiteSpace(plan.Beneficios))
-                    {
-                        <ul class="beneficios-plan-emprendedor">
-
-                            @foreach (var beneficio in plan.Beneficios
-                                .Split(
-                                    new[] { '\r', '\n' },
-                                    StringSplitOptions.RemoveEmptyEntries))
+                            @if (!string.IsNullOrWhiteSpace(plan.Descripcion))
                             {
-                                <li>
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    @beneficio.Trim()
-                                </li>
+                                <p>
+                                    @plan.Descripcion
+                                </p>
                             }
 
-                        </ul>
-                    }
+                        </div>
 
 
-                    <span class="boton-seleccionar-plan">
-                        Seleccionar plan
+                        <div class="precio-plan-emprendedor">
+
+                            @if (plan.Precio == 0)
+                            {
+                                <strong>Gratis</strong>
+                            }
+                            else
+                            {
+                                <strong>₡@plan.Precio.ToString("N0")</strong>
+                            }
+
+                            <span>
+                                @plan.Periodicidad
+                            </span>
+
+                        </div>
+
+
+                        @if (!string.IsNullOrWhiteSpace(plan.Beneficios))
+                        {
+                            <ul class="beneficios-plan-emprendedor">
+
+                                @foreach (var beneficio in plan.Beneficios
+                                    .Split(
+                                        new[] { '\r', '\n' },
+                                        StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <li>
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        @beneficio.Trim()
+                                    </li>
+                                }
+
+                            </ul>
+                        }
+
+
+                        <span class="boton-seleccionar-plan">
+                            Seleccionar plan
+                        </span>
+
+                    </label>
+                }
+
+            </section>
+
+
+            <span asp-validation-for="IdPlanSeleccionado"
+                  class="mensaje-validacion-emprendedor validacion-plan-emprendedor">
+            </span>
+
+            @if (Model.Planes.Count >= 2)
+            {
+                <div style="display:flex; justify-content:center; margin:28px 0;">
+                    <button type="button"
+                            id="botonCompararPlanes"
+                            class="boton-cancelar-formulario-emprendedor">
+                        <i class="bi bi-columns-gap"></i>
+                        Comparar planes
+                    </button>
+                </div>
+
+                <section id="comparacionPlanes"
+                         class="confirmacion-plan-emprendedor"
+                         style="display:none;">
+
+                    <div class="informacion-confirmacion-plan">
+
+                        <span class="icono-confirmacion-plan">
+                            <i class="bi bi-bar-chart"></i>
+                        </span>
+
+                        <div>
+                            <h2>Comparación de planes</h2>
+                            <p>
+                                Compara las características de los planes disponibles
+                                antes de seleccionar el que mejor se adapte a tu emprendimiento.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div style="overflow-x:auto; margin-top:20px;">
+
+                        <table style="width:100%; border-collapse:collapse;">
+
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left; padding:14px;">
+                                        Característica
+                                    </th>
+
+                                    @foreach (var plan in Model.Planes)
+                                    {
+                                        <th style="text-align:center; padding:14px;">
+                                            @plan.Nombre
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td style="padding:14px;">
+                                        <strong>Precio</strong>
+                                    </td>
+
+                                    @foreach (var plan in Model.Planes)
+                                    {
+                                        <td style="text-align:center; padding:14px;">
+                                            @if (plan.Precio == 0)
+                                            {
+                                                <span>Gratis</span>
+                                            }
+                                            else
+                                            {
+                                                <span>₡@plan.Precio.ToString("N0")</span>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px;">
+                                        <strong>Periodicidad</strong>
+                                    </td>
+
+                                    @foreach (var plan in Model.Planes)
+                                    {
+                                        <td style="text-align:center; padding:14px;">
+                                            @plan.Periodicidad
+                                        </td>
+                                    }
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px;">
+                                        <strong>Descripción</strong>
+                                    </td>
+
+                                    @foreach (var plan in Model.Planes)
+                                    {
+                                        <td style="text-align:center; padding:14px;">
+                                            @(string.IsNullOrWhiteSpace(plan.Descripcion)
+                                                ? "Sin descripción"
+                                                : plan.Descripcion)
+                                        </td>
+                                    }
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px; vertical-align:top;">
+                                        <strong>Beneficios</strong>
+                                    </td>
+
+                                    @foreach (var plan in Model.Planes)
+                                    {
+                                        <td style="padding:14px; vertical-align:top;">
+
+                                            @if (!string.IsNullOrWhiteSpace(plan.Beneficios))
+                                            {
+                                                <ul style="margin:0; padding-left:20px;">
+
+                                                    @foreach (var beneficio in plan.Beneficios
+                                                        .Split(
+                                                            new[] { '\r', '\n' },
+                                                            StringSplitOptions.RemoveEmptyEntries))
+                                                    {
+                                                        <li style="margin-bottom:6px;">
+                                                            @beneficio.Trim()
+                                                        </li>
+                                                    }
+
+                                                </ul>
+                                            }
+                                            else
+                                            {
+                                                <span>Sin beneficios registrados</span>
+                                            }
+
+                                        </td>
+                                    }
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+            }
+
+            <div style="display:flex; justify-content:flex-end; margin:20px 0 28px;">
+                <button type="button" id="botonSiguientePlan" class="boton-guardar-formulario-emprendedor">
+                    Siguiente <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="pasoConfirmacionPlan" style="display:none;">
+            <div style="margin-bottom: 20px;">
+                <span class="subtitulo-emprendedor">PASO 2 DE 2</span>
+
+                <h2 style="margin: 8px 0; font-size: 22px;">
+                    Confirma tu selección
+                </h2>
+
+                <p style="color: #777; margin: 0;">
+                    Revisa tu elección y confirma que deseas continuar
+                    con el plan seleccionado.
+                </p>
+            </div>
+            <section class="confirmacion-plan-emprendedor">
+
+                <div class="informacion-confirmacion-plan">
+
+                    <span class="icono-confirmacion-plan">
+                        <i class="bi bi-shield-check"></i>
+                    </span>
+
+                    <div>
+                        <h2>Confirma tu elección</h2>
+
+                        <p>
+                            Selecciona uno de los planes y confirma que deseas
+                            continuar con la suscripción.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <label class="casilla-confirmacion-plan">
+
+                    <input asp-for="ConfirmaSeleccion" />
+
+                    <span>
+                        Confirmo que deseo seleccionar el plan indicado
+                        y conozco sus beneficios.
                     </span>
 
                 </label>
-            }
-
-        </section>
 
 
-        <span asp-validation-for="IdPlanSeleccionado"
-              class="mensaje-validacion-emprendedor validacion-plan-emprendedor">
-        </span>
-
-        @if (Model.Planes.Count >= 2)
-{
-    <div style="display:flex; justify-content:center; margin:28px 0;">
-        <button type="button"
-                id="botonCompararPlanes"
-                class="boton-cancelar-formulario-emprendedor">
-            <i class="bi bi-columns-gap"></i>
-            Comparar planes
-        </button>
-    </div>
-
-    <section id="comparacionPlanes"
-             class="confirmacion-plan-emprendedor"
-             style="display:none;">
-
-        <div class="informacion-confirmacion-plan">
-
-            <span class="icono-confirmacion-plan">
-                <i class="bi bi-bar-chart"></i>
-            </span>
-
-            <div>
-                <h2>Comparación de planes</h2>
-                <p>
-                    Compara las características de los planes disponibles
-                    antes de seleccionar el que mejor se adapte a tu emprendimiento.
-                </p>
-            </div>
-
-        </div>
-
-        <div style="overflow-x:auto; margin-top:20px;">
-
-            <table style="width:100%; border-collapse:collapse;">
-
-                <thead>
-                    <tr>
-                        <th style="text-align:left; padding:14px;">
-                            Característica
-                        </th>
-
-                        @foreach (var plan in Model.Planes)
-                        {
-                            <th style="text-align:center; padding:14px;">
-                                @plan.Nombre
-                            </th>
-                        }
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    <tr>
-                        <td style="padding:14px;">
-                            <strong>Precio</strong>
-                        </td>
-
-                        @foreach (var plan in Model.Planes)
-                        {
-                            <td style="text-align:center; padding:14px;">
-                                @if (plan.Precio == 0)
-                                {
-                                    <span>Gratis</span>
-                                }
-                                else
-                                {
-                                    <span>₡@plan.Precio.ToString("N0")</span>
-                                }
-                            </td>
-                        }
-                    </tr>
-
-                    <tr>
-                        <td style="padding:14px;">
-                            <strong>Periodicidad</strong>
-                        </td>
-
-                        @foreach (var plan in Model.Planes)
-                        {
-                            <td style="text-align:center; padding:14px;">
-                                @plan.Periodicidad
-                            </td>
-                        }
-                    </tr>
-
-                    <tr>
-                        <td style="padding:14px;">
-                            <strong>Descripción</strong>
-                        </td>
-
-                        @foreach (var plan in Model.Planes)
-                        {
-                            <td style="text-align:center; padding:14px;">
-                                @(string.IsNullOrWhiteSpace(plan.Descripcion)
-                                    ? "Sin descripción"
-                                    : plan.Descripcion)
-                            </td>
-                        }
-                    </tr>
-
-                    <tr>
-                        <td style="padding:14px; vertical-align:top;">
-                            <strong>Beneficios</strong>
-                        </td>
-
-                        @foreach (var plan in Model.Planes)
-                        {
-                            <td style="padding:14px; vertical-align:top;">
-
-                                @if (!string.IsNullOrWhiteSpace(plan.Beneficios))
-                                {
-                                    <ul style="margin:0; padding-left:20px;">
-
-                                        @foreach (var beneficio in plan.Beneficios
-                                            .Split(
-                                                new[] { '\r', '\n' },
-                                                StringSplitOptions.RemoveEmptyEntries))
-                                        {
-                                            <li style="margin-bottom:6px;">
-                                                @beneficio.Trim()
-                                            </li>
-                                        }
-
-                                    </ul>
-                                }
-                                else
-                                {
-                                    <span>Sin beneficios registrados</span>
-                                }
-
-                            </td>
-                        }
-
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </section>
-}
-
-        <section class="confirmacion-plan-emprendedor">
-
-            <div class="informacion-confirmacion-plan">
-
-                <span class="icono-confirmacion-plan">
-                    <i class="bi bi-shield-check"></i>
+                <span asp-validation-for="ConfirmaSeleccion"
+                      id="mensajeErrorConfirmacion"
+                      class="mensaje-validacion-emprendedor"
+                      style="color: #dc3545; display: block;">
                 </span>
 
-                <div>
-                    <h2>Confirma tu elección</h2>
+            </section>
 
-                    <p>
-                        Selecciona uno de los planes y confirma que deseas
-                        continuar con la suscripción.
-                    </p>
-                </div>
+
+            <div class="acciones-formulario-emprendedor">
+
+                <button type="button" id="botonAnteriorPlan" class="boton-cancelar-formulario-emprendedor">
+                    <i class="bi bi-arrow-left"></i> Anterior
+                </button>
+
+                <button type="submit"
+                        id="botonContinuarPlan"
+                        class="boton-guardar-formulario-emprendedor">
+
+                    <i class="bi bi-credit-card-fill"></i>
+                    Continuar con el plan
+
+                </button>
 
             </div>
-
-
-            <label class="casilla-confirmacion-plan">
-
-                <input asp-for="ConfirmaSeleccion" />
-
-                <span>
-                    Confirmo que deseo seleccionar el plan indicado
-                    y conozco sus beneficios.
-                </span>
-
-            </label>
-
-
-            <span asp-validation-for="ConfirmaSeleccion"
-                  class="mensaje-validacion-emprendedor">
-            </span>
-
-        </section>
-
-
-        <div class="acciones-formulario-emprendedor">
-
-            <a asp-controller="Emprendedor"
-               asp-action="Panel"
-               class="boton-cancelar-formulario-emprendedor">
-
-                Cancelar
-
-            </a>
-
-            <button type="submit"
-                    class="boton-guardar-formulario-emprendedor">
-
-                <i class="bi bi-credit-card-fill"></i>
-                Continuar con el plan
-
-            </button>
-
         </div>
     }
     else
@@ -502,6 +549,65 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+
+            const pasoSeleccion = document.getElementById("pasoSeleccionPlan");
+            const pasoConfirmacion = document.getElementById("pasoConfirmacionPlan");
+            const botonSiguiente = document.getElementById("botonSiguientePlan");
+            const botonAnterior = document.getElementById("botonAnteriorPlan");
+            const radios = document.querySelectorAll('input[name="IdPlanSeleccionado"]');
+                    const formulario = document.querySelector(".formulario-planes-emprendedor");
+        const confirmacion = document.getElementById("ConfirmaSeleccion");
+        const mensajeConfirmacion = document.getElementById("mensajeErrorConfirmacion");
+
+                if (formulario && confirmacion && mensajeConfirmacion) {
+
+            const botonContinuar = document.getElementById("botonContinuarPlan");
+
+            if (botonContinuar) {
+                botonContinuar.addEventListener("click", function (event) {
+
+                    if (!confirmacion.checked) {
+                        event.preventDefault();
+
+                        mensajeConfirmacion.textContent =
+                            "Debes confirmar la selección del plan para continuar.";
+
+                        mensajeConfirmacion.style.color = "#dc3545";
+                        mensajeConfirmacion.style.display = "block";
+
+                        return;
+                    }
+
+                    mensajeConfirmacion.textContent = "";
+                });
+            }
+
+            confirmacion.addEventListener("change", function () {
+                if (confirmacion.checked) {
+                    mensajeConfirmacion.textContent = "";
+                }
+            });
+        }
+
+            if (botonSiguiente && pasoSeleccion && pasoConfirmacion) {
+                botonSiguiente.addEventListener("click", function () {
+                    if (!Array.from(radios).some(radio => radio.checked)) {
+                        alert("Selecciona un plan para continuar.");
+                        return;
+                    }
+                    pasoSeleccion.style.display = "none";
+                    pasoConfirmacion.style.display = "block";
+                    pasoConfirmacion.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+            }
+
+            if (botonAnterior && pasoSeleccion && pasoConfirmacion) {
+                botonAnterior.addEventListener("click", function () {
+                    pasoConfirmacion.style.display = "none";
+                    pasoSeleccion.style.display = "block";
+                    pasoSeleccion.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+            }
 
             const botonComparar = document.getElementById("botonCompararPlanes");
             const comparacion = document.getElementById("comparacionPlanes");
