@@ -2286,8 +2286,9 @@ namespace ProyectoClubCreativo.Controllers
                 await transaccion.CommitAsync();
 
                 // Mostrar el resultado exitoso con el diseño del usuario.
+                // HU-45: Mostrar confirmación con el nombre del evento.
                 TempData["AsistenciaQrMensaje"] =
-                    "¡Asistencia registrada correctamente! Has recibido 10 puntos.";
+                    $"¡Asistencia registrada correctamente al evento '{eventoActual.Nombre}'! Has recibido 10 puntos.";
 
                 TempData["AsistenciaQrExitoso"] = true;
 
@@ -2335,6 +2336,306 @@ namespace ProyectoClubCreativo.Controllers
                 && exitoso;
 
             return View();
+        }
+
+        // HU-43: Validar el código QR de un taller.
+        [HttpGet]
+        public async Task<IActionResult> RegistrarAsistenciaQrTaller(int id, Guid codigo)
+        {
+            // Validar que el usuario tenga una sesión activa.
+            var (idUsuario, redireccion, errorSesion) =
+                await ValidarSesionRegistroAsync();
+
+            if (redireccion is not null)
+            {
+                return redireccion;
+            }
+
+            if (errorSesion is not null)
+            {
+                TempData["AsistenciaQrMensaje"] = errorSesion;
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Buscar el taller y comprobar que esté disponible.
+            Tallere? taller = await _context.Talleres
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t =>
+                    t.IdTaller == id &&
+                    t.Estado == ReglasTalleres.Programado);
+
+            if (taller is null)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "El taller no existe o no está disponible.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Verificar que el QR sea el vigente.
+            if (!taller.CodigoQrTaller.HasValue ||
+                taller.CodigoQrTaller.Value != codigo)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "El código QR de este taller no es válido o ya fue reemplazado.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Comprobar que el usuario esté inscrito en el taller.
+            bool inscripcionConfirmada = await _context.InscripcionesTallers
+                .AsNoTracking()
+                .AnyAsync(i =>
+                    i.IdTaller == id &&
+                    i.IdUsuario == idUsuario!.Value &&
+                    i.Estado == ReglasTalleres.InscripcionConfirmada);
+
+            if (!inscripcionConfirmada)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "No puedes registrar asistencia porque no tienes una inscripción confirmada en este taller.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Verificar que el taller esté dentro de su horario.
+            DateTime ahora = DateTime.Now;
+
+            if (!taller.FechaInicio.HasValue ||
+                ahora < taller.FechaInicio.Value)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Todavía no puedes registrar asistencia porque el taller no ha comenzado.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            if (taller.FechaFin.HasValue &&
+                ahora > taller.FechaFin.Value)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "No puedes registrar asistencia porque el taller ya finalizó.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Evitar registrar asistencia duplicada.
+            bool asistenciaExistente = await _context.RegistrosAsistencia
+                .AsNoTracking()
+                .AnyAsync(a =>
+                    a.IdUsuario == idUsuario!.Value &&
+                    a.IdTaller == id);
+
+            if (asistenciaExistente)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Ya tienes una asistencia registrada para este taller. No puedes recibir los puntos nuevamente.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Mostrar la vista de confirmación del taller.
+            ViewBag.IdTaller = taller.IdTaller;
+            ViewBag.NombreTaller = taller.Nombre;
+            ViewBag.CodigoQr = codigo;
+
+            return View();
+        }
+
+        // HU-43: Confirmar asistencia mediante el QR del taller.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmarAsistenciaQrTaller(int id, Guid codigo)
+        {
+            // Validar que el usuario tenga una sesión activa.
+            var (idUsuario, redireccion, errorSesion) =
+                await ValidarSesionRegistroAsync();
+
+            if (redireccion is not null)
+            {
+                return redireccion;
+            }
+
+            if (errorSesion is not null)
+            {
+                TempData["AsistenciaQrMensaje"] = errorSesion;
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Utilizar una transacción para registrar asistencia y puntos.
+            await using var transaccion = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+            try
+            {
+                DateTime ahora = DateTime.Now;
+
+                // Buscar el taller y verificar que esté programado.
+                Tallere? taller = await _context.Talleres
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t =>
+                        t.IdTaller == id &&
+                        t.Estado == ReglasTalleres.Programado);
+
+                if (taller is null)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "El taller no existe o no está disponible.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                // Comprobar que el código QR siga vigente.
+                if (!taller.CodigoQrTaller.HasValue ||
+                    taller.CodigoQrTaller.Value != codigo)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "Este código QR ya no es válido. Solicita el código actualizado.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                // Comprobar que el usuario siga inscrito.
+                bool inscripcionConfirmada = await _context.InscripcionesTallers
+                    .AsNoTracking()
+                    .AnyAsync(i =>
+                        i.IdUsuario == idUsuario!.Value &&
+                        i.IdTaller == id &&
+                        i.Estado == ReglasTalleres.InscripcionConfirmada);
+
+                if (!inscripcionConfirmada)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "No puedes confirmar tu asistencia porque no tienes una inscripción confirmada en este taller.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                // Verificar la fecha y el horario del taller.
+                if (!taller.FechaInicio.HasValue ||
+                    ahora < taller.FechaInicio.Value)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "Todavía no puedes confirmar tu asistencia porque el taller no ha comenzado.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                if (taller.FechaFin.HasValue &&
+                    ahora > taller.FechaFin.Value)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "No puedes confirmar tu asistencia porque el taller ya finalizó.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                // Evitar asistencias duplicadas.
+                bool asistenciaExistente = await _context.RegistrosAsistencia
+                    .AsNoTracking()
+                    .AnyAsync(a =>
+                        a.IdUsuario == idUsuario!.Value &&
+                        a.IdTaller == id);
+
+                if (asistenciaExistente)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "Ya tienes una asistencia registrada para este taller. No puedes recibir los 10 puntos nuevamente.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                // Registrar la asistencia al taller.
+                var nuevaAsistencia = new RegistrosAsistencium
+                {
+                    IdUsuario = idUsuario!.Value,
+                    IdEvento = null,
+                    IdTaller = id,
+                    TipoAsistencia = "Taller",
+                    FechaHora = ahora,
+                    RegistradoPorQr = true,
+                    Observacion = "Asistencia confirmada mediante QR del taller."
+                };
+
+                _context.RegistrosAsistencia.Add(nuevaAsistencia);
+                await _context.SaveChangesAsync();
+
+                // Otorgar 10 puntos por asistir al taller.
+                var nuevoMovimiento = new MovimientosPunto
+                {
+                    IdUsuario = idUsuario.Value,
+                    TipoMovimiento = "Acumulacion",
+                    Puntos = 10,
+                    Motivo = "Asistencia al taller: " + taller.Nombre,
+                    IdVenta = null,
+                    FechaMovimiento = ahora,
+                    IdAsistencia = nuevaAsistencia.IdAsistencia
+                };
+
+                _context.MovimientosPuntos.Add(nuevoMovimiento);
+                await _context.SaveChangesAsync();
+
+                // Confirmar la asistencia y los puntos.
+                await transaccion.CommitAsync();
+
+                // HU-45: Mostrar confirmación con el nombre del taller.
+                TempData["AsistenciaQrMensaje"] =
+                    $"¡Asistencia registrada correctamente al taller '{taller.Nombre}'! Has recibido 10 puntos.";
+
+                TempData["AsistenciaQrExitoso"] = true;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+            catch (DbUpdateException)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["AsistenciaQrMensaje"] =
+                    "No se pudo registrar la asistencia. Es posible que ya exista un registro.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["AsistenciaQrMensaje"] =
+                    "Ocurrió un error al registrar la asistencia y los puntos.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
         }
 
         [HttpPost]

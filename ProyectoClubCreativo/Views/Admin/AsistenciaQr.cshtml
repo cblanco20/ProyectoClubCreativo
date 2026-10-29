@@ -19,7 +19,24 @@
                         <td>@a.Fecha</td>
                         <td><span class="etiqueta-estado-admin @(a.QrGenerado ? "estado-activo" : "estado-pendiente")">@(a.QrGenerado ? "Generado" : "Sin generar")</span></td>
                         <td>@a.Asistentes.Count(x => x.Presente) / @a.Asistentes.Count</td>
-                        <td><a asp-action="DetalleAsistenciaQr" asp-route-id="@a.Id" class="boton-admin boton-admin-secundario">Ver</a></td>
+                        <td>
+                            @if (a.Tipo == "Taller")
+                            {
+                                <a asp-action="InscritosTaller"
+                                    asp-route-id="@a.Id"
+                                    class="boton-admin boton-admin-secundario">
+                                    Ver
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="DetalleAsistenciaQr"
+                                   asp-route-id="@a.Id"
+                                   class="boton-admin boton-admin-secundario">
+                                   Ver
+                                </a>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>

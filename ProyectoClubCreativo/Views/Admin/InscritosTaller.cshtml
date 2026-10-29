@@ -8,9 +8,56 @@
 
 <article class="bloque-admin">
     <div class="encabezado-bloque-admin">
-        <h2><i class="bi bi-people-fill"></i> @Model.Nombre — @Model.Inscritos / @Model.CuposTotales cupos ocupados (@Model.CuposDisponibles disponibles)</h2>
-        <form asp-action="GenerarQrTaller" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="boton-admin boton-admin-oscuro"><i class="bi bi-qr-code"></i> Generar QR</button></form>
+    <h2>
+        <i class="bi bi-people-fill"></i>
+        @Model.Nombre — @Model.Inscritos / @Model.CuposTotales cupos ocupados
+        (@Model.CuposDisponibles disponibles)
+    </h2>
+
+    <div class="grupo-acciones-admin">
+
+        @if (!Model.QrGenerado && Model.Estado == "Programado")
+        {
+            <form asp-action="GenerarQrTaller" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <button type="submit" class="boton-admin boton-admin-primario">
+                    <i class="bi bi-qr-code"></i> Generar QR
+                </button>
+            </form>
+        }
+        else if (Model.QrGenerado)
+        {
+            <a asp-action="DescargarQrTaller"
+               asp-route-id="@Model.Id"
+               class="boton-admin boton-admin-secundario">
+                <i class="bi bi-download"></i> Descargar QR
+            </a>
+
+            @if (Model.Estado == "Programado")
+            {
+                <form asp-action="RegenerarQrTaller" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <button type="submit"
+                            class="boton-admin boton-admin-oscuro"
+                            onclick="return confirm('¿Deseas regenerar el QR? El código anterior dejará de funcionar.');">
+                        <i class="bi bi-arrow-repeat"></i> Regenerar
+                    </button>
+                </form>
+            }
+        }
+        else
+        {
+            <span class="etiqueta-estado-admin estado-pendiente">
+                QR no disponible
+            </span>
+        }
+
     </div>
+</div>
 
     <div class="tabla-admin-contenedor">
         <table class="tabla-admin">

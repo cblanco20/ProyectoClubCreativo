@@ -1765,7 +1765,10 @@ namespace ProyectoClubCreativo.Controllers
             Tallere taller = new()
             {
                 Estado = publicar ? ReglasTalleres.Programado : ReglasTalleres.Borrador,
-                FechaRegistro = DateTime.Now
+                FechaRegistro = DateTime.Now,
+                // HU-42: Generar el QR automáticamente al publicar el taller.
+                // Si es borrador, todavía no se genera.
+                CodigoQrTaller = publicar ? Guid.NewGuid() : null
             };
 
             AplicarDatosTaller(taller, modelo);
@@ -1883,6 +1886,12 @@ namespace ProyectoClubCreativo.Controllers
             if (eraBorrador && publicar)
             {
                 taller.Estado = ReglasTalleres.Programado;
+                // HU-42: Generar el QR cuando un borrador se publica.
+                // No reemplazar un código que ya exista.
+                if (!taller.CodigoQrTaller.HasValue)
+                {
+                    taller.CodigoQrTaller = Guid.NewGuid();
+                }
             }
 
             if (modelo.Imagen is { Length: > 0 })
@@ -1934,6 +1943,7 @@ namespace ProyectoClubCreativo.Controllers
                 Nombre = taller.Nombre,
                 CupoTotal = taller.CupoMaximo,
                 Estado = taller.Estado,
+                QrGenerado = taller.CodigoQrTaller.HasValue,
                 Inscritos = taller.InscripcionesTallers.Count(i => i.Estado != "Cancelada"),
                 ListaInscritos = taller.InscripcionesTallers
                     .Where(i => i.Estado != "Cancelada")
@@ -1973,13 +1983,146 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(Talleres));
         }
 
+        // HU-42: Generar el código QR de un taller.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult GenerarQrTaller(int id)
+        public async Task<IActionResult> GenerarQrTaller(int id)
         {
-            TempData["MensajeAdmin"] = "El código QR del taller fue generado correctamente.";
+            Tallere? taller = await _context.Talleres
+                .FirstOrDefaultAsync(t => t.IdTaller == id);
+
+            if (taller == null)
+            {
+                TempData["ErrorAdmin"] = "El taller no existe.";
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            if (taller.Estado != ReglasTalleres.Programado)
+            {
+                TempData["ErrorAdmin"] =
+                    "Solo se puede generar el código QR de un taller programado.";
+
+                return RedirectToAction(nameof(InscritosTaller), new { id });
+            }
+
+            if (taller.CodigoQrTaller.HasValue)
+            {
+                TempData["MensajeAdmin"] =
+                    "Este taller ya tiene un código QR generado.";
+
+                return RedirectToAction(nameof(InscritosTaller), new { id });
+            }
+
+            // HU-42: Generar un identificador único para el taller.
+            taller.CodigoQrTaller = Guid.NewGuid();
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                "El código QR del taller fue generado correctamente.";
+
             return RedirectToAction(nameof(InscritosTaller), new { id });
         }
+
+        // HU-42: Regenerar el código QR de un taller.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegenerarQrTaller(int id)
+        {
+            Tallere? taller = await _context.Talleres
+                .FirstOrDefaultAsync(t => t.IdTaller == id);
+
+            if (taller == null)
+            {
+                TempData["ErrorAdmin"] =
+                    "El taller no existe o no está disponible.";
+
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            if (taller.Estado != ReglasTalleres.Programado)
+            {
+                TempData["ErrorAdmin"] =
+                    "Solo se puede regenerar el código QR de un taller programado.";
+
+                return RedirectToAction(nameof(InscritosTaller), new { id });
+            }
+
+            if (!taller.CodigoQrTaller.HasValue)
+            {
+                TempData["ErrorAdmin"] =
+                    "Este taller todavía no tiene un código QR generado.";
+
+                return RedirectToAction(nameof(InscritosTaller), new { id });
+            }
+
+            // HU-42: Reemplazar el identificador anterior por uno nuevo.
+            taller.CodigoQrTaller = Guid.NewGuid();
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                "El código QR del taller fue regenerado correctamente.";
+
+            return RedirectToAction(nameof(InscritosTaller), new { id });
+        }
+
+        // HU-42: Descargar el código QR de un taller.
+        [HttpGet]
+        public async Task<IActionResult> DescargarQrTaller(int id)
+        {
+            Tallere? taller = await _context.Talleres
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.IdTaller == id);
+
+            if (taller == null)
+            {
+                TempData["ErrorAdmin"] =
+                    "El taller no existe o no está disponible.";
+
+                return RedirectToAction(nameof(Talleres));
+            }
+
+            if (!taller.CodigoQrTaller.HasValue)
+            {
+                TempData["ErrorAdmin"] =
+                    "Este taller todavía no tiene un código QR generado.";
+
+                return RedirectToAction(nameof(InscritosTaller), new { id });
+            }
+
+            // HU-42: Crear el enlace que contendrá el QR del taller.
+            string contenidoQr = Url.Action(
+                "RegistrarAsistenciaQrTaller",
+                "Usuario",
+                new
+                {
+                    id = taller.IdTaller,
+                    codigo = taller.CodigoQrTaller.Value
+                },
+                Request.Scheme
+            )!;
+
+            // Generar la imagen PNG utilizando QRCoder.
+            using QRCodeGenerator generador = new();
+
+            using QRCodeData datosQr = generador.CreateQrCode(
+                contenidoQr,
+                QRCodeGenerator.ECCLevel.Q
+            );
+
+            PngByteQRCode codigoQr = new(datosQr);
+
+            byte[] imagenQr = codigoQr.GetGraphic(20);
+
+            return File(
+                imagenQr,
+                "image/png",
+                $"QR_Taller_{taller.IdTaller}.png"
+            );
+        }
+
+
 
         [HttpGet]
         public IActionResult Ventas(string estado = "Todas")
@@ -2197,9 +2340,47 @@ namespace ProyectoClubCreativo.Controllers
                             .ToList()
                     })
                     .ToListAsync();
+            // HU-42: Incluir talleres en el listado de Asistencia QR.
+            List<ActividadQrAdminViewModel> talleres =
+                await _context.Talleres
+                    .AsNoTracking()
+                    .Where(t => t.Estado == ReglasTalleres.Programado)
+                    .OrderByDescending(t => t.FechaInicio)
+                    .Select(t => new ActividadQrAdminViewModel
+                    {
+                        Id = t.IdTaller,
+                        Nombre = t.Nombre,
+                        Tipo = "Taller",
+                        Fecha = t.FechaInicio.HasValue
+                            ? t.FechaInicio.Value.ToString("dd/MM/yyyy")
+                            : "Sin fecha",
+
+                        QrGenerado = t.CodigoQrTaller.HasValue,
+
+                        Asistentes = _context.InscripcionesTallers
+                            .Where(i =>
+                                i.IdTaller == t.IdTaller &&
+                                i.Estado != "Cancelada")
+                            .Select(i => new AsistenteQrAdminViewModel
+                            {
+                                IdUsuario = i.IdUsuario,
+                                Nombre = i.IdUsuarioNavigation.Nombre + " " +
+                                         i.IdUsuarioNavigation.ApellidoPaterno,
+                                Correo = i.IdUsuarioNavigation.Correo,
+                                Presente = _context.RegistrosAsistencia.Any(a =>
+                                    a.IdUsuario == i.IdUsuario &&
+                                    a.IdTaller == t.IdTaller)
+                            })
+                            .ToList()
+                    })
+                    .ToListAsync();
+
+            // Unir eventos y talleres sin modificar sus registros.
+            actividades.AddRange(talleres);
 
             return View(actividades);
         }
+
         [HttpGet]
         public async Task<IActionResult> DetalleAsistenciaQr(int id)
         {

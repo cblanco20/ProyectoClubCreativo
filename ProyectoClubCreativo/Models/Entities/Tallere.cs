@@ -7,6 +7,8 @@ public partial class Tallere
 {
     public int IdTaller { get; set; }
 
+    public Guid? CodigoQrTaller { get; set; }
+
     public int? IdCategoria { get; set; }
 
     public string Nombre { get; set; } = null!;
