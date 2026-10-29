@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models;
 using ProyectoClubCreativo.Models.Entities;
+using ProyectoClubCreativo.Models.ViewModels;
 using ProyectoClubCreativo.Models.ViewModels.Admin;
 using ProyectoClubCreativo.Services;
 using QRCoder;
+using ClosedXML.Excel;
 
 namespace ProyectoClubCreativo.Controllers
 {
@@ -2426,6 +2428,229 @@ namespace ProyectoClubCreativo.Controllers
             };
 
             return View(modelo);
+        }
+
+        // HU-44: Consultar el reporte de asistencia de un evento o taller.
+        [HttpGet]
+        public async Task<IActionResult> ReporteAsistencia(int id, string tipo)
+        {
+            ReporteAsistenciaViewModel modelo = new()
+            {
+                IdActividad = id,
+                TipoActividad = tipo
+            };
+
+            if (tipo == "Evento")
+            {
+                Evento? evento = await _context.Eventos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdEvento == id &&
+                        e.Estado != "Eliminado");
+
+                if (evento is null)
+                {
+                    TempData["ErrorAdmin"] = "El evento no existe o no está disponible.";
+                    return RedirectToAction(nameof(AsistenciaQr));
+                }
+
+                modelo.NombreActividad = evento.Nombre;
+
+                modelo.Asistentes = await _context.RegistrosAsistencia
+                    .AsNoTracking()
+                    .Where(a => a.IdEvento == id)
+                    .OrderBy(a => a.FechaHora)
+                    .Select(a => new AsistenteReporteViewModel
+                    {
+                        Nombre = a.IdUsuarioNavigation.Nombre + " " +
+                                 a.IdUsuarioNavigation.ApellidoPaterno,
+                        Correo = a.IdUsuarioNavigation.Correo,
+                        FechaHora = a.FechaHora
+                    })
+                    .ToListAsync();
+            }
+            else if (tipo == "Taller")
+            {
+                Tallere? taller = await _context.Talleres
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.IdTaller == id);
+
+                if (taller is null)
+                {
+                    TempData["ErrorAdmin"] = "El taller no existe.";
+                    return RedirectToAction(nameof(AsistenciaQr));
+                }
+
+                modelo.NombreActividad = taller.Nombre;
+
+                modelo.Asistentes = await _context.RegistrosAsistencia
+                    .AsNoTracking()
+                    .Where(a => a.IdTaller == id)
+                    .OrderBy(a => a.FechaHora)
+                    .Select(a => new AsistenteReporteViewModel
+                    {
+                        Nombre = a.IdUsuarioNavigation.Nombre + " " +
+                                 a.IdUsuarioNavigation.ApellidoPaterno,
+                        Correo = a.IdUsuarioNavigation.Correo,
+                        FechaHora = a.FechaHora
+                    })
+                    .ToListAsync();
+            }
+            else
+            {
+                TempData["ErrorAdmin"] = "El tipo de actividad no es válido.";
+                return RedirectToAction(nameof(AsistenciaQr));
+            }
+
+            return View(modelo);
+        }
+
+        // HU-44: Descargar reporte individual de asistencia en Excel
+        [HttpGet]
+        public async Task<IActionResult> DescargarReporteAsistencia(int id, string tipo)
+        {
+            if (id <= 0 || (tipo != "Evento" && tipo != "Taller"))
+            {
+                return BadRequest("La actividad seleccionada no es válida.");
+            }
+
+            string nombreActividad;
+
+            if (tipo == "Evento")
+            {
+                var evento = await _context.Eventos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdEvento == id &&
+                        e.Estado != "Eliminado");
+
+                if (evento == null)
+                    return NotFound("El evento no existe.");
+
+                nombreActividad = evento.Nombre;
+            }
+            else
+            {
+                var taller = await _context.Talleres
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.IdTaller == id);
+
+                if (taller == null)
+                    return NotFound("El taller no existe.");
+
+                nombreActividad = taller.Nombre;
+            }
+
+            var asistentes = await _context.RegistrosAsistencia
+                .AsNoTracking()
+                .Where(a => tipo == "Evento"
+                    ? a.IdEvento == id
+                    : a.IdTaller == id)
+                .OrderBy(a => a.FechaHora)
+                .Select(a => new
+                {
+                    Nombre = a.IdUsuarioNavigation.Nombre + " " +
+                             a.IdUsuarioNavigation.ApellidoPaterno,
+                    Correo = a.IdUsuarioNavigation.Correo,
+                    a.FechaHora
+                })
+                .ToListAsync();
+
+            // HU-44: Generar archivo Excel con formato.
+            using var libro = new XLWorkbook();
+            var hoja = libro.Worksheets.Add("Asistencia");
+
+            // Título principal.
+            hoja.Range("A1:D1").Merge();
+            hoja.Cell("A1").Value = "CLUB CREATIVO - REPORTE DE ASISTENCIA";
+            hoja.Range("A1:D1").Style.Fill.BackgroundColor = XLColor.FromHtml("#F97316");
+            hoja.Range("A1:D1").Style.Font.FontColor = XLColor.White;
+            hoja.Range("A1:D1").Style.Font.Bold = true;
+            hoja.Range("A1:D1").Style.Font.FontSize = 16;
+            hoja.Row(1).Height = 32;
+
+            // Información de la actividad.
+            hoja.Cell("A3").Value = "Tipo de actividad:";
+            hoja.Cell("B3").Value = tipo;
+
+            hoja.Cell("A4").Value = "Actividad:";
+            hoja.Cell("B4").Value = nombreActividad;
+
+            hoja.Cell("A5").Value = "Total de asistencias:";
+            hoja.Cell("B5").Value = asistentes.Count;
+
+            hoja.Range("A3:A5").Style.Font.Bold = true;
+
+            // Encabezados de la tabla.
+            hoja.Cell("A7").Value = "Nombre del asistente";
+            hoja.Cell("B7").Value = "Correo electrónico";
+            hoja.Cell("C7").Value = "Fecha de asistencia";
+            hoja.Cell("D7").Value = "Hora de asistencia";
+
+            var encabezados = hoja.Range("A7:D7");
+            encabezados.Style.Fill.BackgroundColor = XLColor.FromHtml("#F97316");
+            encabezados.Style.Font.FontColor = XLColor.White;
+            encabezados.Style.Font.Bold = true;
+            encabezados.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            hoja.Row(7).Height = 25;
+
+            // Datos reales de asistencia.
+            int fila = 8;
+
+            foreach (var asistente in asistentes)
+            {
+                hoja.Cell(fila, 1).Value = asistente.Nombre;
+                hoja.Cell(fila, 2).Value = asistente.Correo;
+                hoja.Cell(fila, 3).Value = asistente.FechaHora.Date;
+                hoja.Cell(fila, 4).Value = asistente.FechaHora.TimeOfDay;
+
+                hoja.Cell(fila, 3).Style.DateFormat.Format = "dd/MM/yyyy";
+                hoja.Cell(fila, 4).Style.DateFormat.Format = "hh:mm AM/PM";
+
+                if (fila % 2 == 0)
+                {
+                    hoja.Range(fila, 1, fila, 4).Style.Fill.BackgroundColor =
+                        XLColor.FromHtml("#FFF7ED");
+                }
+
+                fila++;
+            }
+
+            // Mensaje cuando no hay asistencias.
+            if (asistentes.Count == 0)
+            {
+                hoja.Range("A8:D8").Merge();
+                hoja.Cell("A8").Value =
+                    "Todavía no hay asistencias registradas para esta actividad.";
+                hoja.Cell("A8").Style.Font.Italic = true;
+            }
+
+            // Bordes de la tabla.
+            int ultimaFila = Math.Max(8, fila - 1);
+            hoja.Range(7, 1, ultimaFila, 4).Style.Border.OutsideBorder =
+                XLBorderStyleValues.Thin;
+            hoja.Range(7, 1, ultimaFila, 4).Style.Border.InsideBorder =
+                XLBorderStyleValues.Thin;
+
+            // Anchos de columna para evitar textos cortados.
+            hoja.Column(1).Width = 30;
+            hoja.Column(2).Width = 42;
+            hoja.Column(3).Width = 24;
+            hoja.Column(4).Width = 24;
+
+            hoja.SheetView.FreezeRows(7);
+
+            // Generar y descargar el archivo.
+            using var memoria = new MemoryStream();
+            libro.SaveAs(memoria);
+
+            string nombreArchivo =
+                $"Reporte_Asistencia_{tipo}_{id}_{DateTime.Now:yyyyMMdd}.xlsx";
+
+            return File(
+                memoria.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                nombreArchivo);
         }
 
         [HttpPost]

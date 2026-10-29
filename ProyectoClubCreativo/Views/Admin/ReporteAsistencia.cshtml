@@ -1,0 +1,79 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.ReporteAsistenciaViewModel
+
+@{
+    ViewData["Title"] = "Reporte de asistencia";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<a asp-action="AsistenciaQr"
+   class="boton-admin boton-admin-secundario"
+   style="margin-bottom:18px;">
+    <i class="bi bi-arrow-left"></i> Volver
+</a>
+
+<article class="bloque-admin">
+
+    <div class="encabezado-bloque-admin">
+        <h2>
+            <i class="bi bi-file-earmark-text"></i>
+            Reporte de asistencia
+        </h2>
+
+        <a asp-action="DescargarReporteAsistencia"
+           asp-route-id="@Model.IdActividad"
+           asp-route-tipo="@Model.TipoActividad"
+           class="boton-admin boton-admin-primario">
+            <i class="bi bi-download"></i>
+            Descargar reporte
+        </a>
+    </div>
+
+    <h3>@Model.NombreActividad</h3>
+
+    <p>
+        Tipo de actividad: <strong>@Model.TipoActividad</strong>
+    </p>
+
+    <p>
+        Total de asistencias registradas:
+        <strong>@Model.Asistentes.Count</strong>
+    </p>
+
+    <div class="tabla-admin-contenedor">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Nombre del asistente</th>
+                    <th>Correo electrónico</th>
+                    <th>Fecha de asistencia</th>
+                    <th>Hora de asistencia</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (Model.Asistentes.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4">
+                            Todavía no hay asistencias registradas
+                            para esta actividad.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var asistente in Model.Asistentes)
+                    {
+                        <tr>
+                            <td>@asistente.Nombre</td>
+                            <td>@asistente.Correo</td>
+                            <td>@asistente.FechaHora.ToString("dd/MM/yyyy")</td>
+                            <td>@asistente.FechaHora.ToString("hh:mm tt")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</article>

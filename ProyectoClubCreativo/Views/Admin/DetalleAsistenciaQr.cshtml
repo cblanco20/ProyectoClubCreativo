@@ -9,6 +9,13 @@
     <div class="encabezado-bloque-admin">
         <h2><i class="bi bi-qr-code-scan"></i> @Model.Nombre <span class="etiqueta-estado-admin estado-activo">@Model.Tipo</span></h2>
         <div class="grupo-acciones-admin">
+            <a asp-action="ReporteAsistencia"
+               asp-route-id="@Model.Id"
+               asp-route-tipo="Evento"
+               class="boton-admin boton-admin-secundario">
+                <i class="bi bi-file-earmark-text"></i>
+                Ver reporte de asistencia
+            </a>
             @if (!Model.QrGenerado)
             {
                 <form asp-action="GenerarQrAsistencia" method="post"><input type="hidden" name="id" value="@Model.Id" /><button class="boton-admin boton-admin-primario"><i class="bi bi-qr-code"></i> Generar QR</button></form>
