@@ -1,0 +1,61 @@
+﻿@{
+    ViewData["Title"] = "Confirmar asistencia";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+
+    int idEvento = ViewBag.IdEvento;
+    string nombreEvento = ViewBag.NombreEvento;
+    Guid codigoQr = ViewBag.CodigoQr;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center p-4">
+
+                    <h2 class="mb-3">
+                        Confirmar asistencia
+                    </h2>
+
+                    <p class="text-muted">
+                        Has escaneado correctamente el código QR
+                        del siguiente evento:
+                    </p>
+
+                    <h4 class="mb-4">
+                        @nombreEvento
+                    </h4>
+
+                    <p>
+                        Confirma tu asistencia para recibir
+                        <strong>10 puntos</strong>.
+                    </p>
+
+                    <form asp-controller="Usuario"
+                          asp-action="ConfirmarAsistenciaQr"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               name="id"
+                               value="@idEvento" />
+
+                        <input type="hidden"
+                               name="codigo"
+                               value="@codigoQr" />
+
+                        <button type="submit"
+                                class="btn btn-success w-100">
+                            Confirmar asistencia
+                        </button>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

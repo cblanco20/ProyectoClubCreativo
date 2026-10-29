@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Resultado de asistencia";
+    Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
+
+    bool exitoso = ViewBag.Exitoso == true;
+    string mensaje = ViewBag.Mensaje as string
+        ?? "No se pudo obtener el resultado de la asistencia.";
+}
+
+<div class="encabezado-pagina-usuario">
+    <div>
+        <span class="etiqueta-pagina-usuario">Actividades</span>
+        <h1 class="titulo-pagina-usuario">
+            Resultado de asistencia
+        </h1>
+        <p class="descripcion-pagina-usuario">
+            Consulta el resultado de la validación de tu asistencia.
+        </p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center p-4">
+
+                    @if (exitoso)
+                    {
+                        <i class="bi bi-check-circle-fill text-success"
+                           style="font-size: 48px;"></i>
+
+                        <h2 class="mt-3">¡Asistencia confirmada!</h2>
+                    }
+                    else
+                    {
+                        <i class="bi bi-exclamation-circle-fill text-warning"
+                           style="font-size: 48px;"></i>
+
+                        <h2 class="mt-3">No se pudo confirmar la asistencia</h2>
+                    }
+
+                    <p class="mt-3">@mensaje</p>
+
+                    <a asp-controller="Usuario"
+                       asp-action="MisInscripciones"
+                       class="btn btn-primary mt-3">
+                        Volver a mis inscripciones
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

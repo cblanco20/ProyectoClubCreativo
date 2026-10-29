@@ -32,27 +32,7 @@
                         <td>@p.Nombre</td>
                         <td>@p.Correo</td>
                         <td><span class="etiqueta-estado-admin @(p.Presente ? "estado-activo" : "estado-pendiente")">@(p.Presente ? "Presente" : "Sin validar")</span></td>
-                        <td>
-                            @if (!p.Presente)
-                            {
-                                <form asp-action="ValidarAsistencia" method="post">
-                                    @Html.AntiForgeryToken()
-
-                                    <input type="hidden" name="id" value="@Model.Id" />
-
-                                    <input type="text"
-                                           name="codigoQr"
-                                           placeholder="Código QR del usuario"
-                                           required
-                                           class="form-control"
-                                           style="margin-bottom:8px;" />
-
-                                    <button type="submit" class="boton-admin boton-admin-exito">
-                                        Validar QR
-                                    </button>
-                                </form>
-                            }
-                        </td>
+                        <td></td>
                     </tr>
                 }
                 @if (Model.Asistentes.Count == 0)

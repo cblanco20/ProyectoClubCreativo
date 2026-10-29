@@ -1947,6 +1947,396 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(ConfirmacionInscripcion), new { tipo = "Evento", id });
         }
 
+        // HU-37 y HU-41: Validar el código QR del evento.
+        [HttpGet]
+        public async Task<IActionResult> RegistrarAsistenciaQr(int id, Guid codigo)
+        {
+
+            // Validar que el usuario tenga una sesión activa.
+            var (idUsuario, redireccion, errorSesion) =
+                await ValidarSesionRegistroAsync();
+
+            if (redireccion is not null)
+            {
+                return redireccion;
+            }
+
+            if (errorSesion is not null)
+            {
+                TempData["AsistenciaQrMensaje"] = errorSesion;
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Buscar el evento y comprobar que esté disponible.
+            Evento? evento = await _context.Eventos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdEvento == id &&
+                    e.Estado != "Eliminado");
+
+            if (evento == null)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "El evento no existe o no está disponible.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // Comprobar que el QR escaneado sea el vigente.
+            if (!evento.CodigoQrEvento.HasValue ||
+    evento.CodigoQrEvento.Value != codigo)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "El código QR de este evento no es válido o ya fue reemplazado.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // HU-37: Verificar que el usuario tenga una inscripción confirmada.
+            bool inscripcionConfirmada = await _context.InscripcionesEventos
+                .AsNoTracking()
+                .AnyAsync(i =>
+                    i.IdEvento == id &&
+                    i.IdUsuario == idUsuario!.Value &&
+                    i.Estado == ReglasTalleres.InscripcionConfirmada);
+
+            if (!inscripcionConfirmada)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "No puedes registrar asistencia porque no tienes una inscripción confirmada en este evento.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // HU-37: Validar que el evento esté en curso.
+            DateTime ahora = DateTime.Now;
+
+            if (evento.Estado != "Programado" &&
+     evento.Estado != "Activo")
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Este evento no está disponible para registrar asistencia.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            if (ahora < evento.FechaInicio)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Todavía no puedes registrar asistencia porque el evento no ha comenzado.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            if (evento.FechaFin.HasValue && ahora > evento.FechaFin.Value)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "No puedes registrar asistencia porque el evento ya finalizó.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // HU-37: Evitar registrar asistencia duplicada.
+            bool asistenciaExistente = await _context.RegistrosAsistencia
+     .AsNoTracking()
+     .AnyAsync(a =>
+         a.IdUsuario == idUsuario!.Value &&
+         a.IdEvento == id);
+
+            if (asistenciaExistente)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Ya tienes una asistencia registrada para este evento. No puedes recibir los puntos nuevamente.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            ViewBag.IdEvento = evento.IdEvento;
+            ViewBag.NombreEvento = evento.Nombre;
+            ViewBag.CodigoQr = codigo;
+
+            return View();
+        }
+
+        // HU-37 y HU-41: Confirmar asistencia mediante el QR del evento.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmarAsistenciaQr(int id, Guid codigo)
+        {
+            // Validar la sesión del usuario.
+            var (idUsuario, redireccion, errorSesion) =
+                await ValidarSesionRegistroAsync();
+
+            if (redireccion is not null)
+            {
+                return redireccion;
+            }
+
+            if (errorSesion is not null)
+            {
+                TempData["AsistenciaQrMensaje"] = errorSesion;
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+            // HU-37 y HU-41: Comprobar que el QR del evento siga vigente.
+            Evento? evento = await _context.Eventos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdEvento == id &&
+                    (e.Estado == "Programado" || e.Estado == "Activo"));
+
+            if (evento == null)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "El evento no existe o no está disponible.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            if (!evento.CodigoQrEvento.HasValue ||
+     evento.CodigoQrEvento.Value != codigo)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Este código QR ya no es válido. Solicita el código actualizado.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // HU-37: Comprobar que el usuario siga inscrito en el evento.
+            bool inscripcionConfirmada = await _context.InscripcionesEventos
+                .AsNoTracking()
+                .AnyAsync(i =>
+                    i.IdUsuario == idUsuario!.Value &&
+                    i.IdEvento == id &&
+                    i.Estado == ReglasTalleres.InscripcionConfirmada);
+
+            if (!inscripcionConfirmada)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "No puedes confirmar tu asistencia porque no tienes una inscripción confirmada en este evento.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+            // HU-37: Comprobar que el evento esté dentro de su horario.
+            DateTime fechaActual = DateTime.Now;
+            if (fechaActual < evento.FechaInicio)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Todavía no puedes confirmar tu asistencia porque el evento no ha comenzado.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            if (evento.FechaFin.HasValue &&
+     fechaActual > evento.FechaFin.Value)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "No puedes confirmar tu asistencia porque el evento ya finalizó.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // HU-37: Comprobar que el usuario no tenga una asistencia registrada.
+            bool asistenciaExistente = await _context.RegistrosAsistencia
+                .AsNoTracking()
+                .AnyAsync(a =>
+                    a.IdUsuario == idUsuario!.Value &&
+                    a.IdEvento == id);
+
+            if (asistenciaExistente)
+            {
+                TempData["AsistenciaQrMensaje"] =
+                    "Ya tienes una asistencia registrada para este evento. No puedes recibir los 10 puntos nuevamente.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+
+            // HU-37 y HU-41: Registrar asistencia y asignar 10 puntos.
+            await using var transaccion = await _context.Database
+                .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+            try
+            {
+                // Revalidar los datos dentro de la transacción.
+                DateTime fechaRegistro = DateTime.Now;
+
+                var eventoActual = await _context.Eventos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdEvento == id &&
+                        (e.Estado == "Programado" || e.Estado == "Activo"));
+
+                if (eventoActual == null ||
+      !eventoActual.CodigoQrEvento.HasValue ||
+      eventoActual.CodigoQrEvento.Value != codigo)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "El código QR del evento ya no está disponible o no es válido.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                if (fechaRegistro < eventoActual.FechaInicio ||
+    (eventoActual.FechaFin.HasValue &&
+     fechaRegistro > eventoActual.FechaFin.Value))
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "No puedes confirmar tu asistencia porque el evento está fuera de su fecha u horario.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                bool sigueInscrito = await _context.InscripcionesEventos
+                    .AsNoTracking()
+                    .AnyAsync(i =>
+                        i.IdUsuario == idUsuario!.Value &&
+                        i.IdEvento == id &&
+                        i.Estado == ReglasTalleres.InscripcionConfirmada);
+
+                if (!sigueInscrito)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "Ya no tienes una inscripción confirmada para este evento.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                bool yaRegistroAsistencia = await _context.RegistrosAsistencia
+                    .AsNoTracking()
+                    .AnyAsync(a =>
+                        a.IdUsuario == idUsuario!.Value &&
+                        a.IdEvento == id);
+
+                if (yaRegistroAsistencia)
+                {
+                    TempData["AsistenciaQrMensaje"] =
+                        "Ya tienes una asistencia registrada para este evento. No puedes recibir los 10 puntos nuevamente.";
+
+                    TempData["AsistenciaQrExitoso"] = false;
+
+                    return RedirectToAction(nameof(ResultadoAsistenciaQr));
+                }
+
+                // Crear el registro de asistencia.
+                var nuevaAsistencia = new RegistrosAsistencium
+                {
+                    IdUsuario = idUsuario!.Value,
+                    IdEvento = id,
+                    IdTaller = null,
+                    TipoAsistencia = "Evento",
+                    FechaHora = fechaRegistro,
+                    RegistradoPorQr = true,
+                    Observacion = "Asistencia confirmada mediante QR del evento."
+                };
+
+                _context.RegistrosAsistencia.Add(nuevaAsistencia);
+                await _context.SaveChangesAsync();
+
+                // Asignar los 10 puntos y relacionarlos con la asistencia.
+                var nuevoMovimiento = new MovimientosPunto
+                {
+                    IdUsuario = idUsuario.Value,
+                    TipoMovimiento = "Acumulacion",
+                    Puntos = 10,
+                    Motivo = "Asistencia al evento: " + eventoActual.Nombre,
+                    IdVenta = null,
+                    FechaMovimiento = fechaRegistro,
+                    IdAsistencia = nuevaAsistencia.IdAsistencia
+                };
+
+                _context.Set<MovimientosPunto>().Add(nuevoMovimiento);
+                await _context.SaveChangesAsync();
+
+                // Confirmar ambas operaciones.
+                await transaccion.CommitAsync();
+
+                // Mostrar el resultado exitoso con el diseño del usuario.
+                TempData["AsistenciaQrMensaje"] =
+                    "¡Asistencia registrada correctamente! Has recibido 10 puntos.";
+
+                TempData["AsistenciaQrExitoso"] = true;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+            catch (DbUpdateException)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["AsistenciaQrMensaje"] =
+                    "No se pudo registrar la asistencia. Es posible que ya exista un registro.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["AsistenciaQrMensaje"] =
+                    "Ocurrió un error al registrar la asistencia y los puntos.";
+
+                TempData["AsistenciaQrExitoso"] = false;
+
+                return RedirectToAction(nameof(ResultadoAsistenciaQr));
+            }
+        }
+
+        // HU-37 y HU-41: Mostrar el resultado de la asistencia QR.
+        [HttpGet]
+        public IActionResult ResultadoAsistenciaQr()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idUsuario == null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            ViewBag.Mensaje = TempData["AsistenciaQrMensaje"] as string
+                ?? "No hay un resultado de asistencia disponible.";
+
+            ViewBag.Exitoso = TempData["AsistenciaQrExitoso"] is bool exitoso
+                && exitoso;
+
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistrarseTaller(int id)

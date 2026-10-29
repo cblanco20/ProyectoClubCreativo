@@ -62,14 +62,17 @@
                 <div class="acciones-inscripcion">
                     <a asp-controller="Home"
                        asp-action="@(item.Tipo == "Taller" ? "DetalleTaller" : "DetalleEvento")"
-                       asp-route-id="@item.Id">
-                        <button type="button">Ver información</button>
+                       asp-route-id="@item.Id"
+                       class="boton-inscripcion">
+                        Ver información
                     </a>
 
                     @if (item.Estado == "Próximo" && item.Tipo == "Taller")
                     {
-                        <a asp-action="ConfirmarCancelacionTaller" asp-route-id="@item.Id">
-                            <button type="button" class="accion-peligro">Cancelar</button>
+                        <a asp-action="ConfirmarCancelacionTaller"
+                           asp-route-id="@item.Id"
+                           class="boton-inscripcion accion-peligro">
+                            Cancelar
                         </a>
                     }
                 </div>
