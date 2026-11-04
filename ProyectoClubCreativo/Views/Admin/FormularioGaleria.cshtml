@@ -55,11 +55,15 @@
                     <div class="grid-imagenes-galeria-admin">
                         @foreach (var imagen in Model.Imagenes)
                         {
-                            <div class="miniatura-imagen-galeria">
+                                                        <div class="miniatura-imagen-galeria">
                                 <img src="@imagen.Url" alt="@imagen.NombreArchivo" />
                                 <input type="checkbox" name="imagenesEliminar" value="@imagen.Id" hidden />
-                                <button type="button" class="boton-admin boton-admin-secundario" data-quitar-actual>
-                                    Quitar
+                                <button type="button"
+                                        class="boton-eliminar-miniatura"
+                                        data-quitar-actual
+                                        title="Quitar imagen"
+                                        aria-label="Quitar imagen">
+                                    <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>
                         }
@@ -94,14 +98,18 @@
 @section Scripts {
     <script>
         (function () {
-            // Imágenes actuales: Quitar / Deshacer (se aplica al guardar).
+            // Imágenes actuales: quitar o deshacer (se aplica al guardar).
             document.querySelectorAll('[data-quitar-actual]').forEach(function (boton) {
                 boton.addEventListener('click', function () {
                     var tarjeta = boton.closest('.miniatura-imagen-galeria');
                     var casilla = tarjeta.querySelector('input[type=checkbox]');
+
                     casilla.checked = !casilla.checked;
                     tarjeta.querySelector('img').style.opacity = casilla.checked ? '0.3' : '1';
-                    boton.textContent = casilla.checked ? 'Deshacer' : 'Quitar';
+                    boton.title = casilla.checked ? 'Deshacer' : 'Quitar imagen';
+                    boton.innerHTML = casilla.checked
+                        ? '<i class="bi bi-arrow-counterclockwise"></i>'
+                        : '<i class="bi bi-x-lg"></i>';
                 });
             });
 
@@ -123,30 +131,34 @@
                 archivos.forEach(function (archivo, indice) {
                     var tarjeta = document.createElement('div');
                     tarjeta.className = 'miniatura-imagen-galeria';
+                    tarjeta.title = archivo.name;
 
                     var img = document.createElement('img');
                     img.src = URL.createObjectURL(archivo);
                     img.alt = archivo.name;
+                    tarjeta.appendChild(img);
 
-                    var nombre = document.createElement('small');
-                    nombre.style.display = 'block';
-                    nombre.style.overflow = 'hidden';
-                    nombre.style.textOverflow = 'ellipsis';
-                    nombre.style.whiteSpace = 'nowrap';
-                    nombre.textContent = (esNueva && indice === 0 ? 'Portada · ' : '') + archivo.name;
+                    if (esNueva && indice === 0) {
+                        var etiqueta = document.createElement('span');
+                        etiqueta.textContent = 'Portada';
+                        etiqueta.style.cssText =
+                            'position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.65);' +
+                            'color:#fff;font-size:11px;padding:2px 8px;border-radius:8px;';
+                        tarjeta.appendChild(etiqueta);
+                    }
 
                     var quitar = document.createElement('button');
                     quitar.type = 'button';
-                    quitar.className = 'boton-admin boton-admin-secundario';
-                    quitar.textContent = 'Quitar';
+                    quitar.className = 'boton-eliminar-miniatura';
+                    quitar.title = 'Quitar imagen';
+                    quitar.setAttribute('aria-label', 'Quitar imagen');
+                    quitar.innerHTML = '<i class="bi bi-x-lg"></i>';
                     quitar.addEventListener('click', function () {
                         archivos.splice(indice, 1);
                         sincronizar();
                     });
-
-                    tarjeta.appendChild(img);
-                    tarjeta.appendChild(nombre);
                     tarjeta.appendChild(quitar);
+
                     vista.appendChild(tarjeta);
                 });
             }
@@ -162,4 +174,5 @@
             });
         })();
     </script>
+}
 }
