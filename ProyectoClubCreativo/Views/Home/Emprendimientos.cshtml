@@ -1,6 +1,19 @@
-﻿@{
+﻿@using ProyectoClubCreativo.Models.Entities
+@using ProyectoClubCreativo.Models.ViewModels
+
+@{
     ViewData["Title"] = "Emprendimientos";
     Layout = "_LayoutExterno";
+
+    List<EmprendimientoPublicoViewModel> emprendimientos =
+        ViewBag.Emprendimientos as List<EmprendimientoPublicoViewModel> ?? new();
+
+    List<Categoria> categorias =
+        ViewBag.CategoriasEmprendimiento as List<Categoria> ?? new();
+
+    int? categoriaSeleccionada = ViewBag.CategoriaSeleccionada as int?;
+
+    string imagenPorDefecto = Url.Content("~/images/logo.jpg");
 }
 
 <section class="hero-emprendimientos">
@@ -32,7 +45,7 @@
                 <i class="bi bi-shop-window"></i>
 
                 <div>
-                    <strong>+40 emprendimientos</strong>
+                    <strong>@(emprendimientos.Count) emprendimientos</strong>
                     <span>forman parte del Club</span>
                 </div>
             </div>
@@ -67,12 +80,17 @@
     <div class="container">
 
         <div class="lista-categorias-emprendimientos">
-            <span class="categoria-chip categoria-chip-activa">Todos</span>
-            <span class="categoria-chip">Accesorios</span>
-            <span class="categoria-chip">Arte e ilustración</span>
-            <span class="categoria-chip">Velas y aromas</span>
-            <span class="categoria-chip">Bolsos y textiles</span>
-            <span class="categoria-chip">Joyería</span>
+            <a asp-controller="Home"
+               asp-action="Emprendimientos"
+               class="categoria-chip @(categoriaSeleccionada is null ? "categoria-chip-activa" : "")">Todos</a>
+
+            @foreach (Categoria categoria in categorias)
+            {
+                <a asp-controller="Home"
+                   asp-action="Emprendimientos"
+                   asp-route-categoria="@categoria.IdCategoria"
+                   class="categoria-chip @(categoriaSeleccionada == categoria.IdCategoria ? "categoria-chip-activa" : "")">@categoria.Nombre</a>
+            }
         </div>
 
     </div>
@@ -82,187 +100,62 @@
 <section class="emprendimientos-listado" id="emprendimientos-listado">
     <div class="container">
 
-        <div class="grid-emprendimientos">
+        @if (!emprendimientos.Any())
+        {
+            <p class="text-center">
+                No hay emprendimientos disponibles por el momento.
+            </p>
+        }
+        else
+        {
+            <div class="grid-emprendimientos">
 
-            <article class="tarjeta-emprendimiento">
-                <div class="imagen-tarjeta-emprendimiento">
-                    <img src="~/images/producto-1.jpg"
-                         alt="Accesorios artesanales de Orquídea" />
-                    <span class="categoria-tarjeta-emprendimiento">Accesorios</span>
-                </div>
+                @foreach (EmprendimientoPublicoViewModel e in emprendimientos)
+                {
+                    string imagen = string.IsNullOrWhiteSpace(e.ImagenUrl)
+                        ? imagenPorDefecto
+                        : Url.Content(e.ImagenUrl);
 
-                <div class="cuerpo-tarjeta-emprendimiento">
-                    <h3>Orquídea</h3>
+                    <article class="tarjeta-emprendimiento">
+                        <div class="imagen-tarjeta-emprendimiento">
+                            <img src="@imagen" alt="@e.NombreComercial" />
 
-                    <p>
-                        Accesorios artesanales hechos a mano con materiales
-                        naturales de distintas zonas del país.
-                    </p>
+                            @if (!string.IsNullOrWhiteSpace(e.Categoria))
+                            {
+                                <span class="categoria-tarjeta-emprendimiento">@e.Categoria</span>
+                            }
+                        </div>
 
-                    <div class="datos-tarjeta-emprendimiento">
-                        <span><i class="bi bi-geo-alt-fill"></i> Escazú</span>
-                        <span><i class="bi bi-star-fill"></i> 4.9</span>
-                    </div>
+                        <div class="cuerpo-tarjeta-emprendimiento">
+                            <h3>@e.NombreComercial</h3>
 
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento"
-                       asp-route-name="Orquídea"
-                       class="enlace-tarjeta-emprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
+                            <p>@e.Descripcion</p>
 
-            <article class="tarjeta-emprendimiento">
-                <div class="imagen-tarjeta-emprendimiento">
-                    <img src="~/images/producto-2.jpg"
-                         alt="Bolsos y accesorios de Moras" />
-                    <span class="categoria-tarjeta-emprendimiento">Bolsos y textiles</span>
-                </div>
+                            <div class="datos-tarjeta-emprendimiento">
+                                @if (!string.IsNullOrWhiteSpace(e.Provincia))
+                                {
+                                    <span><i class="bi bi-geo-alt-fill"></i> @e.Provincia</span>
+                                }
 
-                <div class="cuerpo-tarjeta-emprendimiento">
-                    <h3>Moras</h3>
+                                @if (e.Valoracion.HasValue)
+                                {
+                                    <span><i class="bi bi-star-fill"></i> @e.Valoracion.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)</span>
+                                }
+                            </div>
 
-                    <p>
-                        Bolsos y accesorios textiles diseñados y confeccionados
-                        artesanalmente en pequeños lotes.
-                    </p>
+                            <a asp-controller="Home"
+                               asp-action="DetalleEmprendimiento"
+                               asp-route-id="@e.IdEmprendimiento"
+                               class="enlace-tarjeta-emprendimiento">
+                                Ver emprendimiento
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+                }
 
-                    <div class="datos-tarjeta-emprendimiento">
-                        <span><i class="bi bi-geo-alt-fill"></i> Santa Ana</span>
-                        <span><i class="bi bi-star-fill"></i> 4.8</span>
-                    </div>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento"
-                       asp-route-name="Moras"
-                       class="enlace-tarjeta-emprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-emprendimiento">
-                <div class="imagen-tarjeta-emprendimiento">
-                    <img src="~/images/producto-3.jpg"
-                         alt="Velas artesanales de Luz Natural" />
-                    <span class="categoria-tarjeta-emprendimiento">Velas y aromas</span>
-                </div>
-
-                <div class="cuerpo-tarjeta-emprendimiento">
-                    <h3>Luz Natural</h3>
-
-                    <p>
-                        Velas artesanales elaboradas con cera vegetal y
-                        aromas naturales inspirados en Costa Rica.
-                    </p>
-
-                    <div class="datos-tarjeta-emprendimiento">
-                        <span><i class="bi bi-geo-alt-fill"></i> Heredia</span>
-                        <span><i class="bi bi-star-fill"></i> 5.0</span>
-                    </div>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento"
-                       asp-route-name="Luz Natural"
-                       class="enlace-tarjeta-emprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-emprendimiento">
-                <div class="imagen-tarjeta-emprendimiento">
-                    <img src="~/images/producto-4.jpg"
-                         alt="Ilustraciones de Pinta Bonito" />
-                    <span class="categoria-tarjeta-emprendimiento">Arte e ilustración</span>
-                </div>
-
-                <div class="cuerpo-tarjeta-emprendimiento">
-                    <h3>Pinta Bonito</h3>
-
-                    <p>
-                        Ilustraciones y arte original que celebra la cultura
-                        y los paisajes costarricenses.
-                    </p>
-
-                    <div class="datos-tarjeta-emprendimiento">
-                        <span><i class="bi bi-geo-alt-fill"></i> San José</span>
-                        <span><i class="bi bi-star-fill"></i> 4.7</span>
-                    </div>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento"
-                       asp-route-name="Pinta Bonito"
-                       class="enlace-tarjeta-emprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-emprendimiento">
-                <div class="imagen-tarjeta-emprendimiento">
-                    <img src="~/images/taller-joyeria.jpg"
-                         alt="Joyería artesanal en arcilla" />
-                    <span class="categoria-tarjeta-emprendimiento">Joyería</span>
-                </div>
-
-                <div class="cuerpo-tarjeta-emprendimiento">
-                    <h3>Arcilla Viva</h3>
-
-                    <p>
-                        Piezas de joyería en arcilla polimérica, pintadas y
-                        horneadas a mano en pequeños talleres.
-                    </p>
-
-                    <div class="datos-tarjeta-emprendimiento">
-                        <span><i class="bi bi-geo-alt-fill"></i> Alajuela</span>
-                        <span><i class="bi bi-star-fill"></i> 4.9</span>
-                    </div>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento"
-                       class="enlace-tarjeta-emprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-emprendimiento">
-                <div class="imagen-tarjeta-emprendimiento">
-                    <img src="~/images/taller-bordado.jpg"
-                         alt="Bordado creativo hecho a mano" />
-                    <span class="categoria-tarjeta-emprendimiento">Bolsos y textiles</span>
-                </div>
-
-                <div class="cuerpo-tarjeta-emprendimiento">
-                    <h3>Hilo y Flor</h3>
-
-                    <p>
-                        Bordados creativos sobre prendas y accesorios,
-                        personalizados según cada historia.
-                    </p>
-
-                    <div class="datos-tarjeta-emprendimiento">
-                        <span><i class="bi bi-geo-alt-fill"></i> San Pedro</span>
-                        <span><i class="bi bi-star-fill"></i> 4.8</span>
-                    </div>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento"
-                       class="enlace-tarjeta-emprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-        </div>
+            </div>
+        }
 
     </div>
 </section>
@@ -348,3 +241,4 @@
 
     </div>
 </section>
+

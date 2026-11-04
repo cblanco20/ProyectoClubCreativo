@@ -1,6 +1,10 @@
-﻿@{
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.Admin.GaleriaAdminViewModel>
+
+@{
     ViewData["Title"] = "Galería Multimedia";
     Layout = "_LayoutExterno";
+    string categoriaActiva = ViewBag.CategoriaActiva as string ?? string.Empty;
+    int totalFotos = Model.Sum(g => g.Imagenes.Count);
 }
 
 <section class="hero-eventos">
@@ -19,7 +23,7 @@
             <div class="tarjeta-flotante-eventos">
                 <i class="bi bi-images"></i>
                 <div>
-                    <strong>+300 fotos</strong>
+                                        <strong>@totalFotos foto(s)</strong>
                     <span>de nuestras actividades</span>
                 </div>
             </div>
@@ -29,57 +33,37 @@
 
 <section class="categorias-emprendimientos">
     <div class="container">
-        <div class="lista-categorias-emprendimientos">
-            <span class="categoria-chip categoria-chip-activa">Todas</span>
-            <span class="categoria-chip">Eventos</span>
-            <span class="categoria-chip">Talleres</span>
-            <span class="categoria-chip">Emprendimientos</span>
-            <span class="categoria-chip">Productos</span>
-            <span class="categoria-chip">Ediciones anteriores</span>
+               <div class="lista-categorias-emprendimientos">
+            <a asp-action="GaleriaMultimedia" class="categoria-chip @(categoriaActiva == "" ? "categoria-chip-activa" : "")">Todas</a>
+            <a asp-action="GaleriaMultimedia" asp-route-categoria="evento" class="categoria-chip @(categoriaActiva == "evento" ? "categoria-chip-activa" : "")">Eventos</a>
+            <a asp-action="GaleriaMultimedia" asp-route-categoria="emprendimiento" class="categoria-chip @(categoriaActiva == "emprendimiento" ? "categoria-chip-activa" : "")">Emprendimientos</a>
+            <a asp-action="GaleriaMultimedia" asp-route-categoria="producto" class="categoria-chip @(categoriaActiva == "producto" ? "categoria-chip-activa" : "")">Productos</a>
         </div>
     </div>
 </section>
 
 <section class="emprendimientos-listado" id="galeria-listado">
     <div class="container">
-        <div class="grid-galeria-multimedia">
-            <div class="item-galeria-multimedia">
-                <img src="~/images/hero-feria.jpg" alt="Feria de emprendimientos" />
-                <span>Eventos</span>
+                @if (Model.Count == 0)
+        {
+            <p>Aún no hay galerías publicadas en esta categoría.</p>
+        }
+        else
+        {
+            <div class="grid-galeria-multimedia">
+                @foreach (var galeria in Model)
+                {
+                    @foreach (var imagen in galeria.Imagenes)
+                    {
+                        <div class="item-galeria-multimedia">
+                            <img src="@imagen.Url" alt="@galeria.Nombre" title="@galeria.Nombre" />
+                            <span>@galeria.Categoria</span>
+                        </div>
+                    }
+                }
             </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/taller-ceramica.jpg" alt="Taller de cerámica" />
-                <span>Talleres</span>
-            </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/producto-1.jpg" alt="Producto de Orquídea" />
-                <span>Productos</span>
-            </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/evento-santa-ana.jpg" alt="Feria Creativa Santa Ana" />
-                <span>Eventos</span>
-            </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/taller-bordado.jpg" alt="Taller de bordado" />
-                <span>Talleres</span>
-            </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/producto-3.jpg" alt="Velas Luz Natural" />
-                <span>Productos</span>
-            </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/convivencia.jpg" alt="Convivencia comunidad Club Creativo" />
-                <span>Emprendimientos</span>
-            </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/evento-madres.jpg" alt="Feria del Día de las Madres" />
-                <span>Ediciones anteriores</span>
-            </div>
-            <div class="item-galeria-multimedia">
-                <img src="~/images/taller-joyeria.jpg" alt="Taller de joyería" />
-                <span>Talleres</span>
-            </div>
-        </div>
+        }
+       
     </div>
 </section>
 

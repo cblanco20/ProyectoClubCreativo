@@ -14,17 +14,20 @@ namespace ProyectoClubCreativo.Controllers
         private readonly IWebHostEnvironment _entornoWeb;
         private readonly PagoService _pagoService;
         private readonly CorreoService _correoService;
+        private readonly NotificacionService _notificaciones;
 
         public EmprendedorController(
     ClubCreativoDbContext context,
     IWebHostEnvironment entornoWeb,
     PagoService pagoService,
-    CorreoService correoService)
+    CorreoService correoService,
+    NotificacionService notificaciones)
         {
             _context = context;
             _entornoWeb = entornoWeb;
             _pagoService = pagoService;
             _correoService = correoService;
+            _notificaciones = notificaciones;
         }
 
         public override async Task OnActionExecutionAsync(
@@ -627,12 +630,12 @@ namespace ProyectoClubCreativo.Controllers
 
             modelo.Fotografias = await _context.Galerias
                 .AsNoTracking()
-                .Include(g => g.GaleriaImagene)
+              .Include(g => g.GaleriaImagenes)
                 .Where(g =>
                     g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                    g.GaleriaImagene != null)
+                  g.GaleriaImagenes.Any())
                 .OrderBy(g => g.FechaCreacion)
-                .Select(g => g.GaleriaImagene!.UrlImagen)
+                .Select(g => g.GaleriaImagenes.OrderBy(i => i.OrdenVisual).Select(i => i.UrlImagen).First())
                 .ToListAsync();
 
             List<Producto> productosDestacados = await _context.Productos
@@ -752,12 +755,12 @@ namespace ProyectoClubCreativo.Controllers
 
             ViewBag.FotografiasActuales = await _context.Galerias
                 .AsNoTracking()
-                .Include(g => g.GaleriaImagene)
+                .Include(g => g.GaleriaImagenes)
                 .Where(g =>
                     g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                    g.GaleriaImagene != null)
+                    g.GaleriaImagenes.Any())
                 .OrderBy(g => g.FechaCreacion)
-                .Select(g => g.GaleriaImagene!.UrlImagen)
+                .Select(g => g.GaleriaImagenes.OrderBy(i => i.OrdenVisual).Select(i => i.UrlImagen).First())
                 .ToListAsync();
 
             return View(modelo);
@@ -852,12 +855,12 @@ namespace ProyectoClubCreativo.Controllers
 
                 ViewBag.FotografiasActuales = await _context.Galerias
                     .AsNoTracking()
-                    .Include(g => g.GaleriaImagene)
+                    .Include(g => g.GaleriaImagenes)
                     .Where(g =>
                         g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                        g.GaleriaImagene != null)
+                      g.GaleriaImagenes.Any())
                     .OrderBy(g => g.FechaCreacion)
-                    .Select(g => g.GaleriaImagene!.UrlImagen)
+                    .Select(g => g.GaleriaImagenes.OrderBy(i => i.OrdenVisual).Select(i => i.UrlImagen).First())
                     .ToListAsync();
 
                 return View(modelo);
@@ -1021,12 +1024,12 @@ namespace ProyectoClubCreativo.Controllers
 
                 ViewBag.FotografiasActuales = await _context.Galerias
                     .AsNoTracking()
-                    .Include(g => g.GaleriaImagene)
+                   .Include(g => g.GaleriaImagenes)
                     .Where(g =>
                         g.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                        g.GaleriaImagene != null)
+                      g.GaleriaImagenes.Any())
                     .OrderBy(g => g.FechaCreacion)
-                    .Select(g => g.GaleriaImagene!.UrlImagen)
+                    .Select(g => g.GaleriaImagenes.OrderBy(i => i.OrdenVisual).Select(i => i.UrlImagen).First())
                     .ToListAsync();
 
                 return View(modelo);
@@ -3734,8 +3737,7 @@ namespace ProyectoClubCreativo.Controllers
                     ? string.Empty
                     : $" Observación del emprendedor: {modelo.Observacion.Trim()}");
 
-            _context.Notificaciones.Add(new Notificacione
-            {
+            await _notificaciones.AgregarAsync(new Notificacione            {
                 IdUsuario = venta.IdUsuario,
                 Titulo = "Estado de tu pedido actualizado",
                 Mensaje = mensaje,

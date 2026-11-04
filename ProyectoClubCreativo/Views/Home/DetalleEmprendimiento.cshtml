@@ -1,53 +1,83 @@
-﻿@{
-    ViewData["Title"] = "Detalle de Emprendimiento";
+﻿@using ProyectoClubCreativo.Models.ViewModels
+@model DetalleEmprendimientoPublicoViewModel
+
+@{
+    ViewData["Title"] = Model.NombreComercial;
     Layout = "_LayoutExterno";
+
+    string imagenPorDefecto = Url.Content("~/images/logo.jpg");
+
+    string ImagenDe(string? url) =>
+        string.IsNullOrWhiteSpace(url) ? imagenPorDefecto : Url.Content(url);
+
+    string Resumen(string texto, int maximo) =>
+        texto.Length <= maximo ? texto : texto[..(maximo - 3)] + "...";
+
+    string? EnlaceRed(string? valor, string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            return null;
+        }
+
+        string limpio = valor.Trim();
+
+        return limpio.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? limpio
+            : baseUrl + limpio.TrimStart('@');
+    }
+
+    string? instagram = EnlaceRed(Model.Instagram, "https://instagram.com/");
+    string? facebook = EnlaceRed(Model.Facebook, "https://facebook.com/");
 }
 
 <!-- ENCABEZADO -->
 <section class="encabezado-detalle-emprendimiento">
     <div class="container">
 
-        <nav class="migas-detalle-emprendimiento"
-             aria-label="Navegación secundaria">
-
-            <a asp-controller="Home"
-               asp-action="Index">
-                Inicio
-            </a>
-
+        <nav class="migas-detalle-emprendimiento" aria-label="Navegación secundaria">
+            <a asp-controller="Home" asp-action="Index">Inicio</a>
             <i class="bi bi-chevron-right"></i>
-
-            <a asp-controller="Home"
-               asp-action="Emprendimientos">
-                Emprendimientos
-            </a>
-
+            <a asp-controller="Home" asp-action="Emprendimientos">Emprendimientos</a>
             <i class="bi bi-chevron-right"></i>
-
-            <span>Orquídea</span>
+            <span>@Model.NombreComercial</span>
         </nav>
 
         <div class="perfil-detalle-emprendimiento">
 
-            <img src="~/images/producto-1.jpg"
-                 alt="Logo del emprendimiento Orquídea"
+            <img src="@ImagenDe(Model.LogoUrl)"
+                 alt="Logo del emprendimiento @Model.NombreComercial"
                  class="logo-detalle-emprendimiento" />
 
             <div class="informacion-perfil-emprendimiento">
-                <span class="categoria-detalle-emprendimiento">
-                    Accesorios
-                </span>
+                @if (!string.IsNullOrWhiteSpace(Model.Categoria))
+                {
+                    <span class="categoria-detalle-emprendimiento">@Model.Categoria</span>
+                }
 
-                <h1>Orquídea</h1>
+                <h1>@Model.NombreComercial</h1>
 
-                <p class="resumen-detalle-emprendimiento">
-                    Accesorios artesanales hechos a mano con materiales
-                    naturales de distintas zonas de Costa Rica.
-                </p>
+                <p class="resumen-detalle-emprendimiento">@Resumen(Model.Descripcion, 180)</p>
 
                 <div class="datos-perfil-emprendimiento">
-                    <span><i class="bi bi-geo-alt-fill"></i> Escazú, San José</span>
-                    <span><i class="bi bi-star-fill"></i> 4.9 (86 reseñas)</span>
+                    @if (!string.IsNullOrWhiteSpace(Model.Provincia))
+                    {
+                        <span><i class="bi bi-geo-alt-fill"></i> @Model.Provincia</span>
+                    }
+
+                    @if (Model.CantidadResenas > 0 && Model.Valoracion.HasValue)
+                    {
+                        <span>
+                            <i class="bi bi-star-fill"></i>
+                            @Model.Valoracion.Value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
+                            (@Model.CantidadResenas @(Model.CantidadResenas == 1 ? "reseña" : "reseñas"))
+                        </span>
+                    }
+                    else
+                    {
+                        <span><i class="bi bi-star"></i> Sin reseñas todavía</span>
+                    }
+
                     <span><i class="bi bi-patch-check-fill"></i> Emprendimiento verificado</span>
                 </div>
             </div>
@@ -57,20 +87,20 @@
     </div>
 </section>
 
-
 <!-- GALERÍA -->
-<section class="galeria-detalle-emprendimiento">
-    <div class="container">
-
-        <div class="grid-galeria-emprendimiento">
-            <img src="~/images/producto-1.jpg" alt="Accesorios de Orquídea, vista principal" />
-            <img src="~/images/producto-2.jpg" alt="Accesorios de Orquídea, segunda vista" />
-            <img src="~/images/producto-3.jpg" alt="Accesorios de Orquídea, tercera vista" />
+@if (Model.Imagenes.Any())
+{
+    <section class="galeria-detalle-emprendimiento">
+        <div class="container">
+            <div class="grid-galeria-emprendimiento">
+                @foreach (string imagen in Model.Imagenes)
+                {
+                    <img src="@ImagenDe(imagen)" alt="Galería de @Model.NombreComercial" />
+                }
+            </div>
         </div>
-
-    </div>
-</section>
-
+    </section>
+}
 
 <!-- CONTENIDO -->
 <section class="contenido-detalle-emprendimiento">
@@ -79,44 +109,26 @@
         <article class="informacion-detalle-emprendimiento">
 
             <h2>Nuestra historia</h2>
+            <p>@Model.Descripcion</p>
 
-            <p>
-                Orquídea nació en el año 2021 como un proyecto familiar
-                dedicado a la elaboración de accesorios artesanales. Cada
-                pieza se diseña y produce a mano, utilizando materiales
-                naturales provenientes de distintas zonas del país.
-            </p>
+            @if (Model.Productos.Any())
+            {
+                <h2>Productos destacados</h2>
 
-            <p>
-                Con el tiempo, el emprendimiento se ha convertido en parte
-                activa de la comunidad de Club Creativo MiVo, participando
-                en ferias, talleres y actividades que fortalecen el
-                talento local.
-            </p>
-
-            <h2>Productos destacados</h2>
-
-            <div class="grid-productos-emprendimiento">
-
-                <article class="producto-detalle-emprendimiento">
-                    <img src="~/images/producto-1.jpg" alt="Aretes artesanales" />
-                    <h3>Aretes tejidos</h3>
-                    <p>Elaborados a mano con hilo encerado y semillas.</p>
-                </article>
-
-                <article class="producto-detalle-emprendimiento">
-                    <img src="~/images/producto-2.jpg" alt="Collares artesanales" />
-                    <h3>Collares naturales</h3>
-                    <p>Piezas únicas con materiales recolectados localmente.</p>
-                </article>
-
-                <article class="producto-detalle-emprendimiento">
-                    <img src="~/images/producto-4.jpg" alt="Pulseras artesanales" />
-                    <h3>Pulseras artesanales</h3>
-                    <p>Combinaciones de colores inspiradas en la naturaleza.</p>
-                </article>
-
-            </div>
+                <div class="grid-productos-emprendimiento">
+                    @foreach (ProductoEmprendimientoPublicoViewModel producto in Model.Productos)
+                    {
+                        <article class="producto-detalle-emprendimiento">
+                            <a asp-controller="Home" asp-action="DetalleProducto" asp-route-id="@producto.IdProducto">
+                                <img src="@ImagenDe(producto.ImagenUrl)" alt="@producto.Nombre" />
+                            </a>
+                            <h3>@producto.Nombre</h3>
+                            <p>@Resumen(producto.Descripcion, 90)</p>
+                            <p><strong>₡@producto.Precio.ToString("N0")</strong></p>
+                        </article>
+                    }
+                </div>
+            }
 
         </article>
 
@@ -125,100 +137,113 @@
             <h2>Contacto</h2>
 
             <ul class="lista-contacto-emprendimiento">
-                <li>
-                    <i class="bi bi-whatsapp"></i>
-                    <span>+506 7130-1389</span>
-                </li>
+                @if (!string.IsNullOrWhiteSpace(Model.Telefono))
+                {
+                    <li>
+                        <i class="bi bi-whatsapp"></i>
+                        <span>@Model.Telefono</span>
+                    </li>
+                }
 
                 <li>
                     <i class="bi bi-envelope-fill"></i>
-                    <span>orquidea@clubcreativomivo.com</span>
+                    <span>@Model.Correo</span>
                 </li>
 
-                <li>
-                    <i class="bi bi-geo-alt-fill"></i>
-                    <span>Escazú, San José, Costa Rica</span>
-                </li>
+                @if (!string.IsNullOrWhiteSpace(Model.Provincia))
+                {
+                    <li>
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>@Model.Provincia, Costa Rica</span>
+                    </li>
+                }
 
-                <li>
-                    <i class="bi bi-instagram"></i>
-                    <span>@@orquidea.cr</span>
-                </li>
+                @if (instagram is not null)
+                {
+                    <li>
+                        <i class="bi bi-instagram"></i>
+                        <a href="@instagram" target="_blank" rel="noopener">@Model.Instagram</a>
+                    </li>
+                }
+
+                @if (facebook is not null)
+                {
+                    <li>
+                        <i class="bi bi-facebook"></i>
+                        <a href="@facebook" target="_blank" rel="noopener">@Model.Facebook</a>
+                    </li>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.SitioWeb))
+                {
+                    <li>
+                        <i class="bi bi-globe"></i>
+                        <a href="@Model.SitioWeb" target="_blank" rel="noopener">@Model.SitioWeb</a>
+                    </li>
+                }
             </ul>
 
-            <a href="#"
-               class="boton-contacto-emprendimiento">
-                Escribir por WhatsApp
-            </a>
+            @if (Model.EnlaceWhatsApp is not null)
+            {
+                <a href="@Model.EnlaceWhatsApp" target="_blank" rel="noopener" class="boton-contacto-emprendimiento">
+                    Escribir por WhatsApp
+                </a>
+            }
 
         </aside>
 
     </div>
 </section>
 
-
 <!-- EMPRENDIMIENTOS RELACIONADOS -->
-<section class="relacionados-detalle-emprendimiento">
-    <div class="container">
+@if (Model.Relacionados.Any())
+{
+    <section class="relacionados-detalle-emprendimiento">
+        <div class="container">
 
-        <div class="encabezado-relacionados-emprendimiento">
-            <div>
-                <span class="subtitulo-emprendimientos">
-                    Sigue explorando
-                </span>
+            <div class="encabezado-relacionados-emprendimiento">
+                <div>
+                    <span class="subtitulo-emprendimientos">Sigue explorando</span>
+                    <h2>Otros emprendimientos que te pueden interesar</h2>
+                </div>
 
-                <h2>Otros emprendimientos que te pueden interesar</h2>
+                <a asp-controller="Home" asp-action="Emprendimientos">
+                    Ver todos los emprendimientos
+                    <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
 
-            <a asp-controller="Home"
-               asp-action="Emprendimientos">
-                Ver todos los emprendimientos
-                <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
+            <div class="grid-relacionados-emprendimiento">
+                @foreach (EmprendimientoPublicoViewModel relacionado in Model.Relacionados)
+                {
+                    <article class="tarjeta-relacionada-emprendimiento">
+                        <img src="@ImagenDe(relacionado.ImagenUrl)" alt="@relacionado.NombreComercial" />
 
-        <div class="grid-relacionados-emprendimiento">
+                        <div>
+                            @if (!string.IsNullOrWhiteSpace(relacionado.Categoria))
+                            {
+                                <span>@relacionado.Categoria</span>
+                            }
+                            <h3>@relacionado.NombreComercial</h3>
 
-            <article class="tarjeta-relacionada-emprendimiento">
-                <img src="~/images/producto-2.jpg" alt="Bolsos y accesorios de Moras" />
-
-                <div>
-                    <span>Bolsos y textiles</span>
-                    <h3>Moras</h3>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-relacionada-emprendimiento">
-                <img src="~/images/producto-3.jpg" alt="Velas artesanales de Luz Natural" />
-
-                <div>
-                    <span>Velas y aromas</span>
-                    <h3>Luz Natural</h3>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleEmprendimiento">
-                        Ver emprendimiento
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </article>
+                            <a asp-controller="Home"
+                               asp-action="DetalleEmprendimiento"
+                               asp-route-id="@relacionado.IdEmprendimiento">
+                                Ver emprendimiento
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
 
         </div>
-
-    </div>
-</section>
-
+    </section>
+}
 
 <!-- CTA FINAL -->
 <section class="cta-detalle-emprendimiento">
     <div class="container">
-
         <div class="contenido-cta-detalle-emprendimiento">
             <span>Club Creativo MiVo</span>
 
@@ -235,6 +260,5 @@
                 Ver emprendimientos
             </a>
         </div>
-
     </div>
 </section>

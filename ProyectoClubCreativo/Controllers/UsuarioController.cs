@@ -16,13 +16,16 @@ namespace ProyectoClubCreativo.Controllers
     {
         private readonly ClubCreativoDbContext _context;
         private readonly PagoService _pagoService;
+        private readonly NotificacionService _notificaciones;
 
         public UsuarioController(
     ClubCreativoDbContext context,
-    PagoService pagoService)
+    PagoService pagoService,
+    NotificacionService notificaciones)
         {
             _context = context;
             _pagoService = pagoService;
+            _notificaciones = notificaciones;
         }
 
         [HttpGet]
@@ -1288,7 +1291,7 @@ namespace ProyectoClubCreativo.Controllers
                     FechaLectura = null
                 };
 
-                _context.Notificaciones.Add(notificacionComprador);
+                await _notificaciones.AgregarAsync(notificacionComprador);
 
                 var idsProductos = detalles
                     .Select(d => d.IdProducto)
@@ -1318,7 +1321,7 @@ namespace ProyectoClubCreativo.Controllers
                         FechaLectura = null
                     };
 
-                    _context.Notificaciones.Add(notificacionEmprendedor);
+                    await _notificaciones.AgregarAsync(notificacionEmprendedor);
                 }
 
                 await _context.SaveChangesAsync();
@@ -1611,7 +1614,7 @@ namespace ProyectoClubCreativo.Controllers
                     FechaLectura = null
                 };
 
-                _context.Notificaciones.Add(notificacionRechazo);
+                await _notificaciones.AgregarAsync(notificacionRechazo);
                 await _context.SaveChangesAsync();
 
                 ModelState.AddModelError(
@@ -1890,7 +1893,47 @@ namespace ProyectoClubCreativo.Controllers
 
             return (idUsuario, null, null);
         }
+        // Cancelar la inscripción del usuario a un evento (HU-48, escenario 3).
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelarRegistroEvento(int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
+            if (idUsuario is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            DateTime ahora = DateTime.Now;
+
+            InscripcionesEvento? inscripcion = await _context.InscripcionesEventos
+                .Include(i => i.IdEventoNavigation)
+                .FirstOrDefaultAsync(i =>
+                    i.IdEvento == id &&
+                    i.IdUsuario == idUsuario.Value &&
+                    (i.Estado == "Pendiente" ||
+                     i.Estado == ReglasTalleres.InscripcionConfirmada));
+
+            if (inscripcion is null ||
+                inscripcion.IdEventoNavigation.FechaInicio <= ahora)
+            {
+                TempData["ErrorInscripcion"] =
+                    "Esta inscripción ya no se puede cancelar.";
+
+                return RedirectToAction(nameof(MisInscripciones));
+            }
+
+            inscripcion.Estado = ReglasTalleres.InscripcionCancelada;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeInscripcion"] =
+                $"Cancelaste tu inscripción en «{inscripcion.IdEventoNavigation.Nombre}». " +
+                "El cupo quedó disponible para otras personas.";
+
+            return RedirectToAction(nameof(MisInscripciones));
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistrarseEvento(int id)
@@ -3428,30 +3471,52 @@ namespace ProyectoClubCreativo.Controllers
         }
 
 
+        // HU-49: Consultar las preferencias de notificación.
         [HttpGet]
-        public IActionResult Preferencias()
+        public async Task<IActionResult> Preferencias()
         {
-            PreferenciasNotificacionViewModel modelo = new()
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
             {
-                Compras = true,
-                Eventos = true,
-                Talleres = true,
-                Promociones = false,
-                Recordatorios = true,
-                CanalCorreo = true,
-                CanalPlataforma = true,
-                FrecuenciaCorreo = "Inmediata"
-            };
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            PreferenciasNotificacion? preferencias = await _context.PreferenciasNotificacions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.IdUsuario == idUsuario.Value);
+
+            PreferenciasNotificacionViewModel modelo = preferencias is null
+                ? ObtenerPreferenciasPredeterminadas()
+                : new PreferenciasNotificacionViewModel
+                {
+                    Compras = preferencias.Compras,
+                    Eventos = preferencias.Eventos,
+                    Talleres = preferencias.Talleres,
+                    Promociones = preferencias.Promociones,
+                    Recordatorios = preferencias.Recordatorios,
+                    CanalCorreo = preferencias.CanalCorreo,
+                    CanalPlataforma = preferencias.CanalPlataforma,
+                    FrecuenciaCorreo = preferencias.FrecuenciaCorreo
+                };
 
             return View(modelo);
         }
 
+        // HU-49: Guardar las preferencias de notificación.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Preferencias(
+        public async Task<IActionResult> Preferencias(
             PreferenciasNotificacionViewModel modelo
         )
         {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
             if (!modelo.CanalCorreo && !modelo.CanalPlataforma)
             {
                 ModelState.AddModelError(
@@ -3460,15 +3525,104 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+            string[] frecuenciasValidas =
+    { "Inmediata", "Diaria", "Semanal", "Nunca" };
+
+            if (!string.IsNullOrWhiteSpace(modelo.FrecuenciaCorreo) &&
+                !frecuenciasValidas.Contains(modelo.FrecuenciaCorreo))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.FrecuenciaCorreo),
+                    "Seleccione una frecuencia válida."
+                );
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(modelo);
             }
 
+            PreferenciasNotificacion? preferencias = await _context.PreferenciasNotificacions
+                .FirstOrDefaultAsync(p => p.IdUsuario == idUsuario.Value);
+
+            if (preferencias is null)
+            {
+                preferencias = new PreferenciasNotificacion
+                {
+                    IdUsuario = idUsuario.Value
+                };
+
+                _context.PreferenciasNotificacions.Add(preferencias);
+            }
+
+            AplicarPreferencias(preferencias, modelo);
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajePreferencias"] =
-                "Las preferencias se validaron correctamente.";
+                "Tus preferencias se guardaron correctamente.";
 
             return RedirectToAction(nameof(Preferencias));
+        }
+
+        // HU-49: Restaurar los valores predeterminados.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestaurarPreferencias()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            PreferenciasNotificacion? preferencias = await _context.PreferenciasNotificacions
+                .FirstOrDefaultAsync(p => p.IdUsuario == idUsuario.Value);
+
+            if (preferencias is not null)
+            {
+                AplicarPreferencias(
+                    preferencias,
+                    ObtenerPreferenciasPredeterminadas()
+                );
+
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["MensajePreferencias"] =
+                "Se restablecieron los valores predeterminados.";
+
+            return RedirectToAction(nameof(Preferencias));
+        }
+
+        private static PreferenciasNotificacionViewModel ObtenerPreferenciasPredeterminadas()
+        {
+            return new PreferenciasNotificacionViewModel
+            {
+                Compras = true,
+                Eventos = true,
+                Talleres = true,
+                Promociones = true,
+                Recordatorios = true,
+                CanalCorreo = true,
+                CanalPlataforma = true,
+                FrecuenciaCorreo = "Inmediata"
+            };
+        }
+
+        private static void AplicarPreferencias(
+            PreferenciasNotificacion destino,
+            PreferenciasNotificacionViewModel origen)
+        {
+            destino.Compras = origen.Compras;
+            destino.Eventos = origen.Eventos;
+            destino.Talleres = origen.Talleres;
+            destino.Promociones = origen.Promociones;
+            destino.Recordatorios = origen.Recordatorios;
+            destino.CanalCorreo = origen.CanalCorreo;
+            destino.CanalPlataforma = origen.CanalPlataforma;
+            destino.FrecuenciaCorreo = origen.FrecuenciaCorreo;
         }
 
         [HttpGet]

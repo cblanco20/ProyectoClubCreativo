@@ -1,3 +1,4 @@
+using ProyectoClubCreativo.Models.ViewModels.Admin;
 using Microsoft.AspNetCore.Mvc;
 using ProyectoClubCreativo.Models;
 using ProyectoClubCreativo.Models.ViewModels;
@@ -77,14 +78,198 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View();
         }
-        public IActionResult Emprendimientos()
+        public async Task<IActionResult> Emprendimientos(int? categoria)
         {
+            IQueryable<Emprendimiento> consulta = _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e =>
+                    e.EstadoAprobacion == "Aprobado" &&
+                    e.Activo);
+
+            if (categoria.HasValue)
+            {
+                consulta = consulta.Where(e => e.IdCategoria == categoria.Value);
+            }
+
+            var datos = await consulta
+                .OrderBy(e => e.NombreComercial)
+                .Select(e => new
+                {
+                    e.IdEmprendimiento,
+                    e.NombreComercial,
+                    e.Descripcion,
+                    e.LogoUrl,
+                    Categoria = e.IdCategoriaNavigation == null
+                        ? null
+                        : e.IdCategoriaNavigation.Nombre,
+                    Provincia = e.IdUsuarioPropietarioNavigation.IdProvinciaNavigation == null
+                        ? null
+                        : e.IdUsuarioPropietarioNavigation.IdProvinciaNavigation.Nombre,
+                    ImagenPrincipal = e.EmprendimientoImagene == null
+                        ? null
+                        : e.EmprendimientoImagene.UrlImagen,
+                    Valoraciones = e.ComentariosResenas
+                        .Where(c => c.Estado != "Eliminado" && c.Valoracion != null)
+                        .Select(c => (int)c.Valoracion!.Value)
+                        .ToList()
+                })
+                .ToListAsync();
+
+            ViewBag.Emprendimientos = datos
+                .Select(e => new EmprendimientoPublicoViewModel
+                {
+                    IdEmprendimiento = e.IdEmprendimiento,
+                    NombreComercial = e.NombreComercial,
+                    Descripcion = e.Descripcion,
+                    Categoria = e.Categoria,
+                    Provincia = e.Provincia,
+                    ImagenUrl = !string.IsNullOrWhiteSpace(e.ImagenPrincipal)
+                        ? e.ImagenPrincipal
+                        : e.LogoUrl,
+                    Valoracion = e.Valoraciones.Count > 0
+                        ? Math.Round(e.Valoraciones.Average(), 1)
+                        : null
+                })
+                .ToList();
+
+            ViewBag.CategoriasEmprendimiento = await _context.Categorias
+                .AsNoTracking()
+                .Where(c => c.Modulo == "Emprendimientos" && c.Activa)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
+
+            ViewBag.CategoriaSeleccionada = categoria;
+
             return View();
         }
-        public IActionResult DetalleEmprendimiento(string name)
+        [HttpGet]
+        public async Task<IActionResult> DetalleEmprendimiento(int? id, string? name)
         {
-            ViewData["NombreEmprendimiento"] = string.IsNullOrWhiteSpace(name) ? "Orquídea" : name;
-            return View();
+            IQueryable<Emprendimiento> consulta = _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.EstadoAprobacion == "Aprobado" && e.Activo);
+
+            if (id.HasValue)
+            {
+                consulta = consulta.Where(e => e.IdEmprendimiento == id.Value);
+            }
+            else if (!string.IsNullOrWhiteSpace(name))
+            {
+                consulta = consulta.Where(e => e.NombreComercial == name);
+            }
+            else
+            {
+                return NotFound();
+            }
+
+            var datos = await consulta
+                .OrderBy(e => e.IdEmprendimiento)
+                .Select(e => new
+                {
+                    e.IdEmprendimiento,
+                    e.IdCategoria,
+                    e.NombreComercial,
+                    e.Descripcion,
+                    e.Telefono,
+                    e.Correo,
+                    e.SitioWeb,
+                    e.Instagram,
+                    e.Facebook,
+                    Categoria = e.IdCategoriaNavigation == null
+                        ? null
+                        : e.IdCategoriaNavigation.Nombre,
+                    Provincia = e.IdUsuarioPropietarioNavigation.IdProvinciaNavigation == null
+                        ? null
+                        : e.IdUsuarioPropietarioNavigation.IdProvinciaNavigation.Nombre,
+                    ImagenPrincipal = e.EmprendimientoImagene == null
+                        ? null
+                        : e.EmprendimientoImagene.UrlImagen,
+                    e.LogoUrl,
+                    Valoraciones = e.ComentariosResenas
+                        .Where(c => c.Estado != "Eliminado" && c.Valoracion != null)
+                        .Select(c => (int)c.Valoracion!.Value)
+                        .ToList(),
+                    Imagenes = e.Galeria
+                        .Where(g => g.Estado == "Publicada")
+                        .SelectMany(g => g.GaleriaImagenes)
+                        .OrderByDescending(i => i.EsPortada)
+                        .ThenBy(i => i.OrdenVisual)
+                        .Select(i => i.UrlImagen)
+                        .Take(6)
+                        .ToList(),
+                    Productos = e.Productos
+                        .Where(p => p.Estado == "Publicado")
+                        .OrderByDescending(p => p.EsDestacado)
+                        .ThenByDescending(p => p.FechaRegistro)
+                        .Take(6)
+                        .Select(p => new ProductoEmprendimientoPublicoViewModel
+                        {
+                            IdProducto = p.IdProducto,
+                            Nombre = p.Nombre,
+                            Descripcion = p.Descripcion,
+                            Precio = p.Precio,
+                            ImagenUrl = p.ProductoImagene == null
+                                ? null
+                                : p.ProductoImagene.UrlImagen
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (datos is null)
+            {
+                return NotFound();
+            }
+
+            int? idCategoria = datos.IdCategoria;
+
+            List<EmprendimientoPublicoViewModel> relacionados = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e =>
+                    e.EstadoAprobacion == "Aprobado" &&
+                    e.Activo &&
+                    e.IdEmprendimiento != datos.IdEmprendimiento)
+                .OrderBy(e => e.IdCategoria == idCategoria ? 0 : 1)
+                .ThenBy(e => e.NombreComercial)
+                .Take(2)
+                .Select(e => new EmprendimientoPublicoViewModel
+                {
+                    IdEmprendimiento = e.IdEmprendimiento,
+                    NombreComercial = e.NombreComercial,
+                    Categoria = e.IdCategoriaNavigation == null
+                        ? null
+                        : e.IdCategoriaNavigation.Nombre,
+                    ImagenUrl = e.EmprendimientoImagene != null
+                        ? e.EmprendimientoImagene.UrlImagen
+                        : e.LogoUrl
+                })
+                .ToListAsync();
+
+            DetalleEmprendimientoPublicoViewModel modelo = new()
+            {
+                IdEmprendimiento = datos.IdEmprendimiento,
+                NombreComercial = datos.NombreComercial,
+                Descripcion = datos.Descripcion,
+                Categoria = datos.Categoria,
+                Provincia = datos.Provincia,
+                LogoUrl = !string.IsNullOrWhiteSpace(datos.ImagenPrincipal)
+                    ? datos.ImagenPrincipal
+                    : datos.LogoUrl,
+                Telefono = datos.Telefono,
+                Correo = datos.Correo,
+                SitioWeb = datos.SitioWeb,
+                Instagram = datos.Instagram,
+                Facebook = datos.Facebook,
+                Valoracion = datos.Valoraciones.Count > 0
+                    ? Math.Round(datos.Valoraciones.Average(), 1)
+                    : null,
+                CantidadResenas = datos.Valoraciones.Count,
+                Imagenes = datos.Imagenes,
+                Productos = datos.Productos,
+                Relacionados = relacionados
+            };
+
+            return View(modelo);
         }
         public async Task<IActionResult> Eventos(int? categoria)
         {
@@ -413,9 +598,53 @@ namespace ProyectoClubCreativo.Controllers
 
             return View(taller);
         }
-        public IActionResult GaleriaMultimedia()
+        public async Task<IActionResult> GaleriaMultimedia(string? categoria = null)
         {
-            return View();
+            IQueryable<Galeria> consulta = _context.Galerias
+                .AsNoTracking()
+                .Where(g =>
+                    g.Estado == "Publicada" &&
+                    g.GaleriaImagenes.Any());
+
+            consulta = categoria switch
+            {
+                "evento" => consulta.Where(g => g.IdEvento != null),
+                "emprendimiento" => consulta.Where(g => g.IdEmprendimiento != null),
+                "producto" => consulta.Where(g => g.IdProducto != null),
+                _ => consulta
+            };
+
+            var datos = await consulta
+                .OrderByDescending(g => g.FechaCreacion)
+                .Select(g => new
+                {
+                    g.Nombre,
+                    g.IdEvento,
+                    g.IdProducto,
+                    Imagenes = g.GaleriaImagenes
+                        .OrderByDescending(i => i.EsPortada)
+                        .ThenBy(i => i.OrdenVisual)
+                        .Select(i => i.UrlImagen)
+                        .ToList()
+                })
+                .ToListAsync();
+
+            List<GaleriaAdminViewModel> modelo = datos
+                .Select(g => new GaleriaAdminViewModel
+                {
+                    Nombre = g.Nombre,
+                    Categoria =
+                        g.IdEvento != null ? "Evento" :
+                        g.IdProducto != null ? "Producto" : "Emprendimiento",
+                    Imagenes = g.Imagenes
+                        .Select(url => new ImagenGaleriaViewModel { Url = url })
+                        .ToList()
+                })
+                .ToList();
+
+            ViewBag.CategoriaActiva = categoria ?? string.Empty;
+
+            return View(modelo);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 namespace ProyectoClubCreativo.Models.ViewModels.Admin
 {
     // ---------- NOTIFICACIONES ----------
@@ -54,19 +55,31 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public int Id { get; set; }
 
         [Required(ErrorMessage = "El nombre de la galería es obligatorio.")]
+        [StringLength(150, ErrorMessage = "El nombre no puede superar los 150 caracteres.")]
         [Display(Name = "Nombre de la galería")]
         public string Nombre { get; set; } = "";
 
+        [StringLength(800, ErrorMessage = "La descripción no puede superar los 800 caracteres.")]
         [Display(Name = "Descripción")]
         public string Descripcion { get; set; } = "";
 
-        [Required(ErrorMessage = "Seleccione una categoría.")]
-        public string Categoria { get; set; } = "Eventos";
+        // Contenido relacionado con el formato "Evento:5", "Emprendimiento:3" o "Producto:9".
+        [Required(ErrorMessage = "Seleccione el contenido relacionado.")]
+        [Display(Name = "Contenido relacionado")]
+        public string Contenido { get; set; } = "";
+
+        // Etiqueta de solo lectura para el listado (Evento, Emprendimiento, Producto o General).
+        public string Categoria { get; set; } = "";
 
         public string Estado { get; set; } = "Publicada";
         public string Portada { get; set; } = "/images/logo.jpg";
         public string FechaCreacion { get; set; } = "";
         public List<ImagenGaleriaViewModel> Imagenes { get; set; } = [];
+
+        [Display(Name = "Imágenes")]
+        public List<IFormFile> NuevasImagenes { get; set; } = [];
+
+        public List<SelectListItem> Contenidos { get; set; } = [];
     }
 
     // ---------- NOTICIAS Y ANUNCIOS ----------

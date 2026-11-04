@@ -578,8 +578,8 @@ public partial class ClubCreativoDbContext : DbContext
             entity.Property(e => e.OrdenVisual).HasDefaultValue((byte)1);
             entity.Property(e => e.UrlImagen).HasMaxLength(500);
 
-            entity.HasOne(d => d.IdGaleriaNavigation).WithOne(p => p.GaleriaImagene)
-                .HasForeignKey<GaleriaImagene>(d => d.IdGaleria)
+                       entity.HasOne(d => d.IdGaleriaNavigation).WithMany(p => p.GaleriaImagenes)
+                .HasForeignKey(d => d.IdGaleria)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_GaleriaImagenes_Galerias");
         });

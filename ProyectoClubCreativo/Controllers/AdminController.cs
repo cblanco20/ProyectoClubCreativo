@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models;
@@ -17,15 +18,18 @@ namespace ProyectoClubCreativo.Controllers
         private readonly IWebHostEnvironment _entornoWeb;
         private readonly ClubCreativoDbContext _context;
         private readonly CorreoService _correoService;
+        private readonly NotificacionService _notificaciones;
 
         public AdminController(
             IWebHostEnvironment entornoWeb,
             ClubCreativoDbContext context,
-            CorreoService correoService)
+            CorreoService correoService,
+            NotificacionService notificaciones)
         {
             _entornoWeb = entornoWeb;
             _context = context;
             _correoService = correoService;
+            _notificaciones = notificaciones;
         }
 
         public override void OnActionExecuting(
@@ -1380,7 +1384,7 @@ namespace ProyectoClubCreativo.Controllers
 
                 foreach (int idUsuario in idsUsuarios)
                 {
-                    _context.Notificaciones.Add(new Notificacione
+                    await _notificaciones.AgregarAsync(new Notificacione
                     {
                         IdUsuario = idUsuario,
                         Titulo = "Cambio en un evento",
@@ -1391,8 +1395,7 @@ namespace ProyectoClubCreativo.Controllers
                         FechaLectura = null
                     });
                 }
-
-                notificados = idsUsuarios.Count;
+                    notificados = idsUsuarios.Count;
             }
 
             await _context.SaveChangesAsync();
@@ -1450,11 +1453,11 @@ namespace ProyectoClubCreativo.Controllers
                 {
                     inscripcion.Estado = "Cancelada";
 
-                    _context.Notificaciones.Add(new Notificacione
-                    {
-                        IdUsuario = inscripcion.IdUsuario,
-                        Titulo = "Evento cancelado",
-                        Mensaje = mensaje,
+                        await _notificaciones.AgregarAsync(new Notificacione
+                        {
+                            IdUsuario = inscripcion.IdUsuario,
+                            Titulo = "Evento cancelado",
+                            Mensaje = mensaje,
                         Tipo = "Evento",
                         FechaEnvio = DateTime.Now,
                         Leida = false,
@@ -2769,145 +2772,889 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Notificaciones(string pestana = "Enviar")
+        public async Task<IActionResult> Notificaciones(string pestana = "Enviar")
         {
             return View(new NotificacionesAdminViewModel
             {
                 Pestana = pestana,
-                Historial = ObtenerNotificacionesDemo()
+                Historial = await ObtenerHistorialNotificacionesAsync()
             });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EnviarNotificacion(NotificacionFormViewModel modelo)
+        public async Task<IActionResult> EnviarNotificacion(
+    [Bind(Prefix = "Nueva")] NotificacionFormViewModel modelo)
         {
+            string titulo = (modelo.Titulo ?? string.Empty).Trim();
+            string mensaje = (modelo.Mensaje ?? string.Empty).Trim();
+
+            if (titulo.Length > 150)
+            {
+                ModelState.AddModelError(
+                    "Nueva.Titulo",
+                    "El título no puede superar los 150 caracteres.");
+            }
+
+            if (mensaje.Length > 1000)
+            {
+                ModelState.AddModelError(
+                    "Nueva.Mensaje",
+                    "El mensaje no puede superar los 1000 caracteres.");
+            }
+
+            List<int> idsDestino = new();
+            string destinatario = "Todos los usuarios";
+
+            if (ModelState.IsValid)
+            {
+                IQueryable<Usuario> usuarios = _context.Usuarios
+                    .AsNoTracking()
+                    .Where(u => u.Estado == "Activo");
+
+                if (modelo.TipoDestinatario == "Individual")
+                {
+                    string correo = (modelo.UsuarioDestino ?? string.Empty)
+                        .Trim()
+                        .ToLowerInvariant();
+
+                    if (string.IsNullOrWhiteSpace(correo))
+                    {
+                        ModelState.AddModelError(
+                            "Nueva.UsuarioDestino",
+                            "Ingrese el correo del usuario.");
+                    }
+                    else
+                    {
+                        idsDestino = await usuarios
+                            .Where(u => u.Correo.ToLower() == correo)
+                            .Select(u => u.IdUsuario)
+                            .ToListAsync();
+
+                        if (idsDestino.Count == 0)
+                        {
+                            ModelState.AddModelError(
+                                "Nueva.UsuarioDestino",
+                                "No se encontró un usuario activo con ese correo.");
+                        }
+
+                        destinatario = $"Usuario: {correo}";
+                    }
+                }
+                else if (modelo.TipoDestinatario == "Grupo")
+                {
+                    string? nombreRol = modelo.GrupoDestino switch
+                    {
+                        "Usuarios" => "Usuario",
+                        "Emprendedores" => "Emprendedor",
+                        "Administradores" => "Administrador",
+                        _ => null
+                    };
+
+                    if (nombreRol is null)
+                    {
+                        ModelState.AddModelError(
+                            "Nueva.GrupoDestino",
+                            "Seleccione un grupo.");
+                    }
+                    else
+                    {
+                        idsDestino = await usuarios
+                            .Where(u => u.UsuarioRoles.Any(ur =>
+                                ur.IdRolNavigation.Activo &&
+                                ur.IdRolNavigation.Nombre == nombreRol))
+                            .Select(u => u.IdUsuario)
+                            .ToListAsync();
+
+                        if (idsDestino.Count == 0)
+                        {
+                            ModelState.AddModelError(
+                                string.Empty,
+                                "El grupo seleccionado no tiene usuarios activos.");
+                        }
+
+                        destinatario = $"Grupo: {modelo.GrupoDestino}";
+                    }
+                }
+                else
+                {
+                    idsDestino = await usuarios
+                        .Select(u => u.IdUsuario)
+                        .ToListAsync();
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(nameof(Notificaciones), new NotificacionesAdminViewModel
                 {
                     Pestana = "Enviar",
                     Nueva = modelo,
-                    Historial = ObtenerNotificacionesDemo()
+                    Historial = await ObtenerHistorialNotificacionesAsync()
                 });
             }
 
-            string destinatario = modelo.TipoDestinatario switch
+            DateTime ahora = DateTime.Now;
+
+            Notificacione Crear(int idUsuario) => new()
             {
-                "Individual" => $"Usuario: {modelo.UsuarioDestino}",
-                "Grupo" => $"Grupo: {modelo.GrupoDestino}",
-                _ => "Todos los usuarios"
+                IdUsuario = idUsuario,
+                Titulo = titulo,
+                Mensaje = mensaje,
+                Tipo = "Anuncio",
+                FechaEnvio = ahora,
+                Leida = false,
+                FechaLectura = null
             };
 
-            TempData["MensajeAdmin"] = $"La notificación \"{modelo.Titulo}\" fue enviada a {destinatario}.";
+            if (modelo.TipoDestinatario == "Individual")
+            {
+                await _notificaciones.AgregarAsync(Crear(idsDestino[0]));
+            }
+            else
+            {
+                foreach (int idUsuario in idsDestino)
+                {
+                    _context.Notificaciones.Add(Crear(idUsuario));
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"La notificación \"{titulo}\" fue enviada a {destinatario} " +
+                $"({idsDestino.Count} usuario(s)).";
+
             return RedirectToAction(nameof(Notificaciones), new { pestana = "Historial" });
         }
-
-        private static List<NotificacionEnviadaViewModel> ObtenerNotificacionesDemo()
+        private async Task<List<NotificacionEnviadaViewModel>> ObtenerHistorialNotificacionesAsync()
         {
-            return
-            [
-                new() { Id = 1, Titulo = "Nueva feria en San Pedro", Mensaje = "Inscribite antes del 10 de agosto.", Destinatario = "Todos los usuarios", Fecha = "04/08/2026", TotalDestinatarios = 486 },
-                new() { Id = 2, Titulo = "Recordatorio de suscripción", Mensaje = "Tu plan vence pronto, renová para seguir disfrutando de tus beneficios.", Destinatario = "Grupo: Emprendedores", Fecha = "02/08/2026", TotalDestinatarios = 57 },
-                new() { Id = 3, Titulo = "Bienvenida al club", Mensaje = "Gracias por unirte a Club Creativo.", Destinatario = "Usuario: maria@ejemplo.com", Fecha = "30/07/2026", TotalDestinatarios = 1 }
-            ];
+            var envios = await _context.Notificaciones
+                .AsNoTracking()
+                .Where(n => n.Tipo == "Anuncio")
+                .GroupBy(n => new { n.Titulo, n.Mensaje, n.FechaEnvio })
+                .Select(g => new
+                {
+                    g.Key.Titulo,
+                    g.Key.Mensaje,
+                    g.Key.FechaEnvio,
+                    Total = g.Count(),
+                    IdUsuario = g.Min(n => n.IdUsuario)
+                })
+                .OrderByDescending(e => e.FechaEnvio)
+                .Take(50)
+                .ToListAsync();
+
+            List<int> idsIndividuales = envios
+                .Where(e => e.Total == 1)
+                .Select(e => e.IdUsuario)
+                .ToList();
+
+            Dictionary<int, string> correos = await _context.Usuarios
+                .AsNoTracking()
+                .Where(u => idsIndividuales.Contains(u.IdUsuario))
+                .ToDictionaryAsync(u => u.IdUsuario, u => u.Correo);
+
+            return envios
+                .Select((e, i) => new NotificacionEnviadaViewModel
+                {
+                    Id = i + 1,
+                    Titulo = e.Titulo,
+                    Mensaje = e.Mensaje,
+                    Destinatario = e.Total == 1 &&
+                                   correos.TryGetValue(e.IdUsuario, out string? correo)
+                        ? $"Usuario: {correo}"
+                        : "Varios usuarios",
+                    Fecha = e.FechaEnvio.ToString("dd/MM/yyyy HH:mm"),
+                    TotalDestinatarios = e.Total
+                })
+                .ToList();
+        }
+        [HttpGet]
+        public async Task<IActionResult> Galerias()
+        {
+            return View(await ObtenerGaleriasAsync());
         }
 
         [HttpGet]
-        public IActionResult Galerias()
-        {
-            return View(ObtenerGaleriasDemo());
-        }
-
-        [HttpGet]
-        public IActionResult CrearGaleria()
+        public async Task<IActionResult> CrearGaleria()
         {
             ViewData["Titulo"] = "Crear galería";
-            return View("FormularioGaleria", new GaleriaAdminViewModel());
+
+            GaleriaAdminViewModel modelo = new();
+            await CargarContenidosGaleriaAsync(modelo);
+
+            return View("FormularioGaleria", modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearGaleria(GaleriaAdminViewModel modelo)
+        public async Task<IActionResult> CrearGaleria(GaleriaAdminViewModel modelo)
         {
             ViewData["Titulo"] = "Crear galería";
-            if (!ModelState.IsValid) return View("FormularioGaleria", modelo);
-            TempData["MensajeAdmin"] = $"La galería \"{modelo.Nombre}\" fue creada correctamente.";
+
+            if (modelo.Estado != "Publicada" && modelo.Estado != "Inactiva")
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Estado),
+                    "Seleccione un estado válido.");
+            }
+
+            string tipo = string.Empty;
+            int idContenido = 0;
+            bool contenidoValido = false;
+
+            if (!string.IsNullOrWhiteSpace(modelo.Contenido))
+            {
+                if (!TryObtenerContenidoGaleria(modelo.Contenido, out tipo, out idContenido))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Contenido),
+                        "Seleccione un contenido válido.");
+                }
+                else if (!await ExisteContenidoGaleriaAsync(tipo, idContenido))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Contenido),
+                        "El contenido seleccionado ya no existe.");
+                }
+                else
+                {
+                    contenidoValido = true;
+                }
+            }
+
+            List<IFormFile> imagenes = modelo.NuevasImagenes
+                .Where(i => i.Length > 0)
+                .ToList();
+
+            if (imagenes.Count == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevasImagenes),
+                    "Seleccione al menos una imagen.");
+            }
+            else
+            {
+                List<string> errores = await ValidarImagenesGaleriaAsync(
+                    imagenes,
+                    contenidoValido ? tipo : null,
+                    idContenido);
+
+                foreach (string error in errores)
+                {
+                    ModelState.AddModelError(nameof(modelo.NuevasImagenes), error);
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await CargarContenidosGaleriaAsync(modelo);
+                return View("FormularioGaleria", modelo);
+            }
+
+            List<string> urlsGuardadas = new();
+
+            try
+            {
+                Galeria galeria = new()
+                {
+                    Nombre = modelo.Nombre.Trim(),
+                    Descripcion = string.IsNullOrWhiteSpace(modelo.Descripcion)
+                        ? null
+                        : modelo.Descripcion.Trim(),
+                    Estado = modelo.Estado,
+                    FechaCreacion = DateTime.Now,
+                    IdEvento = tipo == "Evento" ? idContenido : (int?)null,
+                    IdEmprendimiento = tipo == "Emprendimiento" ? idContenido : (int?)null,
+                    IdProducto = tipo == "Producto" ? idContenido : (int?)null
+                };
+
+                byte orden = 1;
+
+                foreach (IFormFile imagen in imagenes)
+                {
+                    string url = await GuardarImagenGaleriaAsync(imagen);
+                    urlsGuardadas.Add(url);
+
+                    string nombreOriginal = Path.GetFileName(imagen.FileName);
+
+                    galeria.GaleriaImagenes.Add(new GaleriaImagene
+                    {
+                        UrlImagen = url,
+                        NombreArchivo = nombreOriginal.Length > 255
+                            ? nombreOriginal[..255]
+                            : nombreOriginal,
+                        EsPortada = orden == 1,
+                        OrdenVisual = orden
+                    });
+
+                    orden++;
+                }
+
+                _context.Galerias.Add(galeria);
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                foreach (string url in urlsGuardadas)
+                {
+                    EliminarArchivoGaleria(url);
+                }
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Ocurrió un error al guardar la galería. Intente nuevamente.");
+
+                await CargarContenidosGaleriaAsync(modelo);
+                return View("FormularioGaleria", modelo);
+            }
+
+            TempData["MensajeAdmin"] =
+                $"La galería \"{modelo.Nombre.Trim()}\" fue publicada correctamente.";
+
             return RedirectToAction(nameof(Galerias));
         }
 
         [HttpGet]
-        public IActionResult EditarGaleria(int id = 1)
+        public async Task<IActionResult> EditarGaleria(int id)
         {
+            GaleriaAdminViewModel? galeria =
+                (await ObtenerGaleriasAsync(id)).FirstOrDefault();
+
+            if (galeria is null)
+            {
+                TempData["MensajeAdmin"] = "La galería solicitada no existe.";
+                return RedirectToAction(nameof(Galerias));
+            }
+
             ViewData["Titulo"] = "Editar galería";
-            var galeria = ObtenerGaleriasDemo().FirstOrDefault(g => g.Id == id) ?? new GaleriaAdminViewModel { Id = id };
+            await CargarContenidosGaleriaAsync(galeria);
+
             return View("FormularioGaleria", galeria);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarGaleria(GaleriaAdminViewModel modelo)
+        public async Task<IActionResult> EditarGaleria(
+            GaleriaAdminViewModel modelo,
+            List<int>? imagenesEliminar)
         {
-            ViewData["Titulo"] = "Editar galería";
-            if (!ModelState.IsValid) return View("FormularioGaleria", modelo);
-            TempData["MensajeAdmin"] = $"La galería \"{modelo.Nombre}\" fue actualizada correctamente.";
-            return RedirectToAction(nameof(Galerias));
-        }
+            Galeria? galeria = await _context.Galerias
+                .Include(g => g.GaleriaImagenes)
+                .FirstOrDefaultAsync(g => g.IdGaleria == modelo.Id);
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CargarImagenesGaleria(int id, List<IFormFile> imagenes)
-        {
-            if (imagenes is { Count: > 0 })
+            if (galeria is null)
             {
-                string carpeta = Path.Combine(_entornoWeb.WebRootPath, "uploads", "galerias");
-                Directory.CreateDirectory(carpeta);
+                TempData["MensajeAdmin"] = "La galería ya no existe.";
+                return RedirectToAction(nameof(Galerias));
+            }
 
-                foreach (var archivo in imagenes)
+            List<int> idsEliminar = (imagenesEliminar ?? new List<int>())
+                .Distinct()
+                .Where(id => galeria.GaleriaImagenes.Any(i => i.IdImagen == id))
+                .ToList();
+
+            if (modelo.Estado != "Publicada" && modelo.Estado != "Inactiva")
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Estado),
+                    "Seleccione un estado válido.");
+            }
+
+            string tipo = string.Empty;
+            int idContenido = 0;
+            bool contenidoValido = false;
+
+            if (!string.IsNullOrWhiteSpace(modelo.Contenido))
+            {
+                if (!TryObtenerContenidoGaleria(modelo.Contenido, out tipo, out idContenido))
                 {
-                    if (archivo.Length <= 0) continue;
-                    string nombreArchivo = $"{Guid.NewGuid()}{Path.GetExtension(archivo.FileName)}";
-                    string rutaCompleta = Path.Combine(carpeta, nombreArchivo);
-                    using var flujo = new FileStream(rutaCompleta, FileMode.Create);
-                    await archivo.CopyToAsync(flujo);
+                    ModelState.AddModelError(
+                        nameof(modelo.Contenido),
+                        "Seleccione un contenido válido.");
+                }
+                else if (!await ExisteContenidoGaleriaAsync(tipo, idContenido))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Contenido),
+                        "El contenido seleccionado ya no existe.");
+                }
+                else
+                {
+                    contenidoValido = true;
+                }
+            }
+
+            List<IFormFile> nuevas = modelo.NuevasImagenes
+                .Where(i => i.Length > 0)
+                .ToList();
+
+            if (nuevas.Count > 0)
+            {
+                List<string> errores = await ValidarImagenesGaleriaAsync(
+                    nuevas,
+                    contenidoValido ? tipo : null,
+                    idContenido,
+                    idsEliminar);
+
+                foreach (string error in errores)
+                {
+                    ModelState.AddModelError(nameof(modelo.NuevasImagenes), error);
+                }
+            }
+
+            if (galeria.GaleriaImagenes.Count - idsEliminar.Count + nuevas.Count == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevasImagenes),
+                    "La galería debe conservar al menos una imagen.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return await MostrarFormularioGaleriaAsync(modelo);
+            }
+
+            List<string> urlsNuevas = new();
+            List<string> urlsEliminadas = new();
+
+            await using var transaccion = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                galeria.Nombre = modelo.Nombre.Trim();
+                galeria.Descripcion = string.IsNullOrWhiteSpace(modelo.Descripcion)
+                    ? null
+                    : modelo.Descripcion.Trim();
+                galeria.Estado = modelo.Estado;
+                galeria.IdEvento = tipo == "Evento" ? idContenido : (int?)null;
+                galeria.IdEmprendimiento = tipo == "Emprendimiento" ? idContenido : (int?)null;
+                galeria.IdProducto = tipo == "Producto" ? idContenido : (int?)null;
+
+                foreach (GaleriaImagene imagen in galeria.GaleriaImagenes
+                    .Where(i => idsEliminar.Contains(i.IdImagen))
+                    .ToList())
+                {
+                    urlsEliminadas.Add(imagen.UrlImagen);
+                    _context.GaleriaImagenes.Remove(imagen);
                 }
 
-                TempData["MensajeAdmin"] = $"Se cargaron {imagenes.Count} imagen(es) a la galería correctamente.";
+                int orden = galeria.GaleriaImagenes
+                    .Select(i => (int)i.OrdenVisual)
+                    .DefaultIfEmpty(0)
+                    .Max();
+
+                foreach (IFormFile imagen in nuevas)
+                {
+                    string url = await GuardarImagenGaleriaAsync(imagen);
+                    urlsNuevas.Add(url);
+
+                    string nombreOriginal = Path.GetFileName(imagen.FileName);
+                    orden = Math.Min(orden + 1, 255);
+
+                    _context.GaleriaImagenes.Add(new GaleriaImagene
+                    {
+                        IdGaleria = galeria.IdGaleria,
+                        UrlImagen = url,
+                        NombreArchivo = nombreOriginal.Length > 255
+                            ? nombreOriginal[..255]
+                            : nombreOriginal,
+                        EsPortada = false,
+                        OrdenVisual = (byte)orden
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
+                List<GaleriaImagene> restantes = await _context.GaleriaImagenes
+                    .Where(i => i.IdGaleria == galeria.IdGaleria)
+                    .OrderBy(i => i.OrdenVisual)
+                    .ThenBy(i => i.IdImagen)
+                    .ToListAsync();
+
+                if (restantes.Count > 0 && !restantes.Any(i => i.EsPortada))
+                {
+                    restantes[0].EsPortada = true;
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaccion.CommitAsync();
             }
-            else
+            catch
             {
-                TempData["MensajeAdmin"] = "Seleccioná al menos una imagen para cargar.";
+                await transaccion.RollbackAsync();
+
+                foreach (string url in urlsNuevas)
+                {
+                    EliminarArchivoGaleria(url);
+                }
+
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Ocurrió un error al actualizar la galería. Intente nuevamente.");
+
+                return await MostrarFormularioGaleriaAsync(modelo);
             }
 
-            return RedirectToAction(nameof(EditarGaleria), new { id });
-        }
+            foreach (string url in urlsEliminadas)
+            {
+                try
+                {
+                    EliminarArchivoGaleria(url);
+                }
+                catch
+                {
+                    // El archivo huérfano no impide que la actualización sea correcta.
+                }
+            }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EliminarImagenGaleria(int id, int imagenId)
-        {
-            TempData["MensajeAdmin"] = "La imagen fue eliminada de la galería.";
-            return RedirectToAction(nameof(EditarGaleria), new { id });
-        }
+            TempData["MensajeAdmin"] =
+                $"La galería \"{modelo.Nombre.Trim()}\" fue actualizada correctamente.";
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EliminarGaleria(int id)
-        {
-            TempData["MensajeAdmin"] = "La galería fue eliminada correctamente.";
             return RedirectToAction(nameof(Galerias));
         }
 
-        private static List<GaleriaAdminViewModel> ObtenerGaleriasDemo()
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarGaleria(int id)
         {
-            return
-            [
-                new() { Id = 1, Nombre = "Arte Inarrivo San Pedro 2026", Descripcion = "Fotografías del evento realizado en San Pedro.", Categoria = "Eventos", Estado = "Publicada", Portada = "/images/logo.jpg", FechaCreacion = "16/08/2026",
-                    Imagenes = [ new() { Id = 1, Url = "/images/logo.jpg", NombreArchivo = "portada.jpg" }, new() { Id = 2, Url = "/images/logo.jpg", NombreArchivo = "stand-1.jpg" } ] },
-                new() { Id = 2, Nombre = "Taller de cerámica", Descripcion = "Registro fotográfico del taller de cerámica para principiantes.", Categoria = "Talleres", Estado = "Publicada", Portada = "/images/logo.jpg", FechaCreacion = "24/08/2026", Imagenes = [] },
-                new() { Id = 3, Nombre = "Emprendimientos destacados", Descripcion = "Galería con productos de emprendimientos aliados.", Categoria = "Emprendimientos", Estado = "Oculta", Portada = "/images/logo.jpg", FechaCreacion = "10/07/2026", Imagenes = [] }
-            ];
+            Galeria? galeria = await _context.Galerias
+                .Include(g => g.GaleriaImagenes)
+                .FirstOrDefaultAsync(g => g.IdGaleria == id);
+
+            if (galeria is null)
+            {
+                TempData["MensajeAdmin"] = "La galería ya no existe.";
+                return RedirectToAction(nameof(Galerias));
+            }
+
+            string nombre = galeria.Nombre;
+
+            List<string> urls = galeria.GaleriaImagenes
+                .Select(i => i.UrlImagen)
+                .ToList();
+
+            try
+            {
+                _context.GaleriaImagenes.RemoveRange(galeria.GaleriaImagenes);
+                _context.Galerias.Remove(galeria);
+
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                TempData["MensajeAdmin"] =
+                    "No fue posible eliminar la galería. Intente nuevamente.";
+
+                return RedirectToAction(nameof(Galerias));
+            }
+
+            foreach (string url in urls)
+            {
+                try
+                {
+                    EliminarArchivoGaleria(url);
+                }
+                catch
+                {
+                    // Un archivo huérfano no impide que la eliminación sea correcta.
+                }
+            }
+
+            TempData["MensajeAdmin"] =
+                $"La galería \"{nombre}\" se eliminó exitosamente.";
+
+            return RedirectToAction(nameof(Galerias));
         }
+        private async Task<IActionResult> MostrarFormularioGaleriaAsync(
+    GaleriaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = modelo.Id == 0 ? "Crear galería" : "Editar galería";
+
+            GaleriaAdminViewModel? actual =
+                (await ObtenerGaleriasAsync(modelo.Id)).FirstOrDefault();
+
+            modelo.Imagenes = actual?.Imagenes ?? [];
+
+            await CargarContenidosGaleriaAsync(modelo);
+
+            return View("FormularioGaleria", modelo);
+        }
+        private static bool TryObtenerContenidoGaleria(
+    string? valor,
+    out string tipo,
+    out int id)
+        {
+            tipo = string.Empty;
+            id = 0;
+
+            string[] partes = (valor ?? string.Empty).Split(':');
+
+            if (partes.Length != 2 ||
+                !int.TryParse(partes[1], out id) ||
+                id <= 0 ||
+                (partes[0] != "Evento" &&
+                 partes[0] != "Emprendimiento" &&
+                 partes[0] != "Producto"))
+            {
+                return false;
+            }
+
+            tipo = partes[0];
+            return true;
+        }
+
+        private async Task<bool> ExisteContenidoGaleriaAsync(string tipo, int id)
+        {
+            return tipo switch
+            {
+                "Evento" => await _context.Eventos.AnyAsync(e => e.IdEvento == id),
+                "Producto" => await _context.Productos.AnyAsync(p => p.IdProducto == id),
+                _ => await _context.Emprendimientos.AnyAsync(e => e.IdEmprendimiento == id)
+            };
+        }
+
+        private async Task CargarContenidosGaleriaAsync(GaleriaAdminViewModel modelo)
+        {
+            var eventos = await _context.Eventos
+                .AsNoTracking()
+                .OrderByDescending(e => e.FechaInicio)
+                .Select(e => new { e.IdEvento, e.Nombre })
+                .ToListAsync();
+
+            var emprendimientos = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.EstadoAprobacion == "Aprobado")
+                .OrderBy(e => e.NombreComercial)
+                .Select(e => new { e.IdEmprendimiento, e.NombreComercial })
+                .ToListAsync();
+
+            var productos = await _context.Productos
+                .AsNoTracking()
+                .Where(p => p.Estado == "Publicado")
+                .OrderBy(p => p.Nombre)
+                .Select(p => new { p.IdProducto, p.Nombre })
+                .ToListAsync();
+
+            SelectListGroup grupoEventos = new() { Name = "Eventos" };
+            SelectListGroup grupoEmprendimientos = new() { Name = "Emprendimientos" };
+            SelectListGroup grupoProductos = new() { Name = "Productos" };
+
+            List<SelectListItem> contenidos = new();
+
+            contenidos.AddRange(eventos.Select(e => new SelectListItem
+            {
+                Value = $"Evento:{e.IdEvento}",
+                Text = e.Nombre,
+                Group = grupoEventos
+            }));
+
+            contenidos.AddRange(emprendimientos.Select(e => new SelectListItem
+            {
+                Value = $"Emprendimiento:{e.IdEmprendimiento}",
+                Text = e.NombreComercial,
+                Group = grupoEmprendimientos
+            }));
+
+            contenidos.AddRange(productos.Select(p => new SelectListItem
+            {
+                Value = $"Producto:{p.IdProducto}",
+                Text = p.Nombre,
+                Group = grupoProductos
+            }));
+
+            modelo.Contenidos = contenidos;
+        }
+
+        // Devuelve los errores de validación de las imágenes (formato, tamaño y duplicados).
+        // Si tipo es null, no se comparan con las imágenes ya registradas.
+        private async Task<List<string>> ValidarImagenesGaleriaAsync(
+            List<IFormFile> imagenes,
+                       string? tipo,
+            int idContenido,
+            List<int>? excluirImagenes = null)
+        {
+            List<string> errores = new();
+
+            if (imagenes.Count > 20)
+            {
+                errores.Add("Puede cargar un máximo de 20 imágenes por vez.");
+                return errores;
+            }
+
+            foreach (IFormFile imagen in imagenes)
+            {
+                string extension =
+                    Path.GetExtension(imagen.FileName).ToLowerInvariant();
+
+                if (!ExtensionesImagenEvento.Contains(extension))
+                {
+                    errores.Add(
+                        $"El archivo \"{Path.GetFileName(imagen.FileName)}\" debe ser JPG, PNG o WEBP.");
+                }
+                else if (imagen.Length > 5 * 1024 * 1024)
+                {
+                    errores.Add(
+                        $"El archivo \"{Path.GetFileName(imagen.FileName)}\" supera los 5 MB.");
+                }
+            }
+
+            HashSet<string> existentes = new(StringComparer.OrdinalIgnoreCase);
+
+            if (tipo is not null)
+            {
+                IQueryable<GaleriaImagene> consulta =
+                    _context.GaleriaImagenes.AsNoTracking();
+
+                consulta = tipo switch
+                {
+                    "Evento" => consulta.Where(i =>
+                        i.IdGaleriaNavigation.IdEvento == idContenido),
+                    "Producto" => consulta.Where(i =>
+                        i.IdGaleriaNavigation.IdProducto == idContenido),
+                    _ => consulta.Where(i =>
+                        i.IdGaleriaNavigation.IdEmprendimiento == idContenido)
+                };
+
+                if (excluirImagenes is { Count: > 0 })
+                {
+                    consulta = consulta.Where(i =>
+                        !excluirImagenes.Contains(i.IdImagen));
+                }
+
+                List<string?> nombres = await consulta
+                    .Select(i => i.NombreArchivo)
+                    .ToListAsync();
+
+                foreach (string? nombre in nombres)
+                {
+                    if (!string.IsNullOrWhiteSpace(nombre))
+                    {
+                        existentes.Add(nombre);
+                    }
+                }
+            }
+
+            HashSet<string> vistos = new(StringComparer.OrdinalIgnoreCase);
+            List<string> duplicadas = new();
+
+            foreach (IFormFile imagen in imagenes)
+            {
+                string nombre = Path.GetFileName(imagen.FileName);
+
+                if (existentes.Contains(nombre) || !vistos.Add(nombre))
+                {
+                    if (!duplicadas.Contains(nombre, StringComparer.OrdinalIgnoreCase))
+                    {
+                        duplicadas.Add(nombre);
+                    }
+                }
+            }
+
+            if (duplicadas.Count > 0)
+            {
+                errores.Add(
+                    "Se detectaron imágenes duplicadas para este contenido: " +
+                    string.Join(", ", duplicadas) +
+                    ". Revise la información antes de continuar.");
+            }
+
+            return errores;
+        }
+
+        private async Task<string> GuardarImagenGaleriaAsync(IFormFile imagen)
+        {
+            string carpeta = Path.Combine(
+                _entornoWeb.WebRootPath, "uploads", "galerias");
+
+            Directory.CreateDirectory(carpeta);
+
+            string nombreArchivo =
+                $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName).ToLowerInvariant()}";
+
+            using (var flujo = new FileStream(
+                Path.Combine(carpeta, nombreArchivo), FileMode.Create))
+            {
+                await imagen.CopyToAsync(flujo);
+            }
+
+            return $"/uploads/galerias/{nombreArchivo}";
+        }
+        
+        private void EliminarArchivoGaleria(string url)
+        {
+            if (!url.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+            string ruta = Path.Combine(
+                _entornoWeb.WebRootPath,
+                url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+            if (System.IO.File.Exists(ruta))
+            {
+                System.IO.File.Delete(ruta);
+            }
+        }
+
+        private async Task<List<GaleriaAdminViewModel>> ObtenerGaleriasAsync(
+    int? idGaleria = null)
+        {
+            var datos = await _context.Galerias
+                .AsNoTracking()
+                .Where(g => idGaleria == null || g.IdGaleria == idGaleria)
+                .OrderByDescending(g => g.FechaCreacion)
+                .Select(g => new
+                {
+                    g.IdGaleria,
+                    g.Nombre,
+                    g.Descripcion,
+                    g.Estado,
+                    g.FechaCreacion,
+                    g.IdEvento,
+                    g.IdProducto,
+                    g.IdEmprendimiento,
+                    Imagenes = g.GaleriaImagenes
+                        .OrderByDescending(i => i.EsPortada)
+                        .ThenBy(i => i.OrdenVisual)
+                        .ThenBy(i => i.IdImagen)
+                        .Select(i => new { i.IdImagen, i.UrlImagen, i.NombreArchivo })
+                        .ToList()
+                })
+                .ToListAsync();
+
+            return datos
+                .Select(g => new GaleriaAdminViewModel
+                {
+                    Id = g.IdGaleria,
+                    Nombre = g.Nombre,
+                    Descripcion = g.Descripcion ?? string.Empty,
+                    Estado = g.Estado,
+                    Categoria =
+                        g.IdEvento != null ? "Evento" :
+                        g.IdProducto != null ? "Producto" :
+                        g.IdEmprendimiento != null ? "Emprendimiento" : "General",
+                    Contenido =
+                        g.IdEvento != null ? $"Evento:{g.IdEvento}" :
+                        g.IdProducto != null ? $"Producto:{g.IdProducto}" :
+                        g.IdEmprendimiento != null ? $"Emprendimiento:{g.IdEmprendimiento}" :
+                        string.Empty,
+                    Portada = g.Imagenes.FirstOrDefault()?.UrlImagen ?? "/images/logo.jpg",
+                    FechaCreacion = g.FechaCreacion.ToString("dd/MM/yyyy"),
+                    Imagenes = g.Imagenes
+                        .Select(i => new ImagenGaleriaViewModel
+                        {
+                            Id = i.IdImagen,
+                            Url = i.UrlImagen,
+                            NombreArchivo = i.NombreArchivo ?? string.Empty
+                        })
+                        .ToList()
+                })
+                .ToList();
+        }
+        
 
         [HttpGet]
         public IActionResult Noticias(string estado = "Todas")

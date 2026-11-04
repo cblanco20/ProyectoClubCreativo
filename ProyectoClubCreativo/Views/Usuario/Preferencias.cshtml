@@ -117,9 +117,10 @@
             <select asp-for="FrecuenciaCorreo"
                     class="control-formulario">
                 <option value="">Seleccione una frecuencia</option>
-                <option>Inmediata</option>
-                <option>Resumen diario</option>
-                <option>Resumen semanal</option>
+                               <option value="Inmediata">Inmediata</option>
+                <option value="Diaria">Resumen diario</option>
+                <option value="Semanal">Resumen semanal</option>
+                <option value="Nunca">No enviar correos</option>
             </select>
 
             <span asp-validation-for="FrecuenciaCorreo"
@@ -133,6 +134,23 @@
         </button>
 
     </form>
+
+
+    <form asp-action="RestaurarPreferencias"
+          method="post"
+          style="margin-top: 14px;"
+          onsubmit="return confirm('¿Restablecer tus preferencias a los valores predeterminados?');">
+
+        @Html.AntiForgeryToken()
+
+        <button type="submit"
+                class="boton-secundario-usuario">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Restaurar valores predeterminados
+        </button>
+
+    </form>
+
 </section>
 
 @section Scripts {

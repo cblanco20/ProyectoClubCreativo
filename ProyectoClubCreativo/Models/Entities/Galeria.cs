@@ -23,7 +23,7 @@ public partial class Galeria
 
     public DateTime FechaCreacion { get; set; }
 
-    public virtual GaleriaImagene? GaleriaImagene { get; set; }
+    public virtual ICollection<GaleriaImagene> GaleriaImagenes { get; set; } = new List<GaleriaImagene>();
 
     public virtual Categoria? IdCategoriaNavigation { get; set; }
 

@@ -8,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<CorreoService>();
 builder.Services.AddScoped<PagoService>();
+builder.Services.AddHostedService<RecordatoriosEventosService>();
+builder.Services.AddScoped<NotificacionService>();
 
 // Conexión a ClubCreativoDB
 builder.Services.AddDbContext<ClubCreativoDbContext>(options =>

@@ -15,6 +15,16 @@
     </div>
 </div>
 
+@if (TempData["MensajeInscripcion"] is string mensajeInscripcion)
+{
+    <p style="font-weight:600;"><i class="bi bi-check-circle-fill"></i> @mensajeInscripcion</p>
+}
+
+@if (TempData["ErrorInscripcion"] is string errorInscripcion)
+{
+    <p style="color:#b91c1c; font-weight:600;">@errorInscripcion</p>
+}
+
 @if (!Model.Any())
 {
     <p>Aún no tienes inscripciones. Explora los <a asp-controller="Home" asp-action="Eventos">eventos</a> y <a asp-controller="Home" asp-action="Talleres">talleres</a> disponibles.</p>
@@ -74,6 +84,20 @@
                            class="boton-inscripcion accion-peligro">
                             Cancelar
                         </a>
+                    }
+                                        @if (item.Estado == "Próximo" && item.Tipo == "Evento")
+                    {
+                        <form asp-action="CancelarRegistroEvento"
+                              method="post"
+                              style="display:inline;"
+                              onsubmit="return confirm('¿Cancelar tu inscripción a este evento?');">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button type="submit"
+                                    class="boton-inscripcion accion-peligro"
+                                    style="cursor:pointer;">
+                                Cancelar
+                            </button>
+                        </form>
                     }
                 </div>
 

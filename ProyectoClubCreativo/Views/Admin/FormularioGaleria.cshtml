@@ -16,7 +16,7 @@
             <h2><i class="bi bi-images"></i> @ViewData["Title"]</h2>
         </div>
 
-        <form asp-action="@(esNueva ? "CrearGaleria" : "EditarGaleria")" method="post" class="formulario-admin">
+               <form asp-action="@(esNueva ? "CrearGaleria" : "EditarGaleria")" method="post" enctype="multipart/form-data" class="formulario-admin">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <div asp-validation-summary="ModelOnly"></div>
@@ -33,66 +33,133 @@
             </div>
 
             <div class="fila-formulario">
-                <div class="grupo-formulario">
-                    <label asp-for="Categoria"></label>
-                    <select asp-for="Categoria">
-                        <option>Eventos</option>
-                        <option>Talleres</option>
-                        <option>Emprendimientos</option>
-                        <option>General</option>
+                            <div class="grupo-formulario">
+                    <label asp-for="Contenido"></label>
+                    <select asp-for="Contenido" asp-items="Model.Contenidos">
+                        <option value="">Seleccione el contenido</option>
                     </select>
+                    <span class="mensaje-validacion" asp-validation-for="Contenido"></span>
                 </div>
                 <div class="grupo-formulario">
                     <label asp-for="Estado"></label>
                     <select asp-for="Estado">
                         <option>Publicada</option>
-                        <option>Oculta</option>
+                        <option>Inactiva</option>
                     </select>
                 </div>
             </div>
+                                              @if (!esNueva)
+            {
+                <div class="grupo-formulario">
+                    <label>Imágenes actuales</label>
+                    <div class="grid-imagenes-galeria-admin">
+                        @foreach (var imagen in Model.Imagenes)
+                        {
+                            <div class="miniatura-imagen-galeria">
+                                <img src="@imagen.Url" alt="@imagen.NombreArchivo" />
+                                <input type="checkbox" name="imagenesEliminar" value="@imagen.Id" hidden />
+                                <button type="button" class="boton-admin boton-admin-secundario" data-quitar-actual>
+                                    Quitar
+                                </button>
+                            </div>
+                        }
+                    </div>
+                    <small>Las imágenes quitadas se eliminan al guardar los cambios.</small>
+                </div>
+            }
 
-            <button type="submit" class="boton-admin boton-admin-primario">
-                <i class="bi bi-check-circle-fill"></i> @(esNueva ? "Crear galería" : "Guardar cambios")
-            </button>
+            <div class="grupo-formulario">
+                <label for="NuevasImagenes">@(esNueva ? "Imágenes" : "Agregar imágenes")</label>
+                <input id="NuevasImagenes" type="file" name="NuevasImagenes" multiple accept=".jpg,.jpeg,.png,.webp" />
+                @foreach (var error in ViewData.ModelState["NuevasImagenes"]?.Errors
+                    ?? new Microsoft.AspNetCore.Mvc.ModelBinding.ModelErrorCollection())
+                {
+                    <span class="mensaje-validacion" style="display:block;">@error.ErrorMessage</span>
+                }
+                <div id="vistaPreviaImagenes" class="grid-imagenes-galeria-admin" data-nueva="@esNueva.ToString().ToLower()"></div>
+                <small>JPG, PNG o WEBP. Máximo 5 MB por imagen. Puedes seleccionar imágenes varias veces; se irán sumando.@(esNueva ? " La primera será la portada." : " Para reemplazar una imagen, quita la actual y sube la nueva.")</small>
+            </div>
+
+            <div class="grupo-acciones-admin">
+                <button type="submit" class="boton-admin boton-admin-primario">
+                    <i class="bi bi-check-circle-fill"></i> @(esNueva ? "Crear galería" : "Guardar cambios")
+                </button>
+                <a asp-action="Galerias" class="boton-admin boton-admin-secundario">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+            </div>
         </form>
     </article>
-
-    @if (!esNueva)
-    {
-        <article class="bloque-admin">
-            <div class="encabezado-bloque-admin">
-                <h2><i class="bi bi-cloud-upload-fill"></i> Cargar imágenes</h2>
-            </div>
-
-            <form asp-action="CargarImagenesGaleria" method="post" enctype="multipart/form-data">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-
-                <label for="archivosGaleria" class="zona-carga-admin">
-                    <i class="bi bi-cloud-arrow-up-fill"></i>
-                    <strong>Hacé clic para seleccionar imágenes</strong>
-                    <span>Formatos permitidos: JPG, PNG, WEBP</span>
-                </label>
-                <input id="archivosGaleria" type="file" name="imagenes" multiple accept="image/*" style="display:none;" onchange="this.form.submit();" />
-            </form>
-
-            <div class="grid-imagenes-galeria-admin">
-                @foreach (var imagen in Model.Imagenes)
-                {
-                    <div class="miniatura-imagen-galeria">
-                        <img src="@imagen.Url" alt="@imagen.NombreArchivo" />
-                        <form asp-action="EliminarImagenGaleria" method="post" onsubmit="return confirm('¿Eliminar esta imagen de la galería?');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <input type="hidden" name="imagenId" value="@imagen.Id" />
-                            <button type="submit" class="boton-eliminar-miniatura" aria-label="Eliminar imagen">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        </form>
-                    </div>
-                }
-            </div>
-        </article>
-    }
-
 </div>
+@section Scripts {
+    <script>
+        (function () {
+            // Imágenes actuales: Quitar / Deshacer (se aplica al guardar).
+            document.querySelectorAll('[data-quitar-actual]').forEach(function (boton) {
+                boton.addEventListener('click', function () {
+                    var tarjeta = boton.closest('.miniatura-imagen-galeria');
+                    var casilla = tarjeta.querySelector('input[type=checkbox]');
+                    casilla.checked = !casilla.checked;
+                    tarjeta.querySelector('img').style.opacity = casilla.checked ? '0.3' : '1';
+                    boton.textContent = casilla.checked ? 'Deshacer' : 'Quitar';
+                });
+            });
+
+            // Imágenes nuevas: acumula selecciones y permite quitar cada una.
+            var input = document.getElementById('NuevasImagenes');
+            var vista = document.getElementById('vistaPreviaImagenes');
+            if (!input || !vista) return;
+
+            var esNueva = vista.dataset.nueva === 'true';
+            var archivos = [];
+
+            function sincronizar() {
+                var transferencia = new DataTransfer();
+                archivos.forEach(function (f) { transferencia.items.add(f); });
+                input.files = transferencia.files;
+
+                vista.innerHTML = '';
+
+                archivos.forEach(function (archivo, indice) {
+                    var tarjeta = document.createElement('div');
+                    tarjeta.className = 'miniatura-imagen-galeria';
+
+                    var img = document.createElement('img');
+                    img.src = URL.createObjectURL(archivo);
+                    img.alt = archivo.name;
+
+                    var nombre = document.createElement('small');
+                    nombre.style.display = 'block';
+                    nombre.style.overflow = 'hidden';
+                    nombre.style.textOverflow = 'ellipsis';
+                    nombre.style.whiteSpace = 'nowrap';
+                    nombre.textContent = (esNueva && indice === 0 ? 'Portada · ' : '') + archivo.name;
+
+                    var quitar = document.createElement('button');
+                    quitar.type = 'button';
+                    quitar.className = 'boton-admin boton-admin-secundario';
+                    quitar.textContent = 'Quitar';
+                    quitar.addEventListener('click', function () {
+                        archivos.splice(indice, 1);
+                        sincronizar();
+                    });
+
+                    tarjeta.appendChild(img);
+                    tarjeta.appendChild(nombre);
+                    tarjeta.appendChild(quitar);
+                    vista.appendChild(tarjeta);
+                });
+            }
+
+            input.addEventListener('change', function () {
+                Array.from(input.files).forEach(function (nuevo) {
+                    var repetido = archivos.some(function (a) {
+                        return a.name === nuevo.name && a.size === nuevo.size;
+                    });
+                    if (!repetido) archivos.push(nuevo);
+                });
+                sincronizar();
+            });
+        })();
+    </script>
+}
