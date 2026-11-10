@@ -37,6 +37,10 @@
                 </tr>
             </thead>
             <tbody>
+                @if (Model.Noticias.Count == 0)
+                {
+                    <tr><td colspan="6">No hay publicaciones en este estado.</td></tr>
+                }
                 @foreach (var noticia in Model.Noticias)
                 {
                     string clase = noticia.Estado switch
@@ -78,7 +82,7 @@
                                         <button type="submit" class="boton-admin boton-admin-secundario"><i class="bi bi-eye-slash-fill"></i></button>
                                     </form>
                                 }
-                                <form asp-action="EliminarNoticia" method="post" onsubmit="return confirm('¿Eliminar esta publicación de forma permanente?');">
+                                <form asp-action="EliminarNoticia" method="post" onsubmit="return confirm('¿Eliminar la publicación &quot;@noticia.Titulo&quot; de forma permanente?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@noticia.Id" />
                                     <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-trash-fill"></i></button>

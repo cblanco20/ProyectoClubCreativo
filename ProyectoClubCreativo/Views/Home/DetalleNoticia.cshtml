@@ -1,5 +1,12 @@
-﻿@{
-    ViewData["Title"] = "Detalle de Noticia";
+﻿@model ProyectoClubCreativo.Models.ViewModels.DetalleNoticiaPublicaViewModel
+
+@{
+    var cultura = new System.Globalization.CultureInfo("es-CR");
+    var noticia = Model.Noticia;
+    string[] parrafos = noticia.Contenido
+        .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    int minutos = Math.Max(1, (int)Math.Ceiling(noticia.Contenido.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length / 200.0));
+    ViewData["Title"] = noticia.Titulo;
     Layout = "_LayoutExterno";
 }
 
@@ -24,36 +31,29 @@
 
             <i class="bi bi-chevron-right"></i>
 
-            <span>Feria de emprendimientos</span>
+            <span>@noticia.Titulo</span>
         </nav>
 
         <div class="contenido-encabezado-detalle">
 
             <span class="categoria-detalle-noticia">
-                Evento destacado
+                @noticia.Tipo
             </span>
 
-            <h1>
-                Club Creativo MiVo prepara una nueva feria de
-                emprendimientos locales
-            </h1>
+            <h1>@noticia.Titulo</h1>
 
-            <p class="resumen-detalle-noticia">
-                La próxima feria reunirá artistas, artesanos, diseñadores
-                y emprendimientos que compartirán sus productos, servicios
-                e historias con toda la comunidad.
-            </p>
+            <p class="resumen-detalle-noticia">@noticia.Resumen</p>
 
             <div class="informacion-detalle-noticia">
 
                 <div>
                     <i class="bi bi-calendar3"></i>
-                    <span>15 de julio de 2026</span>
+                    <span>@noticia.Fecha.ToString("d 'de' MMMM 'de' yyyy", cultura)</span>
                 </div>
 
                 <div>
                     <i class="bi bi-clock"></i>
-                    <span>5 minutos de lectura</span>
+                    <span>@minutos min de lectura</span>
                 </div>
 
                 <div>
@@ -74,8 +74,7 @@
     <div class="container">
 
         <div class="contenedor-imagen-detalle">
-            <img src="~/images/detalle-noticia-feria.jpg"
-                 alt="Personas visitando una feria de emprendimientos creativos" />
+            <img src="@noticia.ImagenUrl" alt="@noticia.Titulo" />
         </div>
 
     </div>
@@ -91,150 +90,10 @@
             <!-- ARTÍCULO -->
             <article class="articulo-detalle-noticia">
 
-                <p class="primer-parrafo-detalle">
-                    Club Creativo MiVo continúa creando espacios para apoyar
-                    el talento local. En esta ocasión, la comunidad se prepara
-                    para una nueva feria de emprendimientos que ofrecerá
-                    actividades para personas de todas las edades.
-                </p>
-
-                <p>
-                    La actividad permitirá que artistas, diseñadores,
-                    artesanos y pequeños emprendimientos presenten sus
-                    productos directamente al público. Las personas visitantes
-                    podrán conocer el proceso creativo detrás de cada proyecto
-                    y apoyar iniciativas desarrolladas en la comunidad.
-                </p>
-
-                <h2>Un espacio para apoyar el talento local</h2>
-
-                <p>
-                    La feria busca brindar visibilidad a las personas
-                    emprendedoras y facilitar nuevas oportunidades para
-                    promocionar sus productos y servicios. También será un
-                    punto de encuentro para compartir conocimientos y crear
-                    conexiones entre participantes.
-                </p>
-
-                <p>
-                    Durante el evento se podrán encontrar productos hechos
-                    a mano, ilustraciones, accesorios, decoración, ropa,
-                    alimentos artesanales y diferentes propuestas creativas.
-                </p>
-
-                <blockquote class="cita-detalle-noticia">
-                    <i class="bi bi-quote"></i>
-
-                    <p>
-                        Nuestro objetivo es crear un espacio donde las ideas,
-                        el talento y la comunidad puedan encontrarse.
-                    </p>
-
-                    <span>Equipo de Club Creativo MiVo</span>
-                </blockquote>
-
-                <h2>Actividades para toda la familia</h2>
-
-                <p>
-                    Además de los espacios de exhibición y venta, la feria
-                    contará con talleres cortos, demostraciones creativas,
-                    presentaciones artísticas y actividades diseñadas para
-                    compartir en familia.
-                </p>
-
-                <div class="lista-actividades-detalle">
-
-                    <h3>Entre las actividades estarán:</h3>
-
-                    <ul>
-                        <li>
-                            <i class="bi bi-check-circle-fill"></i>
-                            Talleres rápidos de arte y manualidades.
-                        </li>
-
-                        <li>
-                            <i class="bi bi-check-circle-fill"></i>
-                            Demostraciones de productos artesanales.
-                        </li>
-
-                        <li>
-                            <i class="bi bi-check-circle-fill"></i>
-                            Presentaciones de artistas locales.
-                        </li>
-
-                        <li>
-                            <i class="bi bi-check-circle-fill"></i>
-                            Espacios recreativos para niños y familias.
-                        </li>
-                    </ul>
-
-                </div>
-
-                <div class="imagen-secundaria-detalle">
-                    <img src="~/images/detalle-noticia-taller.jpg"
-                         alt="Personas participando en un taller durante una feria creativa" />
-
-                    <span>
-                        Las actividades permitirán que las personas visitantes
-                        aprendan nuevas técnicas creativas.
-                    </span>
-                </div>
-
-                <h2>Participación de emprendimientos</h2>
-
-                <p>
-                    Las personas emprendedoras interesadas podrán solicitar
-                    un espacio para exhibir sus productos. Cada solicitud será
-                    revisada para asegurar que las propuestas estén relacionadas
-                    con el arte, la creatividad, el diseño o la producción local.
-                </p>
-
-                <div class="informacion-evento-detalle">
-
-                    <div class="icono-informacion-evento">
-                        <i class="bi bi-calendar-event-fill"></i>
-                    </div>
-
-                    <div>
-                        <span>Próxima actividad</span>
-
-                        <h3>Feria Creativa MiVo</h3>
-
-                        <p>
-                            La fecha, ubicación y horario se anunciarán
-                            próximamente mediante nuestros canales oficiales.
-                        </p>
-                    </div>
-
-                </div>
-
-                <h2>¿Cómo mantenerse informado?</h2>
-
-                <p>
-                    Las novedades relacionadas con la feria serán publicadas
-                    en la sección de noticias y en las redes sociales del Club.
-                    También se compartirán los requisitos para participar,
-                    horarios y actividades confirmadas.
-                </p>
-
-                <p>
-                    Invitamos a toda la comunidad a mantenerse pendiente,
-                    compartir la información y apoyar a los emprendimientos
-                    locales que formarán parte de esta experiencia.
-                </p>
-
-
-                <!-- ETIQUETAS -->
-                <div class="etiquetas-detalle-noticia">
-
-                    <span>Etiquetas:</span>
-
-                    <a href="#">Feria creativa</a>
-                    <a href="#">Emprendimientos</a>
-                    <a href="#">Comunidad</a>
-                    <a href="#">Talento local</a>
-
-                </div>
+                @for (int i = 0; i < parrafos.Length; i++)
+                {
+                    <p class="@(i == 0 ? "primer-parrafo-detalle" : "")">@parrafos[i]</p>
+                }
 
             </article>
 
@@ -304,78 +163,38 @@
 
         <div class="grid-relacionadas-detalle">
 
-            <!-- NOTICIA RELACIONADA 1 -->
-            <article class="tarjeta-relacionada-detalle">
+            @foreach (var relacionada in Model.Relacionadas)
+            {
+                <article class="tarjeta-relacionada-detalle">
 
-                <div class="imagen-relacionada-detalle">
-                    <img src="~/images/detalle-noticia-emprendimiento.jpg"
-                         alt="Emprendedora mostrando productos hechos a mano" />
+                    <div class="imagen-relacionada-detalle">
+                        <img src="@relacionada.ImagenUrl" alt="@relacionada.Titulo" />
 
-                    <span>Emprendimientos</span>
-                </div>
-
-                <div class="contenido-relacionada-detalle">
-
-                    <div class="fecha-relacionada-detalle">
-                        <i class="bi bi-calendar3"></i>
-                        8 de julio de 2026
+                        <span>@relacionada.Tipo</span>
                     </div>
 
-                    <h3>
-                        Conoce a los nuevos emprendimientos aliados
-                    </h3>
+                    <div class="contenido-relacionada-detalle">
 
-                    <p>
-                        Nuevos proyectos locales se incorporan a nuestra
-                        comunidad creativa.
-                    </p>
+                        <div class="fecha-relacionada-detalle">
+                            <i class="bi bi-calendar3"></i>
+                            @relacionada.Fecha.ToString("d 'de' MMMM 'de' yyyy", cultura)
+                        </div>
 
-                    <a asp-controller="Home"
-                       asp-action="DetalleNoticia">
-                        Leer noticia
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
+                        <h3>@relacionada.Titulo</h3>
 
-                </div>
+                        <p>@relacionada.Resumen</p>
 
-            </article>
+                        <a asp-controller="Home"
+                           asp-action="DetalleNoticia"
+                           asp-route-id="@relacionada.Id">
+                            Leer noticia
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
 
-
-            <!-- NOTICIA RELACIONADA 2 -->
-            <article class="tarjeta-relacionada-detalle">
-
-                <div class="imagen-relacionada-detalle">
-                    <img src="~/images/detalle-noticia-taller.jpg"
-                         alt="Personas realizando una actividad artística" />
-
-                    <span>Talleres</span>
-                </div>
-
-                <div class="contenido-relacionada-detalle">
-
-                    <div class="fecha-relacionada-detalle">
-                        <i class="bi bi-calendar3"></i>
-                        12 de julio de 2026
                     </div>
 
-                    <h3>
-                        Nuevos talleres creativos para principiantes
-                    </h3>
-
-                    <p>
-                        Descubre nuevas actividades para aprender pintura,
-                        manualidades y diseño.
-                    </p>
-
-                    <a asp-controller="Home"
-                       asp-action="DetalleNoticia">
-                        Leer noticia
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-
-                </div>
-
-            </article>
+                </article>
+            }
 
         </div>
 

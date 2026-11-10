@@ -1,4 +1,4 @@
-@model ProyectoClubCreativo.Models.ViewModels.Admin.NoticiaAdminViewModel
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.NoticiaAdminViewModel
 @{
     ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Publicación";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
@@ -14,15 +14,14 @@
         <h2><i class="bi bi-newspaper"></i> @ViewData["Title"]</h2>
     </div>
 
-    <form asp-action="@(esNueva ? "CrearNoticia" : "EditarNoticia")" method="post" class="formulario-admin">
+    <form asp-action="@(esNueva ? "CrearNoticia" : "EditarNoticia")" method="post" class="formulario-admin" enctype="multipart/form-data" novalidate>
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="Autor" />
-        <div asp-validation-summary="ModelOnly"></div>
+        <div asp-validation-summary="All" class="alerta-error-admin"></div>
 
         <div class="grupo-formulario">
             <label asp-for="Titulo"></label>
-            <input asp-for="Titulo" placeholder="Ej. Nueva alianza con artesanos locales" />
+            <input asp-for="Titulo" maxlength="180" placeholder="Ej. Nueva alianza con artesanos locales" />
             <span class="mensaje-validacion" asp-validation-for="Titulo"></span>
         </div>
 
@@ -39,19 +38,50 @@
                     <option>Anuncio</option>
                     <option>Noticia</option>
                 </select>
+                <span class="mensaje-validacion" asp-validation-for="Categoria"></span>
             </div>
-            <div class="grupo-formulario">
-                <label asp-for="Estado"></label>
-                <select asp-for="Estado">
-                    <option>Borrador</option>
-                    <option>Publicada</option>
-                    <option>Inactiva</option>
-                </select>
-            </div>
+            @if (!esNueva)
+            {
+                <div class="grupo-formulario">
+                    <label asp-for="Estado"></label>
+                    <select asp-for="Estado">
+                        <option>Borrador</option>
+                        <option>Publicada</option>
+                        <option>Inactiva</option>
+                    </select>
+                </div>
+            }
         </div>
 
-        <button type="submit" class="boton-admin boton-admin-primario">
-            <i class="bi bi-check-circle-fill"></i> @(esNueva ? "Crear publicación" : "Guardar cambios")
-        </button>
+        <div class="grupo-formulario">
+            <label asp-for="ImagenArchivo"></label>
+            @if (!esNueva && !string.IsNullOrWhiteSpace(Model.Imagen))
+            {
+                <img src="@Model.Imagen" class="foto-tabla-admin" alt="@Model.Titulo" style="margin-bottom:8px;" />
+            }
+            <input asp-for="ImagenArchivo" type="file" accept=".jpg,.jpeg,.png,.webp" />
+            <span class="mensaje-validacion" asp-validation-for="ImagenArchivo"></span>
+        </div>
+
+        <div class="grupo-acciones-admin">
+            @if (esNueva)
+            {
+                <button type="submit" name="accion" value="publicar" class="boton-admin boton-admin-primario">
+                    <i class="bi bi-broadcast"></i> Publicar
+                </button>
+                <button type="submit" name="accion" value="guardar" class="boton-admin boton-admin-secundario">
+                    <i class="bi bi-save-fill"></i> Guardar borrador
+                </button>
+            }
+            else
+            {
+                <button type="submit" class="boton-admin boton-admin-primario">
+                    <i class="bi bi-check-circle-fill"></i> Guardar cambios
+                </button>
+            }
+            <a asp-action="Noticias" class="boton-admin boton-admin-secundario">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
     </form>
 </article>

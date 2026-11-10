@@ -70,13 +70,73 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View();
         }
-        public IActionResult Noticias()
+        public async Task<IActionResult> Noticias()
         {
-            return View();
+            List<NoticiaPublicaViewModel> noticias = await ConsultarNoticiasPublicadasAsync(null, 13);
+
+            return View(new ListadoNoticiasPublicasViewModel
+            {
+                Destacada = noticias.FirstOrDefault(),
+                Recientes = noticias.Skip(1).ToList()
+            });
         }
-        public IActionResult DetalleNoticia()
+
+        public async Task<IActionResult> DetalleNoticia(int id)
         {
-            return View();
+            List<NoticiaPublicaViewModel> noticias = await ConsultarNoticiasPublicadasAsync(id, 1);
+            NoticiaPublicaViewModel? noticia = noticias.FirstOrDefault();
+
+            if (noticia is null)
+            {
+                return RedirectToAction(nameof(Noticias));
+            }
+
+            List<NoticiaPublicaViewModel> relacionadas = await ConsultarNoticiasPublicadasAsync(null, 3);
+
+            return View(new DetalleNoticiaPublicaViewModel
+            {
+                Noticia = noticia,
+                Relacionadas = relacionadas.Where(n => n.Id != id).Take(2).ToList()
+            });
+        }
+
+        private async Task<List<NoticiaPublicaViewModel>> ConsultarNoticiasPublicadasAsync(int? id, int cantidad)
+        {
+            IQueryable<Noticia> consulta = _context.Noticias
+                .AsNoTracking()
+                .Where(n => n.Estado == "Publicada");
+
+            if (id.HasValue)
+            {
+                consulta = consulta.Where(n => n.IdNoticia == id.Value);
+            }
+
+            var datos = await consulta
+                .OrderByDescending(n => n.FechaPublicacion ?? n.FechaCreacion)
+                .Take(cantidad)
+                .Select(n => new
+                {
+                    n.IdNoticia,
+                    n.Titulo,
+                    n.Contenido,
+                    n.Tipo,
+                    n.ImagenUrl,
+                    Fecha = n.FechaPublicacion ?? n.FechaCreacion
+                })
+                .ToListAsync();
+
+            return datos
+                .Select(n => new NoticiaPublicaViewModel
+                {
+                    Id = n.IdNoticia,
+                    Titulo = n.Titulo,
+                    Contenido = n.Contenido,
+                    Resumen = n.Contenido.Length > 180 ? n.Contenido[..180].TrimEnd() + "..." : n.Contenido,
+                    Tipo = n.Tipo,
+                    ImagenUrl = n.ImagenUrl ?? "/images/noticia-comunidad.jpg",
+                    Fecha = n.Fecha
+                })
+                .ToList();
         }
         public async Task<IActionResult> Emprendimientos(int? categoria)
         {

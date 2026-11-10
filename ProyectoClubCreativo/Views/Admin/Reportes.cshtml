@@ -4,7 +4,7 @@
     ViewData["Title"] = "Reportes y estadísticas";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 
-    int maxBarras = Model.GraficoBarras.Count > 0 ? Model.GraficoBarras.Max(v => v.Valor) : 1;
+    int maxBarras = Model.GraficoBarras.Count > 0 ? Math.Max(1, Model.GraficoBarras.Max(v => v.Valor)) : 1;
 
     string[] coloresDona = { "#F47A20", "#3D8BEA", "#D8B4E8", "#2FB380", "#E7E7E7" };
     int totalDona = Model.GraficoDona.Sum(c => c.Valor);
@@ -23,6 +23,7 @@
 }
 
 <form asp-controller="Admin" asp-action="Reportes" method="get" class="barra-filtros-admin">
+    <input type="hidden" name="generar" value="true" />
     <div class="campo-filtro-admin">
         <label asp-for="Filtro.TipoReporte"></label>
         <select asp-for="Filtro.TipoReporte">
@@ -46,16 +47,53 @@
         <input asp-for="Filtro.Categoria" placeholder="Opcional" />
     </div>
     <button type="submit" class="boton-filtro-admin"><i class="bi bi-funnel-fill"></i> Generar reporte</button>
-    <a asp-action="ExportarReporte"
-       asp-route-Filtro.TipoReporte="@Model.Filtro.TipoReporte"
-       asp-route-Filtro.FechaInicio="@Model.Filtro.FechaInicio?.ToString("yyyy-MM-dd")"
-       asp-route-Filtro.FechaFin="@Model.Filtro.FechaFin?.ToString("yyyy-MM-dd")"
-       asp-route-Filtro.Categoria="@Model.Filtro.Categoria"
-       class="boton-admin boton-admin-oscuro">
-        <i class="bi bi-download"></i> Exportar CSV
-    </a>
+    @if (Model.Generado)
+    {
+        <a asp-action="ExportarReporte" data-exportar
+           asp-route-Filtro.TipoReporte="@Model.Filtro.TipoReporte"
+           asp-route-Filtro.FechaInicio="@Model.Filtro.FechaInicio?.ToString("yyyy-MM-dd")"
+           asp-route-Filtro.FechaFin="@Model.Filtro.FechaFin?.ToString("yyyy-MM-dd")"
+           asp-route-Filtro.Categoria="@Model.Filtro.Categoria"
+           asp-route-formato="csv"
+           class="boton-admin boton-admin-oscuro">
+            <i class="bi bi-filetype-csv"></i> Exportar CSV
+        </a>
+        <a asp-action="ExportarReporte" data-exportar
+           asp-route-Filtro.TipoReporte="@Model.Filtro.TipoReporte"
+           asp-route-Filtro.FechaInicio="@Model.Filtro.FechaInicio?.ToString("yyyy-MM-dd")"
+           asp-route-Filtro.FechaFin="@Model.Filtro.FechaFin?.ToString("yyyy-MM-dd")"
+           asp-route-Filtro.Categoria="@Model.Filtro.Categoria"
+           asp-route-formato="xlsx"
+           class="boton-admin boton-admin-oscuro">
+            <i class="bi bi-file-earmark-excel-fill"></i> Exportar Excel
+        </a>
+    }
 </form>
 
+<div id="avisoExportacion" hidden></div>
+
+@foreach (string error in Model.Errores)
+{
+    <div class="alerta-error-admin">
+        <i class="bi bi-exclamation-circle-fill"></i> @error
+    </div>
+}
+
+@if (!Model.Generado && Model.Errores.Count == 0)
+{
+    <article class="bloque-admin">
+        <p>Elija el tipo de reporte, ajuste los filtros si lo necesita y presione Generar reporte.</p>
+    </article>
+}
+else if (Model.Generado && Model.Filas.Count == 0)
+{
+    <article class="bloque-admin">
+        <p>No hay información registrada para los criterios seleccionados.</p>
+    </article>
+}
+
+@if (Model.Generado && Model.Filas.Count > 0)
+{
 <section class="grid-dashboard-admin">
 
     <article class="bloque-admin">
@@ -120,3 +158,4 @@
         </table>
     </div>
 </article>
+}

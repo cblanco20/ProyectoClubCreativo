@@ -88,6 +88,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public int Id { get; set; }
 
         [Required(ErrorMessage = "El título es obligatorio.")]
+        [StringLength(180, ErrorMessage = "El título no puede superar los 180 caracteres.")]
         public string Titulo { get; set; } = "";
 
         [Required(ErrorMessage = "El contenido es obligatorio.")]
@@ -98,8 +99,11 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
 
         public string Estado { get; set; } = "Borrador";
         public string Imagen { get; set; } = "/images/logo.jpg";
-        public string Autor { get; set; } = "Jossete Sánchez";
+        public string Autor { get; set; } = "";
         public string FechaPublicacion { get; set; } = "";
+
+        [Display(Name = "Imagen")]
+        public IFormFile? ImagenArchivo { get; set; }
     }
 
     public class ListadoNoticiasAdminViewModel
@@ -142,6 +146,45 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public List<string> Columnas { get; set; } = [];
         public List<FilaReporteViewModel> Filas { get; set; } = [];
         public string Titulo { get; set; } = "";
+        public bool Generado { get; set; }
+        public List<string> Errores { get; set; } = [];
+    }
+
+    // ---------- ESTADÍSTICAS DE HECHO EN CR ----------
+    public class FiltroEstadisticasViewModel
+    {
+        [Display(Name = "Desde")]
+        [DataType(DataType.Date)]
+        public DateTime? FechaInicio { get; set; }
+
+        [Display(Name = "Hasta")]
+        [DataType(DataType.Date)]
+        public DateTime? FechaFin { get; set; }
+    }
+
+    public class EmprendimientoEstadisticaViewModel
+    {
+        public string Nombre { get; set; } = "";
+        public int Productos { get; set; }
+        public int UnidadesVendidas { get; set; }
+        public decimal Ingresos { get; set; }
+        public int Participaciones { get; set; }
+    }
+
+    public class EstadisticasHechoEnCrViewModel
+    {
+        public FiltroEstadisticasViewModel Filtro { get; set; } = new();
+        public bool HayDatos { get; set; }
+        public string FechaConsulta { get; set; } = "";
+        public int EmprendimientosParticipantes { get; set; }
+        public int ProductosPublicados { get; set; }
+        public int ParticipacionesEventos { get; set; }
+        public int UnidadesVendidas { get; set; }
+        public decimal IngresosTotales { get; set; }
+        public List<PuntoGraficoViewModel> VentasPorMes { get; set; } = [];
+        public List<PuntoGraficoViewModel> UnidadesPorEmprendimiento { get; set; } = [];
+        public List<EmprendimientoEstadisticaViewModel> Emprendimientos { get; set; } = [];
+        public List<string> Errores { get; set; } = [];
     }
 
     // ---------- MODERACIÓN DE COMENTARIOS ----------

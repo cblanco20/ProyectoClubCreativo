@@ -1,0 +1,144 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.EstadisticasHechoEnCrViewModel
+
+@{
+    ViewData["Title"] = "Estadísticas Hecho en CR";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    int maxBarras = Model.VentasPorMes.Count > 0 ? Math.Max(1, Model.VentasPorMes.Max(v => v.Valor)) : 1;
+
+    string[] coloresDona = { "#F47A20", "#3D8BEA", "#D8B4E8", "#2FB380", "#E7E7E7" };
+    int totalDona = Model.UnidadesPorEmprendimiento.Sum(c => c.Valor);
+    string gradienteDona = "";
+    double acumulado = 0;
+
+    for (int i = 0; i < Model.UnidadesPorEmprendimiento.Count; i++)
+    {
+        double porcentaje = totalDona == 0 ? 0 : (double)Model.UnidadesPorEmprendimiento[i].Valor / totalDona * 100;
+        string color = coloresDona[i % coloresDona.Length];
+        gradienteDona += $"{color} {acumulado}% {acumulado + porcentaje}%, ";
+        acumulado += porcentaje;
+    }
+
+    gradienteDona = gradienteDona.TrimEnd(',', ' ');
+    var cultura = new System.Globalization.CultureInfo("es-CR");
+}
+
+<form asp-controller="Admin" asp-action="EstadisticasHechoEnCr" method="get" class="barra-filtros-admin">
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaInicio"></label>
+        <input asp-for="Filtro.FechaInicio" type="date" />
+    </div>
+    <div class="campo-filtro-admin">
+        <label asp-for="Filtro.FechaFin"></label>
+        <input asp-for="Filtro.FechaFin" type="date" />
+    </div>
+    <button type="submit" class="boton-filtro-admin"><i class="bi bi-arrow-clockwise"></i> Actualizar datos</button>
+    <span>Consulta realizada: @Model.FechaConsulta</span>
+</form>
+
+@foreach (string error in Model.Errores)
+{
+    <div class="alerta-error-admin">
+        <i class="bi bi-exclamation-circle-fill"></i> @error
+    </div>
+}
+
+@if (Model.Errores.Count == 0)
+{
+    <section class="grid-estadisticas-admin">
+        <article class="tarjeta-estadistica-admin">
+            <span class="icono-estadistica-admin icono-emprendimientos-admin"><i class="bi bi-buildings-fill"></i></span>
+            <div><strong>@Model.EmprendimientosParticipantes</strong><span>Emprendimientos participantes</span></div>
+        </article>
+        <article class="tarjeta-estadistica-admin">
+            <span class="icono-estadistica-admin icono-usuarios-admin"><i class="bi bi-box-seam-fill"></i></span>
+            <div><strong>@Model.ProductosPublicados</strong><span>Productos publicados</span></div>
+        </article>
+        <article class="tarjeta-estadistica-admin">
+            <span class="icono-estadistica-admin icono-usuarios-admin"><i class="bi bi-calendar-event-fill"></i></span>
+            <div><strong>@Model.ParticipacionesEventos</strong><span>Participaciones en eventos</span></div>
+        </article>
+        <article class="tarjeta-estadistica-admin">
+            <span class="icono-estadistica-admin icono-emprendimientos-admin"><i class="bi bi-bag-check-fill"></i></span>
+            <div><strong>@Model.UnidadesVendidas</strong><span>Unidades vendidas</span></div>
+        </article>
+        <article class="tarjeta-estadistica-admin">
+            <span class="icono-estadistica-admin icono-usuarios-admin"><i class="bi bi-cash-coin"></i></span>
+            <div><strong>₡@Model.IngresosTotales.ToString("N0", cultura)</strong><span>Ingresos por ventas</span></div>
+        </article>
+    </section>
+
+    @if (!Model.HayDatos)
+    {
+        <article class="bloque-admin">
+            <p>No hay registros de ventas ni de participación para el período consultado.</p>
+        </article>
+    }
+    else
+    {
+        <section class="grid-dashboard-admin">
+            <article class="bloque-admin">
+                <div class="encabezado-bloque-admin">
+                    <h2><i class="bi bi-bar-chart-fill"></i> Ventas por mes</h2>
+                </div>
+                <div class="grafico-barras-admin">
+                    @foreach (var punto in Model.VentasPorMes)
+                    {
+                        int alturaPorcentaje = (int)((double)punto.Valor / maxBarras * 100);
+                        <div class="barra-admin-grupo">
+                            <div class="barra-admin" style="height:@(alturaPorcentaje)%;"></div>
+                            <span>@punto.Etiqueta</span>
+                        </div>
+                    }
+                </div>
+            </article>
+
+            <article class="bloque-admin">
+                <div class="encabezado-bloque-admin">
+                    <h2><i class="bi bi-pie-chart-fill"></i> Unidades por emprendimiento</h2>
+                </div>
+                <div class="grafico-dona-admin" style="background: conic-gradient(@gradienteDona);"></div>
+                <div class="leyenda-dona-admin">
+                    @for (int i = 0; i < Model.UnidadesPorEmprendimiento.Count; i++)
+                    {
+                        <div class="item-leyenda-dona">
+                            <span class="punto-leyenda-dona" style="background-color:@coloresDona[i % coloresDona.Length];"></span>
+                            @Model.UnidadesPorEmprendimiento[i].Etiqueta (@Model.UnidadesPorEmprendimiento[i].Valor)
+                        </div>
+                    }
+                </div>
+            </article>
+        </section>
+
+        <article class="bloque-admin">
+            <div class="encabezado-bloque-admin">
+                <h2><i class="bi bi-table"></i> Detalle por emprendimiento</h2>
+            </div>
+            <div class="tabla-admin-contenedor">
+                <table class="tabla-admin">
+                    <thead>
+                        <tr>
+                            <th>Emprendimiento</th>
+                            <th>Productos</th>
+                            <th>Unidades vendidas</th>
+                            <th>Ingresos</th>
+                            <th>Participaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var fila in Model.Emprendimientos)
+                        {
+                            <tr>
+                                <td>@fila.Nombre</td>
+                                <td>@fila.Productos</td>
+                                <td>@fila.UnidadesVendidas</td>
+                                <td>₡@fila.Ingresos.ToString("N0", cultura)</td>
+                                <td>@fila.Participaciones</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    }
+}

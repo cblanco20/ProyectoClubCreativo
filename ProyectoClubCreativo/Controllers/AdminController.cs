@@ -3657,13 +3657,46 @@ namespace ProyectoClubCreativo.Controllers
         
 
         [HttpGet]
-        public IActionResult Noticias(string estado = "Todas")
+        public async Task<IActionResult> Noticias(string estado = "Todas")
         {
-            var noticias = ObtenerNoticiasDemo();
+            IQueryable<Noticia> consulta = _context.Noticias.AsNoTracking();
+
+            if (estado != "Todas")
+            {
+                consulta = consulta.Where(n => n.Estado == estado);
+            }
+
+            var datos = await consulta
+                .OrderByDescending(n => n.FechaPublicacion ?? n.FechaCreacion)
+                .Select(n => new
+                {
+                    n.IdNoticia,
+                    n.Titulo,
+                    n.Contenido,
+                    n.Tipo,
+                    n.Estado,
+                    n.ImagenUrl,
+                    n.FechaPublicacion,
+                    Autor = n.IdAutorNavigation.Nombre + " " + n.IdAutorNavigation.ApellidoPaterno
+                })
+                .ToListAsync();
+
             return View(new ListadoNoticiasAdminViewModel
             {
                 FiltroEstado = estado,
-                Noticias = estado == "Todas" ? noticias : noticias.Where(n => n.Estado == estado).ToList()
+                Noticias = datos
+                    .Select(n => new NoticiaAdminViewModel
+                    {
+                        Id = n.IdNoticia,
+                        Titulo = n.Titulo,
+                        Contenido = n.Contenido,
+                        Categoria = n.Tipo,
+                        Estado = n.Estado,
+                        Imagen = n.ImagenUrl ?? "/images/logo.jpg",
+                        Autor = n.Autor,
+                        FechaPublicacion = n.FechaPublicacion?.ToString("dd/MM/yyyy") ?? string.Empty
+                    })
+                    .ToList()
             });
         }
 
@@ -3671,161 +3704,878 @@ namespace ProyectoClubCreativo.Controllers
         public IActionResult CrearNoticia()
         {
             ViewData["Titulo"] = "Crear publicación";
+
             return View("FormularioNoticia", new NoticiaAdminViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearNoticia(NoticiaAdminViewModel modelo)
+        public async Task<IActionResult> CrearNoticia(
+            NoticiaAdminViewModel modelo,
+            string accion = "publicar")
         {
             ViewData["Titulo"] = "Crear publicación";
-            if (!ModelState.IsValid) return View("FormularioNoticia", modelo);
-            TempData["MensajeAdmin"] = $"La publicación \"{modelo.Titulo}\" fue creada correctamente.";
-            return RedirectToAction(nameof(Noticias));
-        }
 
-        [HttpGet]
-        public IActionResult EditarNoticia(int id = 1)
-        {
-            ViewData["Titulo"] = "Editar publicación";
-            var noticia = ObtenerNoticiasDemo().FirstOrDefault(n => n.Id == id) ?? new NoticiaAdminViewModel { Id = id };
-            return View("FormularioNoticia", noticia);
-        }
+            LimpiarCamposNoEnviadosNoticia();
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EditarNoticia(NoticiaAdminViewModel modelo)
-        {
-            ViewData["Titulo"] = "Editar publicación";
-            if (!ModelState.IsValid) return View("FormularioNoticia", modelo);
-            TempData["MensajeAdmin"] = $"La publicación \"{modelo.Titulo}\" fue actualizada correctamente.";
-            return RedirectToAction(nameof(Noticias));
-        }
+            await ValidarNoticiaAsync(modelo);
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult PublicarNoticia(int id)
-        {
-            TempData["MensajeAdmin"] = "La publicación fue publicada correctamente.";
-            return RedirectToAction(nameof(Noticias));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult DesactivarNoticia(int id)
-        {
-            TempData["MensajeAdmin"] = "La publicación fue desactivada.";
-            return RedirectToAction(nameof(Noticias));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EliminarNoticia(int id)
-        {
-            TempData["MensajeAdmin"] = "La publicación fue eliminada correctamente.";
-            return RedirectToAction(nameof(Noticias));
-        }
-
-        private static List<NoticiaAdminViewModel> ObtenerNoticiasDemo()
-        {
-            return
-            [
-                new() { Id = 1, Titulo = "Nueva alianza con artesanos locales", Contenido = "Club Creativo firma una alianza para fortalecer el catálogo de productos artesanales.", Categoria = "Noticia", Estado = "Publicada", Autor = "Jossete Sánchez", FechaPublicacion = "01/08/2026" },
-                new() { Id = 2, Titulo = "Cambios en el horario de atención", Contenido = "A partir de setiembre el horario de atención se extiende hasta las 7:00 p. m.", Categoria = "Anuncio", Estado = "Publicada", Autor = "Jossete Sánchez", FechaPublicacion = "28/07/2026" },
-                new() { Id = 3, Titulo = "Próxima feria en Heredia", Contenido = "Se viene una nueva edición de la Feria Creativa en Heredia este 20 de setiembre.", Categoria = "Anuncio", Estado = "Borrador", Autor = "Jossete Sánchez", FechaPublicacion = "" },
-                new() { Id = 4, Titulo = "Resultados de la encuesta 2025", Contenido = "Compartimos los resultados de la última encuesta de satisfacción de los usuarios.", Categoria = "Noticia", Estado = "Inactiva", Autor = "Jossete Sánchez", FechaPublicacion = "15/03/2026" }
-            ];
-        }
-
-        [HttpGet]
-        public IActionResult Reportes(FiltroReporteViewModel filtro)
-        {
-            filtro ??= new FiltroReporteViewModel();
-            return View(ConstruirReporte(filtro));
-        }
-
-        [HttpGet]
-        public IActionResult ExportarReporte(FiltroReporteViewModel filtro)
-        {
-            ReporteAdminViewModel modelo = ConstruirReporte(filtro ?? new FiltroReporteViewModel());
-
-            var constructor = new System.Text.StringBuilder();
-            constructor.AppendLine(string.Join(",", modelo.Columnas));
-            foreach (var fila in modelo.Filas)
+            if (!ModelState.IsValid)
             {
-                constructor.AppendLine(string.Join(",", fila.Columna1, fila.Columna2, fila.Columna3, fila.Columna4));
+                return View("FormularioNoticia", modelo);
             }
 
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(constructor.ToString());
-            string nombreArchivo = $"reporte-{modelo.Filtro.TipoReporte.ToLower()}.csv";
-            return File(bytes, "text/csv", nombreArchivo);
+            int? idAutor = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idAutor is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool publicar = accion != "guardar";
+
+            Noticia noticia = new()
+            {
+                IdAutor = idAutor.Value,
+                Titulo = modelo.Titulo,
+                Contenido = modelo.Contenido,
+                Tipo = modelo.Categoria,
+                Estado = publicar ? "Publicada" : "Borrador",
+                FechaCreacion = DateTime.Now,
+                FechaPublicacion = publicar ? DateTime.Now : null
+            };
+
+            if (modelo.ImagenArchivo is { Length: > 0 })
+            {
+                noticia.ImagenUrl = await GuardarImagenNoticiaAsync(modelo.ImagenArchivo);
+            }
+
+            _context.Noticias.Add(noticia);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = publicar
+                ? $"La publicación \"{noticia.Titulo}\" fue publicada correctamente."
+                : $"La publicación \"{noticia.Titulo}\" se guardó como borrador.";
+
+            return RedirectToAction(nameof(Noticias));
         }
 
-        private static ReporteAdminViewModel ConstruirReporte(FiltroReporteViewModel filtro)
+        [HttpGet]
+        public async Task<IActionResult> EditarNoticia(int id)
         {
-            (List<PuntoGraficoViewModel> barras, List<PuntoGraficoViewModel> dona, string[] columnas, List<FilaReporteViewModel> filas, string titulo) = filtro.TipoReporte switch
-            {
-                "Usuarios" => (
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 40 }, new() { Etiqueta = "Abr", Valor = 55 }, new() { Etiqueta = "May", Valor = 48 }, new() { Etiqueta = "Jun", Valor = 63 }, new() { Etiqueta = "Jul", Valor = 70 }, new() { Etiqueta = "Ago", Valor = 82 } },
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Usuario", Valor = 340 }, new() { Etiqueta = "Emprendedor", Valor = 120 }, new() { Etiqueta = "Administrador", Valor = 6 } },
-                    new[] { "Usuario", "Rol", "Registro", "Estado" },
-                    new List<FilaReporteViewModel> {
-                        new() { Columna1 = "Maria Montero Cruz", Columna2 = "Usuario", Columna3 = "12/01/2026", Columna4 = "Activo" },
-                        new() { Columna1 = "Valentín Arce Mora", Columna2 = "Emprendedor", Columna3 = "20/05/2026", Columna4 = "Activo" }
-                    },
-                    "Reporte de usuarios"
-                ),
-                "Emprendimientos" => (
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 4 }, new() { Etiqueta = "Abr", Valor = 6 }, new() { Etiqueta = "May", Valor = 5 }, new() { Etiqueta = "Jun", Valor = 9 }, new() { Etiqueta = "Jul", Valor = 8 }, new() { Etiqueta = "Ago", Valor = 12 } },
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Aprobados", Valor = 42 }, new() { Etiqueta = "Pendientes", Valor = 8 }, new() { Etiqueta = "Rechazados", Valor = 7 } },
-                    new[] { "Emprendimiento", "Categoría", "Solicitud", "Estado" },
-                    new List<FilaReporteViewModel> {
-                        new() { Columna1 = "Artesanías MiVo", Columna2 = "Arte e ilustración", Columna3 = "01/08/2026", Columna4 = "Pendiente" },
-                        new() { Columna1 = "Orquídea", Columna2 = "Accesorios", Columna3 = "10/07/2026", Columna4 = "Aprobado" }
-                    },
-                    "Reporte de emprendimientos"
-                ),
-                "Productos" => (
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 30 }, new() { Etiqueta = "Abr", Valor = 42 }, new() { Etiqueta = "May", Valor = 38 }, new() { Etiqueta = "Jun", Valor = 55 }, new() { Etiqueta = "Jul", Valor = 60 }, new() { Etiqueta = "Ago", Valor = 72 } },
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Arte e ilustración", Valor = 34 }, new() { Etiqueta = "Accesorios", Valor = 26 }, new() { Etiqueta = "Hogar y decoración", Valor = 20 } },
-                    new[] { "Producto", "Emprendimiento", "Categoría", "Estado" },
-                    new List<FilaReporteViewModel> {
-                        new() { Columna1 = "Aretes Orquídea", Columna2 = "Orquídea", Columna3 = "Accesorios", Columna4 = "Activo" },
-                        new() { Columna1 = "Vela Aromática Lavanda", Columna2 = "Luz Natural", Columna3 = "Velas y aromas", Columna4 = "Activo" }
-                    },
-                    "Reporte de productos"
-                ),
-                "Eventos" => (
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 1 }, new() { Etiqueta = "Abr", Valor = 2 }, new() { Etiqueta = "May", Valor = 1 }, new() { Etiqueta = "Jun", Valor = 3 }, new() { Etiqueta = "Jul", Valor = 2 }, new() { Etiqueta = "Ago", Valor = 3 } },
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Programados", Valor = 2 }, new() { Etiqueta = "Finalizados", Valor = 6 }, new() { Etiqueta = "Cancelados", Valor = 1 } },
-                    new[] { "Evento", "Ubicación", "Fecha", "Inscritos" },
-                    new List<FilaReporteViewModel> {
-                        new() { Columna1 = "Arte Inarrivo San Pedro", Columna2 = "San Pedro", Columna3 = "15 y 16 de agosto", Columna4 = "120" },
-                        new() { Columna1 = "Feria Creativa Santa Ana", Columna2 = "Santa Ana", Columna3 = "5 al 7 de setiembre", Columna4 = "86" }
-                    },
-                    "Reporte de eventos"
-                ),
-                _ => (
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Mar", Valor = 45 }, new() { Etiqueta = "Abr", Valor = 58 }, new() { Etiqueta = "May", Valor = 50 }, new() { Etiqueta = "Jun", Valor = 72 }, new() { Etiqueta = "Jul", Valor = 65 }, new() { Etiqueta = "Ago", Valor = 90 } },
-                    new List<PuntoGraficoViewModel> { new() { Etiqueta = "Pagadas", Valor = 58 }, new() { Etiqueta = "Pendientes", Valor = 12 }, new() { Etiqueta = "Canceladas", Valor = 6 } },
-                    new[] { "Orden", "Cliente", "Fecha", "Total" },
-                    new List<FilaReporteViewModel> {
-                        new() { Columna1 = "ORD-1042", Columna2 = "Maria Montero Cruz", Columna3 = "02/08/2026", Columna4 = "₡24 000" },
-                        new() { Columna1 = "ORD-1043", Columna2 = "Carla Ramírez Solís", Columna3 = "03/08/2026", Columna4 = "₡13 000" }
-                    },
-                    "Reporte de ventas"
-                )
-            };
+            ViewData["Titulo"] = "Editar publicación";
 
-            return new ReporteAdminViewModel
+            Noticia? noticia = await _context.Noticias
+                .AsNoTracking()
+                .Include(n => n.IdAutorNavigation)
+                .FirstOrDefaultAsync(n => n.IdNoticia == id);
+
+            if (noticia is null)
+            {
+                TempData["ErrorAdmin"] =
+                    "La publicación no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Noticias));
+            }
+
+            return View("FormularioNoticia", new NoticiaAdminViewModel
+            {
+                Id = noticia.IdNoticia,
+                Titulo = noticia.Titulo,
+                Contenido = noticia.Contenido,
+                Categoria = noticia.Tipo,
+                Estado = noticia.Estado,
+                Imagen = noticia.ImagenUrl ?? "/images/logo.jpg",
+                Autor = noticia.IdAutorNavigation.Nombre + " " + noticia.IdAutorNavigation.ApellidoPaterno,
+                FechaPublicacion = noticia.FechaPublicacion?.ToString("dd/MM/yyyy") ?? string.Empty
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarNoticia(NoticiaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Editar publicación";
+
+            Noticia? noticia = await _context.Noticias
+                .FirstOrDefaultAsync(n => n.IdNoticia == modelo.Id);
+
+            if (noticia is null)
+            {
+                TempData["ErrorAdmin"] =
+                    "La publicación no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Noticias));
+            }
+
+            LimpiarCamposNoEnviadosNoticia();
+
+            await ValidarNoticiaAsync(modelo);
+
+            if (!ModelState.IsValid)
+            {
+                modelo.Imagen = noticia.ImagenUrl ?? "/images/logo.jpg";
+
+                return View("FormularioNoticia", modelo);
+            }
+
+            noticia.Titulo = modelo.Titulo;
+            noticia.Contenido = modelo.Contenido;
+            noticia.Tipo = modelo.Categoria;
+            noticia.Estado = modelo.Estado;
+
+            if (noticia.Estado == "Publicada" && noticia.FechaPublicacion is null)
+            {
+                noticia.FechaPublicacion = DateTime.Now;
+            }
+
+            if (modelo.ImagenArchivo is { Length: > 0 })
+            {
+                string? imagenAnterior = noticia.ImagenUrl;
+
+                noticia.ImagenUrl = await GuardarImagenNoticiaAsync(modelo.ImagenArchivo);
+
+                EliminarImagenNoticia(imagenAnterior);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"La publicación \"{noticia.Titulo}\" fue actualizada correctamente.";
+
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PublicarNoticia(int id)
+        {
+            Noticia? noticia = await _context.Noticias
+                .FirstOrDefaultAsync(n => n.IdNoticia == id);
+
+            if (noticia is null)
+            {
+                TempData["ErrorAdmin"] = "La publicación no está disponible.";
+
+                return RedirectToAction(nameof(Noticias));
+            }
+
+            noticia.Estado = "Publicada";
+            noticia.FechaPublicacion ??= DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"La publicación \"{noticia.Titulo}\" fue publicada correctamente.";
+
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DesactivarNoticia(int id)
+        {
+            Noticia? noticia = await _context.Noticias
+                .FirstOrDefaultAsync(n => n.IdNoticia == id);
+
+            if (noticia is null)
+            {
+                TempData["ErrorAdmin"] = "La publicación no está disponible.";
+
+                return RedirectToAction(nameof(Noticias));
+            }
+
+            noticia.Estado = "Inactiva";
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"La publicación \"{noticia.Titulo}\" fue desactivada.";
+
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarNoticia(int id)
+        {
+            Noticia? noticia = await _context.Noticias
+                .FirstOrDefaultAsync(n => n.IdNoticia == id);
+
+            if (noticia is null)
+            {
+                TempData["ErrorAdmin"] =
+                    "La publicación no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Noticias));
+            }
+
+            string titulo = noticia.Titulo;
+            string? imagen = noticia.ImagenUrl;
+
+            _context.Noticias.Remove(noticia);
+
+            await _context.SaveChangesAsync();
+
+            EliminarImagenNoticia(imagen);
+
+            TempData["MensajeAdmin"] =
+                $"La publicación \"{titulo}\" fue eliminada correctamente.";
+
+            return RedirectToAction(nameof(Noticias));
+        }
+
+        private void LimpiarCamposNoEnviadosNoticia()
+        {
+            ModelState.Remove(nameof(NoticiaAdminViewModel.Autor));
+            ModelState.Remove(nameof(NoticiaAdminViewModel.Imagen));
+            ModelState.Remove(nameof(NoticiaAdminViewModel.FechaPublicacion));
+            ModelState.Remove(nameof(NoticiaAdminViewModel.Estado));
+        }
+
+        private async Task ValidarNoticiaAsync(NoticiaAdminViewModel modelo)
+        {
+            modelo.Titulo = (modelo.Titulo ?? string.Empty).Trim();
+            modelo.Contenido = (modelo.Contenido ?? string.Empty).Trim();
+
+            List<string> faltantes = [];
+
+            if (modelo.Titulo.Length == 0)
+            {
+                faltantes.Add("título");
+            }
+
+            if (modelo.Contenido.Length == 0)
+            {
+                faltantes.Add("contenido");
+            }
+
+            if (string.IsNullOrWhiteSpace(modelo.Categoria))
+            {
+                faltantes.Add("categoría");
+            }
+
+            if (faltantes.Count > 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Complete los campos obligatorios antes de guardar: {string.Join(", ", faltantes)}.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(modelo.Categoria) &&
+                modelo.Categoria != "Noticia" &&
+                modelo.Categoria != "Anuncio")
+            {
+                ModelState.AddModelError(nameof(modelo.Categoria), "Seleccione una categoría válida.");
+            }
+
+            if (modelo.Estado != "Borrador" &&
+                modelo.Estado != "Publicada" &&
+                modelo.Estado != "Inactiva")
+            {
+                modelo.Estado = "Borrador";
+            }
+
+            if (modelo.ImagenArchivo is { Length: > 0 })
+            {
+                string[] extensiones = [".jpg", ".jpeg", ".png", ".webp"];
+                string extension = Path.GetExtension(modelo.ImagenArchivo.FileName).ToLowerInvariant();
+
+                if (!extensiones.Contains(extension))
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.ImagenArchivo),
+                        "La imagen debe ser JPG, PNG o WEBP.");
+                }
+                else if (modelo.ImagenArchivo.Length > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.ImagenArchivo),
+                        "La imagen no puede superar los 5 MB.");
+                }
+            }
+
+            if (modelo.Titulo.Length > 0 && !string.IsNullOrWhiteSpace(modelo.Categoria))
+            {
+                string titulo = modelo.Titulo;
+                string categoria = modelo.Categoria;
+                int idActual = modelo.Id;
+
+                bool duplicada = await _context.Noticias
+                    .AnyAsync(n =>
+                        n.IdNoticia != idActual &&
+                        n.Titulo == titulo &&
+                        n.Tipo == categoria);
+
+                if (duplicada)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.Titulo),
+                        "Ya existe una publicación con este título y categoría. Revise la información.");
+                }
+            }
+        }
+
+        private async Task<string> GuardarImagenNoticiaAsync(IFormFile imagen)
+        {
+            string carpeta = Path.Combine(_entornoWeb.WebRootPath, "uploads", "noticias");
+
+            Directory.CreateDirectory(carpeta);
+
+            string nombreArchivo =
+                $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName).ToLowerInvariant()}";
+
+            using (FileStream flujo = new(Path.Combine(carpeta, nombreArchivo), FileMode.Create))
+            {
+                await imagen.CopyToAsync(flujo);
+            }
+
+            return $"/uploads/noticias/{nombreArchivo}";
+        }
+
+        private void EliminarImagenNoticia(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url) || !url.StartsWith("/uploads/noticias/"))
+            {
+                return;
+            }
+
+            string ruta = Path.Combine(
+                _entornoWeb.WebRootPath,
+                "uploads",
+                "noticias",
+                Path.GetFileName(url));
+
+            if (System.IO.File.Exists(ruta))
+            {
+                System.IO.File.Delete(ruta);
+            }
+        }
+
+        private static readonly string[] TiposReporte =
+            ["Ventas", "Usuarios", "Emprendimientos", "Productos", "Eventos"];
+
+        private static readonly System.Globalization.CultureInfo CulturaCr = new("es-CR");
+
+        private static List<string> ValidarFiltroReporte(FiltroReporteViewModel filtro)
+        {
+            List<string> errores = [];
+
+            if (string.IsNullOrWhiteSpace(filtro.TipoReporte) ||
+                !TiposReporte.Contains(filtro.TipoReporte))
+            {
+                errores.Add("Seleccione el tipo de reporte que desea generar.");
+            }
+
+            if (filtro.FechaInicio.HasValue != filtro.FechaFin.HasValue)
+            {
+                errores.Add("Indique la fecha inicial y la fecha final del período.");
+            }
+            else if (filtro.FechaInicio > filtro.FechaFin)
+            {
+                errores.Add("La fecha inicial no puede ser posterior a la fecha final.");
+            }
+
+            return errores;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Reportes(FiltroReporteViewModel filtro, bool generar = false)
+        {
+            filtro ??= new FiltroReporteViewModel();
+
+            if (!generar)
+            {
+                return View(new ReporteAdminViewModel
+                {
+                    Filtro = filtro,
+                    Titulo = "Reportes y estadísticas"
+                });
+            }
+
+            List<string> errores = ValidarFiltroReporte(filtro);
+
+            if (errores.Count > 0)
+            {
+                return View(new ReporteAdminViewModel
+                {
+                    Filtro = filtro,
+                    Titulo = "Reportes y estadísticas",
+                    Errores = errores
+                });
+            }
+
+            return View(await ConstruirReporteAsync(filtro, 300));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportarReporte(FiltroReporteViewModel filtro, string formato = "csv")
+        {
+            filtro ??= new FiltroReporteViewModel();
+
+            bool solicitudAsincrona = Request.Headers["X-Requested-With"] == "fetch";
+            string? error = ValidarFiltroReporte(filtro).FirstOrDefault();
+            ReporteAdminViewModel? modelo = null;
+
+            if (error is null)
+            {
+                modelo = await ConstruirReporteAsync(filtro, null);
+
+                if (modelo.Filas.Count == 0)
+                {
+                    error = "No hay información para exportar con los criterios seleccionados.";
+                }
+            }
+
+            if (error is not null || modelo is null)
+            {
+                if (solicitudAsincrona)
+                {
+                    return BadRequest(new { mensaje = error });
+                }
+
+                TempData["ErrorAdmin"] = error;
+
+                return RedirectToAction(nameof(Reportes), new
+                {
+                    filtro.TipoReporte,
+                    FechaInicio = filtro.FechaInicio?.ToString("yyyy-MM-dd"),
+                    FechaFin = filtro.FechaFin?.ToString("yyyy-MM-dd"),
+                    filtro.Categoria,
+                    generar = true
+                });
+            }
+
+            string nombreBase = $"reporte-{filtro.TipoReporte.ToLowerInvariant()}-{DateTime.Now:yyyyMMdd-HHmm}";
+
+            if (formato == "xlsx")
+            {
+                using XLWorkbook libro = new();
+                IXLWorksheet hoja = libro.Worksheets.Add(filtro.TipoReporte);
+
+                for (int i = 0; i < modelo.Columnas.Count; i++)
+                {
+                    hoja.Cell(1, i + 1).Value = modelo.Columnas[i];
+                }
+
+                hoja.Row(1).Style.Font.Bold = true;
+
+                for (int f = 0; f < modelo.Filas.Count; f++)
+                {
+                    FilaReporteViewModel fila = modelo.Filas[f];
+
+                    hoja.Cell(f + 2, 1).Value = fila.Columna1;
+                    hoja.Cell(f + 2, 2).Value = fila.Columna2;
+                    hoja.Cell(f + 2, 3).Value = fila.Columna3;
+                    hoja.Cell(f + 2, 4).Value = fila.Columna4;
+                }
+
+                hoja.Columns().AdjustToContents();
+
+                using MemoryStream salida = new();
+                libro.SaveAs(salida);
+
+                return File(
+                    salida.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"{nombreBase}.xlsx");
+            }
+
+            System.Text.StringBuilder constructor = new();
+            constructor.AppendLine(string.Join(",", modelo.Columnas.Select(EscaparCsv)));
+
+            foreach (FilaReporteViewModel fila in modelo.Filas)
+            {
+                constructor.AppendLine(string.Join(",", new[]
+                {
+                    fila.Columna1, fila.Columna2, fila.Columna3, fila.Columna4
+                }.Select(EscaparCsv)));
+            }
+
+            System.Text.UTF8Encoding codificacion = new(true);
+            byte[] contenido = codificacion.GetPreamble()
+                .Concat(codificacion.GetBytes(constructor.ToString()))
+                .ToArray();
+
+            return File(contenido, "text/csv", $"{nombreBase}.csv");
+        }
+
+        private static string EscaparCsv(string valor)
+        {
+            if (valor.Contains(',') || valor.Contains('"') || valor.Contains('\n'))
+            {
+                return "\"" + valor.Replace("\"", "\"\"") + "\"";
+            }
+
+            return valor;
+        }
+
+        private static List<PuntoGraficoViewModel> AgruparPorMes(
+            List<DateTime> fechas,
+            DateTime? inicio,
+            DateTime? fin)
+        {
+            DateTime hasta = fin?.Date
+                ?? (fechas.Count > 0
+                    ? (fechas.Max().Date > DateTime.Today ? fechas.Max().Date : DateTime.Today)
+                    : DateTime.Today);
+
+            DateTime desde = inicio?.Date
+                ?? (fechas.Count > 0 ? fechas.Min().Date : hasta.AddMonths(-5));
+
+            DateTime primerMes = new(desde.Year, desde.Month, 1);
+            DateTime ultimoMes = new(hasta.Year, hasta.Month, 1);
+
+            while ((ultimoMes.Year - primerMes.Year) * 12 + ultimoMes.Month - primerMes.Month >= 12)
+            {
+                primerMes = primerMes.AddMonths(1);
+            }
+
+            List<PuntoGraficoViewModel> puntos = [];
+
+            for (DateTime mes = primerMes; mes <= ultimoMes; mes = mes.AddMonths(1))
+            {
+                puntos.Add(new PuntoGraficoViewModel
+                {
+                    Etiqueta = mes.ToString("MMM yy", CulturaCr),
+                    Valor = fechas.Count(f => f.Year == mes.Year && f.Month == mes.Month)
+                });
+            }
+
+            return puntos;
+        }
+
+        private static List<PuntoGraficoViewModel> AgruparPorEtiqueta(IEnumerable<string> valores)
+        {
+            return valores
+                .GroupBy(v => v)
+                .OrderByDescending(g => g.Count())
+                .Take(5)
+                .Select(g => new PuntoGraficoViewModel { Etiqueta = g.Key, Valor = g.Count() })
+                .ToList();
+        }
+
+        private async Task<ReporteAdminViewModel> ConstruirReporteAsync(
+            FiltroReporteViewModel filtro,
+            int? limite)
+        {
+            DateTime? inicio = filtro.FechaInicio?.Date;
+            DateTime? finExclusivo = filtro.FechaFin?.Date.AddDays(1);
+            string? categoria = string.IsNullOrWhiteSpace(filtro.Categoria)
+                ? null
+                : filtro.Categoria.Trim();
+
+            ReporteAdminViewModel modelo = new() { Filtro = filtro, Generado = true };
+            List<DateTime> fechas = [];
+            List<string> distribucion = [];
+            List<FilaReporteViewModel> filas = [];
+
+            switch (filtro.TipoReporte)
+            {
+                case "Usuarios":
+                {
+                    IQueryable<Usuario> consulta = _context.Usuarios.AsNoTracking();
+
+                    if (inicio.HasValue) consulta = consulta.Where(u => u.FechaRegistro >= inicio.Value);
+                    if (finExclusivo.HasValue) consulta = consulta.Where(u => u.FechaRegistro < finExclusivo.Value);
+                    if (categoria is not null)
+                    {
+                        consulta = consulta.Where(u => u.UsuarioRoles.Any(r => r.IdRolNavigation.Nombre.Contains(categoria)));
+                    }
+
+                    var datos = await consulta
+                        .OrderByDescending(u => u.FechaRegistro)
+                        .Select(u => new
+                        {
+                            Nombre = u.Nombre + " " + u.ApellidoPaterno,
+                            Rol = u.UsuarioRoles.Select(r => r.IdRolNavigation.Nombre).FirstOrDefault(),
+                            u.FechaRegistro,
+                            u.Estado
+                        })
+                        .ToListAsync();
+
+                    modelo.Titulo = "Reporte de usuarios";
+                    modelo.Columnas = ["Usuario", "Rol", "Registro", "Estado"];
+                    fechas = datos.Select(d => d.FechaRegistro).ToList();
+                    distribucion = datos.Select(d => d.Rol ?? "Sin rol").ToList();
+                    filas = datos.Select(d => new FilaReporteViewModel
+                    {
+                        Columna1 = d.Nombre,
+                        Columna2 = d.Rol ?? "Sin rol",
+                        Columna3 = d.FechaRegistro.ToString("dd/MM/yyyy"),
+                        Columna4 = d.Estado
+                    }).ToList();
+                    break;
+                }
+
+                case "Emprendimientos":
+                {
+                    IQueryable<Emprendimiento> consulta = _context.Emprendimientos.AsNoTracking();
+
+                    if (inicio.HasValue)
+                    {
+                        consulta = consulta.Where(e => e.EmprendimientoRevisione != null && e.EmprendimientoRevisione.FechaSolicitud >= inicio.Value);
+                    }
+
+                    if (finExclusivo.HasValue)
+                    {
+                        consulta = consulta.Where(e => e.EmprendimientoRevisione != null && e.EmprendimientoRevisione.FechaSolicitud < finExclusivo.Value);
+                    }
+
+                    if (categoria is not null)
+                    {
+                        consulta = consulta.Where(e => e.IdCategoriaNavigation != null && e.IdCategoriaNavigation.Nombre.Contains(categoria));
+                    }
+
+                    var datos = await consulta
+                        .OrderBy(e => e.NombreComercial)
+                        .Select(e => new
+                        {
+                            e.NombreComercial,
+                            Categoria = e.IdCategoriaNavigation != null ? e.IdCategoriaNavigation.Nombre : null,
+                            Solicitud = e.EmprendimientoRevisione != null
+                                ? (DateTime?)e.EmprendimientoRevisione.FechaSolicitud
+                                : null,
+                            e.EstadoAprobacion
+                        })
+                        .ToListAsync();
+
+                    modelo.Titulo = "Reporte de emprendimientos";
+                    modelo.Columnas = ["Emprendimiento", "Categoría", "Solicitud", "Estado"];
+                    fechas = datos.Where(d => d.Solicitud.HasValue).Select(d => d.Solicitud!.Value).ToList();
+                    distribucion = datos.Select(d => d.EstadoAprobacion).ToList();
+                    filas = datos.Select(d => new FilaReporteViewModel
+                    {
+                        Columna1 = d.NombreComercial,
+                        Columna2 = d.Categoria ?? "Sin categoría",
+                        Columna3 = d.Solicitud?.ToString("dd/MM/yyyy") ?? "—",
+                        Columna4 = d.EstadoAprobacion
+                    }).ToList();
+                    break;
+                }
+
+                case "Productos":
+                {
+                    IQueryable<Producto> consulta = _context.Productos.AsNoTracking();
+
+                    if (inicio.HasValue) consulta = consulta.Where(p => p.FechaRegistro >= inicio.Value);
+                    if (finExclusivo.HasValue) consulta = consulta.Where(p => p.FechaRegistro < finExclusivo.Value);
+                    if (categoria is not null)
+                    {
+                        consulta = consulta.Where(p => p.IdCategoriaNavigation != null && p.IdCategoriaNavigation.Nombre.Contains(categoria));
+                    }
+
+                    var datos = await consulta
+                        .OrderByDescending(p => p.FechaRegistro)
+                        .Select(p => new
+                        {
+                            p.Nombre,
+                            Emprendimiento = p.IdEmprendimientoNavigation.NombreComercial,
+                            Categoria = p.IdCategoriaNavigation != null ? p.IdCategoriaNavigation.Nombre : null,
+                            p.Estado,
+                            p.FechaRegistro
+                        })
+                        .ToListAsync();
+
+                    modelo.Titulo = "Reporte de productos";
+                    modelo.Columnas = ["Producto", "Emprendimiento", "Categoría", "Estado"];
+                    fechas = datos.Select(d => d.FechaRegistro).ToList();
+                    distribucion = datos.Select(d => d.Categoria ?? "Sin categoría").ToList();
+                    filas = datos.Select(d => new FilaReporteViewModel
+                    {
+                        Columna1 = d.Nombre,
+                        Columna2 = d.Emprendimiento,
+                        Columna3 = d.Categoria ?? "Sin categoría",
+                        Columna4 = d.Estado
+                    }).ToList();
+                    break;
+                }
+
+                case "Eventos":
+                {
+                    IQueryable<Evento> consulta = _context.Eventos
+                        .AsNoTracking()
+                        .Where(e => e.Estado != "Eliminado");
+
+                    if (inicio.HasValue) consulta = consulta.Where(e => e.FechaInicio >= inicio.Value);
+                    if (finExclusivo.HasValue) consulta = consulta.Where(e => e.FechaInicio < finExclusivo.Value);
+                    if (categoria is not null)
+                    {
+                        consulta = consulta.Where(e => e.IdCategoriaNavigation != null && e.IdCategoriaNavigation.Nombre.Contains(categoria));
+                    }
+
+                    var datos = await consulta
+                        .OrderByDescending(e => e.FechaInicio)
+                        .Select(e => new
+                        {
+                            e.Nombre,
+                            e.Ubicacion,
+                            e.FechaInicio,
+                            e.Estado,
+                            Inscritos = e.InscripcionesEventos.Count(i => i.Estado != "Cancelada")
+                        })
+                        .ToListAsync();
+
+                    modelo.Titulo = "Reporte de eventos";
+                    modelo.Columnas = ["Evento", "Ubicación", "Fecha", "Inscritos"];
+                    fechas = datos.Select(d => d.FechaInicio).ToList();
+                    distribucion = datos.Select(d => d.Estado).ToList();
+                    filas = datos.Select(d => new FilaReporteViewModel
+                    {
+                        Columna1 = d.Nombre,
+                        Columna2 = d.Ubicacion,
+                        Columna3 = d.FechaInicio.ToString("dd/MM/yyyy"),
+                        Columna4 = d.Inscritos.ToString()
+                    }).ToList();
+                    break;
+                }
+
+                default:
+                {
+                    IQueryable<Venta> consulta = _context.Ventas.AsNoTracking();
+
+                    if (inicio.HasValue) consulta = consulta.Where(v => v.FechaVenta >= inicio.Value);
+                    if (finExclusivo.HasValue) consulta = consulta.Where(v => v.FechaVenta < finExclusivo.Value);
+                    if (categoria is not null)
+                    {
+                        consulta = consulta.Where(v => v.VentaDetalles.Any(d =>
+                            d.IdProductoNavigation.IdCategoriaNavigation != null &&
+                            d.IdProductoNavigation.IdCategoriaNavigation.Nombre.Contains(categoria)));
+                    }
+
+                    var datos = await consulta
+                        .OrderByDescending(v => v.FechaVenta)
+                        .Select(v => new
+                        {
+                            v.NumeroOrden,
+                            Cliente = v.IdUsuarioNavigation.Nombre + " " + v.IdUsuarioNavigation.ApellidoPaterno,
+                            v.FechaVenta,
+                            v.Total,
+                            v.Estado
+                        })
+                        .ToListAsync();
+
+                    modelo.Titulo = "Reporte de ventas";
+                    modelo.Columnas = ["Orden", "Cliente", "Fecha", "Total"];
+                    fechas = datos.Select(d => d.FechaVenta).ToList();
+                    distribucion = datos.Select(d => d.Estado).ToList();
+                    filas = datos.Select(d => new FilaReporteViewModel
+                    {
+                        Columna1 = d.NumeroOrden,
+                        Columna2 = d.Cliente,
+                        Columna3 = d.FechaVenta.ToString("dd/MM/yyyy"),
+                        Columna4 = "₡" + d.Total.ToString("N0", CulturaCr)
+                    }).ToList();
+                    break;
+                }
+            }
+
+            modelo.GraficoBarras = fechas.Count > 0
+                ? AgruparPorMes(fechas, filtro.FechaInicio, filtro.FechaFin)
+                : [];
+            modelo.GraficoDona = AgruparPorEtiqueta(distribucion);
+            modelo.Filas = limite.HasValue ? filas.Take(limite.Value).ToList() : filas;
+
+            return modelo;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EstadisticasHechoEnCr(FiltroEstadisticasViewModel filtro)
+        {
+            filtro ??= new FiltroEstadisticasViewModel();
+
+            EstadisticasHechoEnCrViewModel modelo = new()
             {
                 Filtro = filtro,
-                GraficoBarras = barras,
-                GraficoDona = dona,
-                Columnas = columnas.ToList(),
-                Filas = filas,
-                Titulo = titulo
+                FechaConsulta = DateTime.Now.ToString("dd/MM/yyyy hh:mm tt")
             };
+
+            if (filtro.FechaInicio.HasValue != filtro.FechaFin.HasValue)
+            {
+                modelo.Errores.Add("Indique la fecha inicial y la fecha final del período.");
+            }
+            else if (filtro.FechaInicio > filtro.FechaFin)
+            {
+                modelo.Errores.Add("La fecha inicial no puede ser posterior a la fecha final.");
+            }
+
+            if (modelo.Errores.Count > 0)
+            {
+                return View(modelo);
+            }
+
+            DateTime desde = filtro.FechaInicio?.Date ?? new DateTime(1900, 1, 1);
+            DateTime hasta = filtro.FechaFin?.Date.AddDays(1) ?? new DateTime(2999, 12, 31);
+
+            var emprendimientos = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.ParticipaHechoEnCr && e.EstadoAprobacion == "Aprobado" && e.Activo)
+                .Select(e => new
+                {
+                    e.IdEmprendimiento,
+                    e.NombreComercial,
+                    Productos = e.Productos.Count(p => p.PublicadoHechoEnCr),
+                    Participaciones = e.ParticipacionesEventos.Count(p =>
+                        p.Estado == "Aprobada" &&
+                        p.FechaSolicitud >= desde &&
+                        p.FechaSolicitud < hasta)
+                })
+                .ToListAsync();
+
+            var lineas = await _context.VentaDetalles
+                .AsNoTracking()
+                .Where(d =>
+                    d.IdProductoNavigation.PublicadoHechoEnCr &&
+                    d.IdProductoNavigation.IdEmprendimientoNavigation.ParticipaHechoEnCr &&
+                    d.IdVentaNavigation.Estado != "Cancelada" &&
+                    d.IdVentaNavigation.FechaVenta >= desde &&
+                    d.IdVentaNavigation.FechaVenta < hasta)
+                .Select(d => new
+                {
+                    d.IdProductoNavigation.IdEmprendimiento,
+                    d.Cantidad,
+                    Importe = d.Cantidad * d.PrecioUnitario,
+                    d.IdVentaNavigation.FechaVenta
+                })
+                .ToListAsync();
+
+            modelo.EmprendimientosParticipantes = emprendimientos.Count;
+            modelo.ProductosPublicados = emprendimientos.Sum(e => e.Productos);
+            modelo.ParticipacionesEventos = emprendimientos.Sum(e => e.Participaciones);
+            modelo.UnidadesVendidas = lineas.Sum(l => l.Cantidad);
+            modelo.IngresosTotales = lineas.Sum(l => l.Importe);
+            modelo.HayDatos = lineas.Count > 0 || modelo.ParticipacionesEventos > 0;
+
+            if (!modelo.HayDatos)
+            {
+                return View(modelo);
+            }
+
+            modelo.Emprendimientos = emprendimientos
+                .Select(e => new EmprendimientoEstadisticaViewModel
+                {
+                    Nombre = e.NombreComercial,
+                    Productos = e.Productos,
+                    UnidadesVendidas = lineas.Where(l => l.IdEmprendimiento == e.IdEmprendimiento).Sum(l => l.Cantidad),
+                    Ingresos = lineas.Where(l => l.IdEmprendimiento == e.IdEmprendimiento).Sum(l => l.Importe),
+                    Participaciones = e.Participaciones
+                })
+                .OrderByDescending(e => e.Ingresos)
+                .ThenByDescending(e => e.Participaciones)
+                .ToList();
+
+            modelo.UnidadesPorEmprendimiento = modelo.Emprendimientos
+                .Where(e => e.UnidadesVendidas > 0)
+                .Take(5)
+                .Select(e => new PuntoGraficoViewModel { Etiqueta = e.Nombre, Valor = e.UnidadesVendidas })
+                .ToList();
+
+            modelo.VentasPorMes = lineas.Count > 0
+                ? AgruparPorMes(lineas.Select(l => l.FechaVenta).ToList(), filtro.FechaInicio, filtro.FechaFin)
+                : [];
+
+            return View(modelo);
         }
 
         [HttpGet]
