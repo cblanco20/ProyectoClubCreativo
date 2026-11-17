@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using ProyectoClubCreativo.Models.ViewModels;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProyectoClubCreativo.Models.ViewModels.Admin
 {
@@ -33,6 +34,8 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public List<TallerAdminViewModel> TalleresDisponibles { get; set; } = [];
         public List<AlertaAdminViewModel> Alertas { get; set; } = [];
         public List<ActividadAdminViewModel> ActividadReciente { get; set; } = [];
+        public List<SelectListItem> EmprendimientosFiltro { get; set; } = new();
+        public List<SelectListItem> EventosFiltro { get; set; } = new();
     }
 
     public class FiltroDashboardViewModel
@@ -46,10 +49,10 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public DateTime? FechaFin { get; set; }
 
         [Display(Name = "Evento")]
-        public string? Evento { get; set; }
+        public int? Evento { get; set; }
 
         [Display(Name = "Emprendimiento")]
-        public string? Emprendimiento { get; set; }
+        public int? Emprendimiento { get; set; }
     }
 
     public class PuntoGraficoViewModel
@@ -242,7 +245,8 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Emprendimiento { get; set; } = "";
         public string Fecha { get; set; } = "";
         public decimal Total { get; set; }
-        public string Estado { get; set; } = ""; 
+        public string Estado { get; set; } = "";
+        public string EstadoPago { get; set; } = string.Empty;
         public string MetodoPago { get; set; } = "";
         public List<ItemVentaAdminViewModel> Items { get; set; } = [];
         public string? MotivoCancelacion { get; set; }

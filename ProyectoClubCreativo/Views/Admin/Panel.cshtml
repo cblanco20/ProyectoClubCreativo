@@ -4,182 +4,435 @@
     ViewData["Title"] = "Dashboard";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 
-    int maxVentas = Model.VentasPorMes.Count > 0 ? Model.VentasPorMes.Max(v => v.Valor) : 1;
+    // Valores del gráfico de ventas
+    int maxVentas = Model.VentasPorMes.Count > 0
+        ? Model.VentasPorMes.Max(v => v.Valor)
+        : 0;
 
-    string[] coloresDona = { "#F47A20", "#3D8BEA", "#D8B4E8", "#2FB380", "#E7E7E7" };
+    bool hayVentas = maxVentas > 0;
+
+    // Valores del gráfico de productos por categoría
+    string[] coloresDona =
+    {
+        "#F47A20",
+        "#3D8BEA",
+        "#D8B4E8",
+        "#2FB380",
+        "#E7E7E7"
+    };
+
     int totalCategorias = Model.ProductosPorCategoria.Sum(c => c.Valor);
+
     string gradienteDona = "";
     double acumulado = 0;
 
     for (int i = 0; i < Model.ProductosPorCategoria.Count; i++)
     {
-        double porcentaje = totalCategorias == 0 ? 0 : (double)Model.ProductosPorCategoria[i].Valor / totalCategorias * 100;
+        double porcentaje = totalCategorias == 0
+            ? 0
+            : (double)Model.ProductosPorCategoria[i].Valor
+              / totalCategorias * 100;
+
         string color = coloresDona[i % coloresDona.Length];
-        gradienteDona += $"{color} {acumulado}% {acumulado + porcentaje}%, ";
+
+        gradienteDona +=
+            $"{color} {acumulado}% {acumulado + porcentaje}%, ";
+
         acumulado += porcentaje;
     }
 
     gradienteDona = gradienteDona.TrimEnd(',', ' ');
+
+    string estiloDona =
+        $"background: conic-gradient({gradienteDona});";
 }
 
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="All"
+         class="alert alert-danger mb-3"></div>
+}
 <!-- Filtros -->
-<form asp-controller="Admin" asp-action="Panel" method="get" class="barra-filtros-admin">
+<form asp-controller="Admin"
+      asp-action="Panel"
+      method="get"
+      class="barra-filtros-admin">
+
     <div class="campo-filtro-admin">
         <label asp-for="Filtro.FechaInicio"></label>
         <input asp-for="Filtro.FechaInicio" type="date" />
     </div>
+
     <div class="campo-filtro-admin">
         <label asp-for="Filtro.FechaFin"></label>
         <input asp-for="Filtro.FechaFin" type="date" />
     </div>
+
     <div class="campo-filtro-admin">
         <label asp-for="Filtro.Evento"></label>
-        <select asp-for="Filtro.Evento">
+
+        <select asp-for="Filtro.Evento"
+                asp-items="Model.EventosFiltro">
             <option value="">Todos los eventos</option>
-            @foreach (var evento in Model.ProximosEventos)
-            {
-                <option value="@evento.Nombre">@evento.Nombre</option>
-            }
         </select>
     </div>
+
     <div class="campo-filtro-admin">
         <label asp-for="Filtro.Emprendimiento"></label>
-        <select asp-for="Filtro.Emprendimiento">
+
+        <select asp-for="Filtro.Emprendimiento"
+                asp-items="Model.EmprendimientosFiltro">
+
             <option value="">Todos los emprendimientos</option>
-            <option>Artesanías MiVo</option>
-            <option>Orquídea</option>
-            <option>Luz Natural</option>
-            <option>Trazo Libre</option>
         </select>
     </div>
+
     <button type="submit" class="boton-filtro-admin">
         <i class="bi bi-funnel-fill"></i> Filtrar
     </button>
+    <a asp-controller="Admin"
+       asp-action="Panel"
+       class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-counterclockwise"></i>
+        Limpiar filtros
+    </a>
 </form>
 
 <!-- Indicadores generales -->
 <section class="grid-estadisticas-admin">
+
     <article class="tarjeta-estadistica-admin">
-        <span class="icono-estadistica-admin icono-usuarios-admin"><i class="bi bi-people-fill"></i></span>
-        <div><strong>@Model.TotalUsuarios</strong><span>Total de usuarios</span></div>
-    </article>
-    <article class="tarjeta-estadistica-admin">
-        <span class="icono-estadistica-admin icono-emprendimientos-admin"><i class="bi bi-buildings-fill"></i></span>
-        <div><strong>@Model.EmprendimientosRegistrados</strong><span>Emprendimientos registrados</span></div>
-    </article>
-    <article class="tarjeta-estadistica-admin">
-        <span class="icono-estadistica-admin icono-solicitudes-admin"><i class="bi bi-file-earmark-text-fill"></i></span>
-        <div><strong>@Model.SolicitudesPendientes</strong><span>Solicitudes pendientes</span></div>
-    </article>
-    <article class="tarjeta-estadistica-admin">
-        <span class="icono-estadistica-admin icono-productos-admin"><i class="bi bi-box-seam-fill"></i></span>
-        <div><strong>@Model.ProductosActivos</strong><span>Productos activos</span></div>
-    </article>
-    <article class="tarjeta-estadistica-admin">
-        <span class="icono-estadistica-admin icono-ventas-admin"><i class="bi bi-cash-coin"></i></span>
+        <span class="icono-estadistica-admin icono-usuarios-admin">
+            <i class="bi bi-people-fill"></i>
+        </span>
         <div>
-            <strong>₡@Model.VentasTotal.ToString("N0")</strong>
-            <span>Ventas <span class="variacion-positiva">+@Model.VariacionVentasPorcentaje%</span></span>
+            <strong>@Model.TotalUsuarios</strong>
+            <span>Total de usuarios</span>
         </div>
     </article>
+
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-emprendimientos-admin">
+            <i class="bi bi-buildings-fill"></i>
+        </span>
+        <div>
+            <strong>@Model.EmprendimientosRegistrados</strong>
+            <span>Emprendimientos registrados</span>
+        </div>
+    </article>
+
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-solicitudes-admin">
+            <i class="bi bi-file-earmark-text-fill"></i>
+        </span>
+        <div>
+            <strong>@Model.SolicitudesPendientes</strong>
+            <span>Solicitudes pendientes</span>
+        </div>
+    </article>
+
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-productos-admin">
+            <i class="bi bi-box-seam-fill"></i>
+        </span>
+        <div>
+            <strong>@Model.ProductosActivos</strong>
+            <span>Productos publicados</span>
+        </div>
+    </article>
+
+    <article class="tarjeta-estadistica-admin">
+        <span class="icono-estadistica-admin icono-ventas-admin">
+            <i class="bi bi-cash-coin"></i>
+        </span>
+        <div>
+            <strong>₡@Model.VentasTotal.ToString("N0")</strong>
+            <span>Ventas confirmadas</span>
+        </div>
+    </article>
+
 </section>
 
 <!-- Gráficos -->
 <section class="grid-dashboard-admin">
 
+    <!-- Ventas por mes -->
     <article class="bloque-admin">
+
         <div class="encabezado-bloque-admin">
-            <h2><i class="bi bi-bar-chart-fill"></i> Ventas por mes</h2>
+            <h2>
+                <i class="bi bi-bar-chart-fill"></i>
+                Ventas por mes
+            </h2>
         </div>
-        <div class="grafico-barras-admin">
-            @foreach (var punto in Model.VentasPorMes)
-            {
-                int alturaPorcentaje = (int)((double)punto.Valor / maxVentas * 100);
-                <div class="barra-admin-grupo">
-                    <div class="barra-admin" style="height:@(alturaPorcentaje)%;"></div>
-                    <span>@punto.Etiqueta</span>
-                </div>
-            }
-        </div>
+
+        @if (hayVentas)
+        {
+            <div class="grafico-barras-admin">
+
+                @foreach (var punto in Model.VentasPorMes)
+                {
+                    int alturaPorcentaje = maxVentas > 0
+                        ? (int)((double)punto.Valor / maxVentas * 100)
+                        : 0;
+
+                    string estiloBarra =
+                        $"height: {alturaPorcentaje}%;";
+
+                    string descripcionBarra =
+                        $"{punto.Etiqueta}: ₡{punto.Valor:N0}";
+
+                    <div class="barra-admin-grupo">
+
+                        <div class="barra-admin"
+                             style="@estiloBarra"
+                             title="@descripcionBarra">
+                        </div>
+
+                        <span>@punto.Etiqueta</span>
+
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="estado-vacio-dashboard">
+                <i class="bi bi-bar-chart-line"></i>
+                <strong>No hay ventas confirmadas</strong>
+                <span>
+                    Todavía no existen ventas para mostrar en el gráfico.
+                </span>
+            </div>
+        }
+
     </article>
 
+    <!-- Productos por categoría -->
     <article class="bloque-admin">
+
         <div class="encabezado-bloque-admin">
-            <h2><i class="bi bi-pie-chart-fill"></i> Productos por categoría</h2>
+            <h2>
+                <i class="bi bi-pie-chart-fill"></i>
+                Productos por categoría
+            </h2>
         </div>
-        <div class="grafico-dona-admin" style="background: conic-gradient(@gradienteDona);"></div>
-        <div class="leyenda-dona-admin">
-            @for (int i = 0; i < Model.ProductosPorCategoria.Count; i++)
-            {
-                <div class="item-leyenda-dona">
-                    <span class="punto-leyenda-dona" style="background-color:@coloresDona[i % coloresDona.Length];"></span>
-                    @Model.ProductosPorCategoria[i].Etiqueta (@Model.ProductosPorCategoria[i].Valor)
-                </div>
-            }
-        </div>
+
+        @if (totalCategorias > 0)
+        {
+            <div class="grafico-dona-admin"
+                 style="@estiloDona">
+            </div>
+
+            <div class="leyenda-dona-admin">
+
+                @for (int i = 0; i < Model.ProductosPorCategoria.Count; i++)
+                {
+                    string estiloColor =
+                        $"background-color: {coloresDona[i % coloresDona.Length]};";
+
+                    <div class="item-leyenda-dona">
+
+                        <span class="punto-leyenda-dona"
+                              style="@estiloColor">
+                        </span>
+
+                        @Model.ProductosPorCategoria[i].Etiqueta
+                        (@Model.ProductosPorCategoria[i].Valor)
+
+                    </div>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="estado-vacio-dashboard">
+                <i class="bi bi-pie-chart"></i>
+                <strong>No hay productos publicados</strong>
+                <span>
+                    Las categorías aparecerán cuando existan productos publicados.
+                </span>
+            </div>
+        }
+
     </article>
 
 </section>
 
-<section class="grid-dashboard-admin">
+<!-- Alertas y actividad reciente -->
+<section class="grid-dashboard-admin grid-alertas-actividad-admin">
 
     <article class="bloque-admin">
+
         <div class="encabezado-bloque-admin">
-            <h2><i class="bi bi-exclamation-triangle-fill"></i> Alertas</h2>
+            <h2>
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Alertas
+            </h2>
         </div>
-        @foreach (var alerta in Model.Alertas)
+
+        @if (Model.Alertas.Any())
         {
-            <div class="item-alerta-admin nivel-@alerta.Nivel">
-                <i class="bi @alerta.Icono"></i>
-                <div>
-                    <p>@alerta.Mensaje</p>
-                    <span>@alerta.Tipo · @alerta.Fecha</span>
+            @foreach (var alerta in Model.Alertas)
+            {
+                <div class="item-alerta-admin nivel-@alerta.Nivel">
+                    <i class="bi @alerta.Icono"></i>
+                    <div>
+                        <p>@alerta.Mensaje</p>
+                        <span>@alerta.Tipo · @alerta.Fecha</span>
+                    </div>
                 </div>
+            }
+        }
+        else
+        {
+            <div class="estado-vacio-dashboard">
+                <i class="bi bi-check-circle"></i>
+                <strong>No hay alertas por el momento</strong>
+                <span>
+                    No hay alertas de cupos de talleres por el momento.
+                </span>
             </div>
         }
+
     </article>
 
     <article class="bloque-admin">
+
         <div class="encabezado-bloque-admin">
-            <h2><i class="bi bi-clock-history"></i> Actividad reciente</h2>
+            <h2>
+                <i class="bi bi-clock-history"></i>
+                Actividad reciente
+            </h2>
         </div>
-        @foreach (var actividad in Model.ActividadReciente)
+
+        @if (Model.ActividadReciente.Any())
         {
-            <div class="item-lista-admin">
-                <span class="icono-lista-admin"><i class="bi @actividad.Icono"></i></span>
-                <div><strong>@actividad.Mensaje</strong><span>@actividad.Fecha</span></div>
+            @foreach (var actividad in Model.ActividadReciente)
+            {
+                <div class="item-lista-admin">
+                    <span class="icono-lista-admin">
+                        <i class="bi @actividad.Icono"></i>
+                    </span>
+
+                    <div>
+                        <strong>@actividad.Mensaje</strong>
+                        <span>@actividad.Fecha</span>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="estado-vacio-dashboard">
+                <i class="bi bi-clock-history"></i>
+                <strong>No hay actividad para mostrar</strong>
+                <span>
+                    No se encontraron registros de actividad
+                    para la selección actual.
+                </span>
             </div>
         }
+
     </article>
 
 </section>
 
+<!-- Próximos eventos y talleres -->
 <section class="grid-dashboard-admin">
 
     <article class="bloque-admin">
+
         <div class="encabezado-bloque-admin">
-            <h2><i class="bi bi-calendar-event-fill"></i> Próximos eventos</h2>
+            <h2>
+                <i class="bi bi-calendar-event-fill"></i>
+                @(Model.Filtro.Evento.HasValue ? "Evento seleccionado" : "Próximos eventos")
+            </h2>
         </div>
-        @foreach (var evento in Model.ProximosEventos)
+
+        @if (Model.ProximosEventos.Any())
         {
-            <div class="item-lista-admin">
-                <span class="icono-lista-admin"><i class="bi bi-calendar-event-fill"></i></span>
-                <div><strong>@evento.Nombre</strong><span>@evento.Fecha · @evento.Ubicacion · @evento.Inscritos inscritos</span></div>
+            @foreach (var evento in Model.ProximosEventos)
+            {
+                <div class="item-lista-admin">
+                    <span class="icono-lista-admin">
+                        <i class="bi bi-calendar-event-fill"></i>
+                    </span>
+
+                    <div>
+                        <strong>@evento.Nombre</strong>
+                        <span>
+                            @evento.Fecha · @evento.Ubicacion ·
+                            @evento.Inscritos inscritos
+                        </span>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="estado-vacio-dashboard">
+                <i class="bi bi-calendar-x"></i>
+
+                <strong>
+                    @(Model.Filtro.Evento.HasValue
+                        ? "No se encontró el evento seleccionado"
+                        : "No hay próximos eventos")
+                </strong>
+
+                <span>
+                    @(Model.Filtro.Evento.HasValue
+                        ? "No existe información disponible para este evento."
+                        : "Los próximos eventos aparecerán cuando sean programados.")
+                </span>
             </div>
         }
+
     </article>
 
     <article class="bloque-admin">
+
         <div class="encabezado-bloque-admin">
-            <h2><i class="bi bi-palette-fill"></i> Talleres disponibles</h2>
+            <h2>
+                <i class="bi bi-palette-fill"></i>
+                Talleres disponibles
+            </h2>
         </div>
-        @foreach (var taller in Model.TalleresDisponibles)
+
+        @if (Model.TalleresDisponibles.Any())
         {
-            <div class="item-lista-admin">
-                <span class="icono-lista-admin"><i class="bi bi-palette-fill"></i></span>
-                <div><strong>@taller.Nombre</strong><span>@taller.Fecha · @taller.CuposDisponibles de @taller.CuposTotales cupos</span></div>
+            @foreach (var taller in Model.TalleresDisponibles)
+            {
+                <div class="item-lista-admin">
+                    <span class="icono-lista-admin">
+                        <i class="bi bi-palette-fill"></i>
+                    </span>
+
+                    <div>
+                        <strong>@taller.Nombre</strong>
+                        <span>
+                            @taller.Fecha ·
+                            @taller.CuposDisponibles de
+                            @taller.CuposTotales cupos
+                        </span>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="estado-vacio-dashboard">
+                <i class="bi bi-calendar-x"></i>
+                <strong>No hay talleres programados</strong>
+                <span>
+                    Los próximos talleres aparecerán
+                    cuando existan nuevas programaciones.
+                </span>
             </div>
         }
+
     </article>
 
 </section>

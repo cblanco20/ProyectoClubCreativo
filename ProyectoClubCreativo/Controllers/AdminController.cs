@@ -68,12 +68,43 @@ namespace ProyectoClubCreativo.Controllers
         public async Task<IActionResult> Panel(FiltroDashboardViewModel filtro)
         {
             DateTime ahora = DateTime.Now;
+            // HU-60: Validar el período seleccionado.
+            if (filtro.FechaInicio.HasValue &&
+                filtro.FechaFin.HasValue &&
+                filtro.FechaInicio.Value.Date > filtro.FechaFin.Value.Date)
+            {
+                ModelState.AddModelError(
+                    "Filtro.FechaFin",
+                    "La fecha final no puede ser anterior a la fecha inicial.");
 
-            var eventos = await _context.Eventos
+                // No aplicar un período inválido a las consultas.
+                filtro.FechaInicio = null;
+                filtro.FechaFin = null;
+            }
+
+            // HU-63: Consultar eventos según el filtro seleccionado.
+            var consultaEventos = _context.Eventos
                 .AsNoTracking()
-                .Where(e =>
-                    (e.Estado == "Programado" || e.Estado == "Activo") &&
-                    e.FechaInicio >= ahora)
+                .AsQueryable();
+
+            if (filtro.Evento.HasValue)
+            {
+                // Mostrar el evento seleccionado, incluso si ya finalizó.
+                int idEvento = filtro.Evento.Value;
+
+                consultaEventos = consultaEventos
+                    .Where(e => e.IdEvento == idEvento);
+            }
+            else
+            {
+                // Sin filtro, mostrar solamente los próximos eventos.
+                consultaEventos = consultaEventos
+                    .Where(e =>
+                        (e.Estado == "Programado" || e.Estado == "Activo") &&
+                        e.FechaInicio >= ahora);
+            }
+
+            var eventos = await consultaEventos
                 .OrderBy(e => e.FechaInicio)
                 .Take(3)
                 .Select(e => new
@@ -119,15 +150,28 @@ namespace ProyectoClubCreativo.Controllers
                 })
                 .ToListAsync();
 
-            var registrosEvento = await _context.InscripcionesEventos
+            // HU-63: Consultar inscripciones de eventos.
+            var consultaRegistrosEvento = _context.InscripcionesEventos
                 .AsNoTracking()
+                .AsQueryable();
+
+            if (filtro.Evento.HasValue)
+            {
+                int idEvento = filtro.Evento.Value;
+
+                consultaRegistrosEvento = consultaRegistrosEvento
+                    .Where(i => i.IdEvento == idEvento);
+            }
+
+            var registrosEvento = await consultaRegistrosEvento
                 .OrderByDescending(i => i.FechaInscripcion)
                 .Take(4)
                 .Select(i => new
                 {
                     i.FechaInscripcion,
                     i.Estado,
-                    Persona = i.IdUsuarioNavigation.Nombre + " " + i.IdUsuarioNavigation.ApellidoPaterno,
+                    Persona = i.IdUsuarioNavigation.Nombre + " " +
+                              i.IdUsuarioNavigation.ApellidoPaterno,
                     Actividad = i.IdEventoNavigation.Nombre
                 })
                 .ToListAsync();
@@ -147,10 +191,100 @@ namespace ProyectoClubCreativo.Controllers
                 })
                 .ToList();
 
-            List<ActividadAdminViewModel> actividad = registrosTaller
-                .Select(r => (r.FechaInscripcion, r.Estado, r.Persona, r.Actividad, Tipo: "taller"))
-                .Concat(registrosEvento
-                    .Select(r => (r.FechaInscripcion, r.Estado, r.Persona, r.Actividad, Tipo: "evento")))
+            // HU-64: Alertas de eventos con pocos cupos disponibles.
+            var eventosConPocosCupos = await _context.Eventos
+                .AsNoTracking()
+                .Where(e =>
+                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                    e.FechaInicio >= ahora &&
+                    e.CupoMaximo.HasValue &&
+                    e.CupoMaximo.Value > 0)
+                .Select(e => new
+                {
+                    e.Nombre,
+                    e.FechaInicio,
+                    CuposDisponibles = e.CupoMaximo!.Value -
+                        e.InscripcionesEventos.Count(i => i.Estado != "Cancelada")
+                })
+                .Where(e =>
+                    e.CuposDisponibles <= ReglasTalleres.UmbralUltimosCupos)
+                .OrderBy(e => e.FechaInicio)
+                .ToListAsync();
+
+            foreach (var evento in eventosConPocosCupos)
+            {
+                alertas.Add(new AlertaAdminViewModel
+                {
+                    Tipo = "Cupos",
+                    Mensaje = evento.CuposDisponibles <= 0
+                        ? $"El evento \"{evento.Nombre}\" alcanzó cupo lleno."
+                        : $"El evento \"{evento.Nombre}\" tiene los últimos {evento.CuposDisponibles} cupos disponibles.",
+                    Fecha = evento.FechaInicio.ToString("dd/MM/yyyy"),
+                    Icono = "bi-calendar-event",
+                    Nivel = evento.CuposDisponibles <= 0
+                        ? "informativa"
+                        : "advertencia"
+                });
+            }
+
+            // HU-64: Alertas de solicitudes pendientes de aprobación.
+
+            int emprendimientosPendientes = await _context.Emprendimientos
+                .CountAsync(e => e.EstadoAprobacion == "Pendiente");
+
+            if (emprendimientosPendientes > 0)
+            {
+                alertas.Add(new AlertaAdminViewModel
+                {
+                    Tipo = "Emprendimientos",
+                    Mensaje = emprendimientosPendientes == 1
+                        ? "Hay 1 emprendimiento pendiente de aprobación."
+                        : $"Hay {emprendimientosPendientes} emprendimientos pendientes de aprobación.",
+                    Fecha = ahora.ToString("dd/MM/yyyy"),
+                    Icono = "bi-shop",
+                    Nivel = "advertencia"
+                });
+            }
+
+            // HU-64: Alertas de pagos de suscripciones pendientes.
+
+            int pagosPendientes = await _context.SolicitudesPagoSuscripcion
+                .CountAsync(s => s.Estado == "Pendiente");
+
+            if (pagosPendientes > 0)
+            {
+                alertas.Add(new AlertaAdminViewModel
+                {
+                    Tipo = "Suscripciones",
+                    Mensaje = pagosPendientes == 1
+                        ? "Hay 1 solicitud de pago de suscripción pendiente de revisión."
+                        : $"Hay {pagosPendientes} solicitudes de pago de suscripción pendientes de revisión.",
+                    Fecha = ahora.ToString("dd/MM/yyyy"),
+                    Icono = "bi-credit-card",
+                    Nivel = "advertencia"
+                });
+            }
+
+            // HU-63 y HU-64: Actividad reciente según el evento seleccionado.
+            var movimientosTaller = filtro.Evento.HasValue
+                ? registrosTaller.Take(0)
+                : registrosTaller;
+
+            List<ActividadAdminViewModel> actividad = movimientosTaller
+                .Select(r => (
+                    r.FechaInscripcion,
+                    r.Estado,
+                    r.Persona,
+                    r.Actividad,
+                    Tipo: "taller"
+                ))
+                .Concat(registrosEvento.Select(r => (
+                    r.FechaInscripcion,
+                    r.Estado,
+                    r.Persona,
+                    r.Actividad,
+                    Tipo: "evento"
+                )))
                 .OrderByDescending(r => r.FechaInscripcion)
                 .Take(4)
                 .Select(r => new ActividadAdminViewModel
@@ -163,10 +297,210 @@ namespace ProyectoClubCreativo.Controllers
                 })
                 .ToList();
 
+            // HU-60: Ventas reales con pago confirmado.
+            // Se consulta la tabla Ventas para no duplicar órdenes
+            // que contienen varios productos.
+
+            var ventasConfirmadas = _context.Ventas
+                .AsNoTracking()
+                .Where(v =>
+                    v.Estado != "Cancelada" &&
+                    (v.EstadoPago == "Aprobado" ||
+                     v.Estado == "Entregada"));
+
+            // HU-60: Aplicar filtros de fechas a las ventas confirmadas.
+            if (filtro.FechaInicio.HasValue)
+            {
+                DateTime fechaInicio = filtro.FechaInicio.Value.Date;
+
+                ventasConfirmadas = ventasConfirmadas
+                    .Where(v => v.FechaVenta >= fechaInicio);
+            }
+
+            if (filtro.FechaFin.HasValue)
+            {
+                DateTime fechaFinExclusiva = filtro.FechaFin.Value.Date.AddDays(1);
+
+                ventasConfirmadas = ventasConfirmadas
+                    .Where(v => v.FechaVenta < fechaFinExclusiva);
+            }
+
+
+            // HU-63: Calcular ventas confirmadas según los filtros.
+            decimal totalVentas;
+            List<PuntoGraficoViewModel> ventasPorMes;
+
+            if (filtro.Emprendimiento.HasValue)
+            {
+                // Si se selecciona un emprendimiento, calcular únicamente
+                // los productos que le corresponden dentro de cada venta.
+                int idEmprendimiento = filtro.Emprendimiento.Value;
+
+                var detallesConfirmados = _context.VentaDetalles
+                    .AsNoTracking()
+                    .Where(d =>
+                        d.IdProductoNavigation.IdEmprendimiento == idEmprendimiento &&
+                        d.IdVentaNavigation.Estado != "Cancelada" &&
+                        (d.IdVentaNavigation.EstadoPago == "Aprobado" ||
+                         d.IdVentaNavigation.Estado == "Entregada"));
+
+                // Aplicar también los filtros de fechas.
+                if (filtro.FechaInicio.HasValue)
+                {
+                    DateTime fechaInicio = filtro.FechaInicio.Value.Date;
+
+                    detallesConfirmados = detallesConfirmados
+                        .Where(d => d.IdVentaNavigation.FechaVenta >= fechaInicio);
+                }
+
+                if (filtro.FechaFin.HasValue)
+                {
+                    DateTime fechaFinExclusiva = filtro.FechaFin.Value.Date.AddDays(1);
+
+                    detallesConfirmados = detallesConfirmados
+                        .Where(d => d.IdVentaNavigation.FechaVenta < fechaFinExclusiva);
+                }
+
+                // Total correspondiente al emprendimiento seleccionado.
+                totalVentas = await detallesConfirmados
+                    .SumAsync(d => (decimal?)(d.Cantidad * d.PrecioUnitario)) ?? 0m;
+
+                // Ventas del emprendimiento agrupadas por mes.
+                var ventasEmprendimiento = await detallesConfirmados
+                    .GroupBy(d => new
+                    {
+                        d.IdVentaNavigation.FechaVenta.Year,
+                        d.IdVentaNavigation.FechaVenta.Month
+                    })
+                    .Select(g => new
+                    {
+                        g.Key.Year,
+                        g.Key.Month,
+                        Total = g.Sum(d => d.Cantidad * d.PrecioUnitario)
+                    })
+                    .OrderBy(g => g.Year)
+                    .ThenBy(g => g.Month)
+                    .ToListAsync();
+
+                ventasPorMes = ventasEmprendimiento
+                    .Select(v => new PuntoGraficoViewModel
+                    {
+                        Etiqueta = $"{v.Month:00}/{v.Year}",
+                        Valor = (int)Math.Min(
+                            Math.Round(v.Total, 0),
+                            int.MaxValue)
+                    })
+                    .ToList();
+            }
+            else
+            {
+                // Sin emprendimiento seleccionado, conservar el cálculo
+                // general de ventas confirmadas, sin duplicar órdenes.
+                totalVentas = await ventasConfirmadas
+                    .SumAsync(v => (decimal?)v.Total) ?? 0m;
+
+                var ventasAgrupadas = await ventasConfirmadas
+                    .GroupBy(v => new
+                    {
+                        v.FechaVenta.Year,
+                        v.FechaVenta.Month
+                    })
+                    .Select(g => new
+                    {
+                        g.Key.Year,
+                        g.Key.Month,
+                        Total = g.Sum(v => v.Total)
+                    })
+                    .OrderBy(g => g.Year)
+                    .ThenBy(g => g.Month)
+                    .ToListAsync();
+
+                ventasPorMes = ventasAgrupadas
+                    .Select(v => new PuntoGraficoViewModel
+                    {
+                        Etiqueta = $"{v.Month:00}/{v.Year}",
+                        Valor = (int)Math.Min(
+                            Math.Round(v.Total, 0),
+                            int.MaxValue)
+                    })
+                    .ToList();
+            }
+
+            // HU-63: Productos publicados con filtro por emprendimiento.
+            var productosConsulta = _context.Productos
+                .AsNoTracking()
+                .Where(p => p.Estado == "Publicado");
+
+            if (filtro.Emprendimiento.HasValue)
+            {
+                int idEmprendimiento = filtro.Emprendimiento.Value;
+
+                productosConsulta = productosConsulta
+                    .Where(p => p.IdEmprendimiento == idEmprendimiento);
+            }
+
+            // HU-60: Productos publicados por categoría.
+            var categoriasAgrupadas = await productosConsulta
+                .GroupBy(p => p.IdCategoriaNavigation != null
+                    ? p.IdCategoriaNavigation.Nombre
+                    : "Sin categoría")
+                .Select(g => new
+                {
+                    Categoria = g.Key,
+                    Cantidad = g.Count()
+                })
+                .OrderByDescending(g => g.Cantidad)
+                .ToListAsync();
+
+            var productosPorCategoria = categoriasAgrupadas
+                .Select(c => new PuntoGraficoViewModel
+                {
+                    Etiqueta = c.Categoria,
+                    Valor = c.Cantidad
+                })
+                .ToList();
+
+            // HU-60: Cargar emprendimientos reales para el filtro.
+            var emprendimientosFiltro = await _context.Emprendimientos
+                .AsNoTracking()
+                .OrderBy(e => e.NombreComercial)
+                .Select(e => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = e.IdEmprendimiento.ToString(),
+                    Text = e.NombreComercial
+                })
+                .ToListAsync();
+
+            // HU-63: Cargar eventos reales para el filtro.
+            var eventosFiltro = await _context.Eventos
+                .AsNoTracking()
+                .OrderByDescending(e => e.FechaInicio)
+                .Select(e => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = e.IdEvento.ToString(),
+                    Text = e.Nombre
+                })
+                .ToListAsync();
+
             DashboardAdminViewModel modelo = new()
             {
                 Filtro = filtro,
+                EmprendimientosFiltro = emprendimientosFiltro,
+                EventosFiltro = eventosFiltro,
+
                 TotalUsuarios = await _context.Usuarios.CountAsync(),
+
+                EmprendimientosRegistrados =
+                    await _context.Emprendimientos.CountAsync(),
+
+                SolicitudesPendientes = emprendimientosPendientes + pagosPendientes,
+                ProductosActivos = await productosConsulta.CountAsync(),
+
+                VentasTotal = totalVentas,
+                VariacionVentasPorcentaje = 0,
+
+                VentasPorMes = ventasPorMes,
+                ProductosPorCategoria = productosPorCategoria,
 
                 ProximosEventos = eventos
                     .Select(e => new EventoAdminViewModel
@@ -2652,39 +2986,394 @@ namespace ProyectoClubCreativo.Controllers
 
 
         [HttpGet]
-        public IActionResult Ventas(string estado = "Todas")
+        public async Task<IActionResult> Ventas(string estado = "Todas")
         {
-            List<VentaAdminViewModel> ventas = ObtenerVentasDemo();
+            // HU-61: Consultar órdenes reales de SQL Server.
+            var ordenes = await _context.Ventas
+                .AsNoTracking()
+                .OrderByDescending(v => v.FechaVenta)
+                .Select(v => new
+                {
+                    v.IdVenta,
+                    v.NumeroOrden,
+                    v.FechaVenta,
+                    v.Total,
+                    v.Estado,
+                    v.EstadoPago,
+                    v.MetodoPago,
 
+                    NombreCliente =
+                        v.IdUsuarioNavigation.Nombre + " " +
+                        v.IdUsuarioNavigation.ApellidoPaterno,
+
+                    Emprendimientos = v.VentaDetalles
+                        .Select(d =>
+                            d.IdProductoNavigation
+                                .IdEmprendimientoNavigation.NombreComercial)
+                        .Distinct()
+                        .ToList()
+                })
+                .ToListAsync();
+
+            // Convertir las órdenes al ViewModel existente.
+            List<VentaAdminViewModel> ventas = ordenes
+                .Select(v => new VentaAdminViewModel
+                {
+                    Id = v.IdVenta,
+                    NumeroOrden = v.NumeroOrden,
+                    Cliente = v.NombreCliente,
+
+                    Emprendimiento = v.Emprendimientos.Any()
+                        ? string.Join(", ", v.Emprendimientos)
+                        : "Sin emprendimiento",
+
+                    Fecha = v.FechaVenta.ToString("dd/MM/yyyy"),
+                    Total = v.Total,
+                    Estado = v.Estado,
+                    MetodoPago = v.MetodoPago
+                })
+                .ToList();
+
+            // HU-61: Indicadores reales de ventas.
             ListadoVentasAdminViewModel modelo = new()
             {
                 FiltroEstado = estado,
-                Ventas = estado == "Todas" ? ventas : ventas.Where(v => v.Estado == estado).ToList(),
-                TotalVendido = ventas.Where(v => v.Estado == "Pagada").Sum(v => v.Total),
+
+                Ventas = estado == "Todas"
+                    ? ventas
+                    : ventas.Where(v => v.Estado == estado).ToList(),
+
+                TotalVendido = ordenes
+                    .Where(v =>
+                        v.Estado != "Cancelada" &&
+                        (v.EstadoPago == "Aprobado" ||
+                         v.Estado == "Entregada"))
+                    .Sum(v => v.Total),
+
                 TotalOrdenes = ventas.Count,
-                TotalPendientes = ventas.Count(v => v.Estado == "Pendiente"),
-                TotalCanceladas = ventas.Count(v => v.Estado == "Cancelada")
+
+                TotalPendientes = ventas.Count(v =>
+                    v.Estado == "Pendiente"),
+
+                TotalCanceladas = ventas.Count(v =>
+                    v.Estado == "Cancelada")
             };
 
             return View(modelo);
         }
 
         [HttpGet]
-        public IActionResult DetalleVenta(int id = 1)
+        public async Task<IActionResult> DetalleVenta(int id)
         {
-            VentaAdminViewModel modelo =
-                ObtenerVentasDemo().FirstOrDefault(v => v.Id == id)
-                ?? ObtenerVentasDemo().First();
+            // HU-61: Consultar el detalle real de la orden.
+            var venta = await _context.Ventas
+                .AsNoTracking()
+                .Where(v => v.IdVenta == id)
+                .Select(v => new
+                {
+                    v.IdVenta,
+                    v.NumeroOrden,
+                    v.FechaVenta,
+                    v.Total,
+                    v.Estado,
+                    v.EstadoPago,
+                    v.MetodoPago,
+
+                    Cliente = v.IdUsuarioNavigation.Nombre + " " +
+                              v.IdUsuarioNavigation.ApellidoPaterno,
+
+                    Emprendimientos = v.VentaDetalles
+                        .Select(d =>
+                            d.IdProductoNavigation
+                                .IdEmprendimientoNavigation.NombreComercial)
+                        .Distinct()
+                        .ToList(),
+
+                    Productos = v.VentaDetalles
+                        .Select(d => new
+                        {
+                            Producto = d.IdProductoNavigation.Nombre,
+                            d.Cantidad,
+                            d.PrecioUnitario
+                        })
+                        .ToList(),
+
+                    MotivoCancelacion = v.VentasCancelada != null
+                        ? v.VentasCancelada.MotivoCancelacion
+                        : null
+                })
+                .FirstOrDefaultAsync();
+
+            if (venta == null)
+            {
+                return NotFound();
+            }
+
+            VentaAdminViewModel modelo = new()
+            {
+                Id = venta.IdVenta,
+                NumeroOrden = venta.NumeroOrden,
+                Cliente = venta.Cliente,
+
+                Emprendimiento = venta.Emprendimientos.Any()
+                    ? string.Join(", ", venta.Emprendimientos)
+                    : "Sin emprendimiento",
+
+                Fecha = venta.FechaVenta.ToString("dd/MM/yyyy"),
+                Total = venta.Total,
+                Estado = venta.Estado,
+                EstadoPago = venta.EstadoPago,
+                MetodoPago = venta.MetodoPago,
+                MotivoCancelacion = venta.MotivoCancelacion,
+
+                Items = venta.Productos
+                    .Select(p => new ItemVentaAdminViewModel
+                    {
+                        Producto = p.Producto,
+                        Cantidad = p.Cantidad,
+                        PrecioUnitario = p.PrecioUnitario
+                    })
+                    .ToList()
+            };
 
             return View(modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CancelarVenta(int id, string motivo)
+        public async Task<IActionResult> CancelarVenta(int id, string motivo)
         {
-            TempData["MensajeAdmin"] = $"La orden fue cancelada. Motivo: {motivo}";
-            return RedirectToAction(nameof(DetalleVenta), new { id });
+            int? idAdministrador =
+                HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idAdministrador.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            if (string.IsNullOrWhiteSpace(motivo) ||
+                motivo.Trim().Length > 300)
+            {
+                TempData["ErrorAdmin"] =
+                    "Debe indicar un motivo de cancelación de máximo 300 caracteres.";
+
+                return RedirectToAction(nameof(DetalleVenta), new { id });
+            }
+
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync(
+                    System.Data.IsolationLevel.Serializable);
+
+            try
+            {
+                Venta? venta = await _context.Ventas
+                    .Include(v => v.VentasCancelada)
+                    .Include(v => v.VentaDetalles)
+                    .FirstOrDefaultAsync(v => v.IdVenta == id);
+
+                if (venta is null)
+                {
+                    await transaccion.RollbackAsync();
+                    return NotFound();
+                }
+
+                if (venta.Estado == "Cancelada" ||
+                    venta.VentasCancelada != null)
+                {
+                    await transaccion.RollbackAsync();
+
+                    TempData["ErrorAdmin"] =
+                        "Esta orden ya fue cancelada.";
+
+                    return RedirectToAction(nameof(DetalleVenta), new { id });
+                }
+
+                if (venta.Estado == "Entregada")
+                {
+                    await transaccion.RollbackAsync();
+
+                    TempData["ErrorAdmin"] =
+                        "No se puede cancelar una orden entregada.";
+
+                    return RedirectToAction(nameof(DetalleVenta), new { id });
+                }
+
+                if (venta.EstadoPago != "Pendiente")
+                {
+                    await transaccion.RollbackAsync();
+
+                    TempData["ErrorAdmin"] =
+                        "Solo se pueden cancelar órdenes con pago pendiente.";
+
+                    return RedirectToAction(nameof(DetalleVenta), new { id });
+                }
+
+                if (!venta.VentaDetalles.Any())
+                {
+                    await transaccion.RollbackAsync();
+
+                    TempData["ErrorAdmin"] =
+                        "La orden no tiene productos registrados.";
+
+                    return RedirectToAction(nameof(DetalleVenta), new { id });
+                }
+
+                var cantidadesPorProducto = venta.VentaDetalles
+                    .GroupBy(d => d.IdProducto)
+                    .Select(g => new
+                    {
+                        IdProducto = g.Key,
+                        Cantidad = g.Sum(d => d.Cantidad)
+                    })
+                    .ToList();
+
+                var idsProductos = cantidadesPorProducto
+                    .Select(p => p.IdProducto)
+                    .ToList();
+
+                var productos = await _context.Productos
+                    .Where(p => idsProductos.Contains(p.IdProducto))
+                    .ToListAsync();
+
+                if (productos.Count != idsProductos.Count ||
+                    cantidadesPorProducto.Any(p => p.Cantidad <= 0))
+                {
+                    throw new InvalidOperationException(
+                        "Los productos de la orden no son válidos.");
+                }
+
+                DateTime fechaActual = DateTime.Now;
+
+                foreach (var detalle in cantidadesPorProducto)
+                {
+                    Producto producto = productos.First(p =>
+                        p.IdProducto == detalle.IdProducto);
+
+                    if (producto.TipoPublicacion != "Producto")
+                    {
+                        continue;
+                    }
+
+                    int stockAnterior = producto.StockActual;
+                    int stockNuevo = checked(
+                        stockAnterior + detalle.Cantidad);
+
+                    producto.StockActual = stockNuevo;
+
+                    _context.MovimientosInventarios.Add(
+                        new MovimientosInventario
+                        {
+                            IdProducto = producto.IdProducto,
+                            IdUsuario = idAdministrador.Value,
+                            TipoMovimiento = "Devolucion",
+                            Cantidad = detalle.Cantidad,
+                            StockAnterior = stockAnterior,
+                            StockNuevo = stockNuevo,
+                            Observacion =
+                                "Devolución por cancelación administrativa " +
+                                "de la orden " + venta.NumeroOrden,
+                            FechaMovimiento = fechaActual
+                        });
+                }
+
+                int puntosAcumulados =
+                    await _context.MovimientosPuntos
+                        .Where(m =>
+                            m.IdVenta == venta.IdVenta &&
+                            m.TipoMovimiento == "Acumulacion")
+                        .SumAsync(m => (int?)m.Puntos) ?? 0;
+
+                bool existeReversion =
+                    await _context.MovimientosPuntos
+                        .AnyAsync(m =>
+                            m.IdVenta == venta.IdVenta &&
+                            m.TipoMovimiento == "Reversion");
+
+                if (puntosAcumulados > 0 && !existeReversion)
+                {
+                    _context.MovimientosPuntos.Add(
+                        new MovimientosPunto
+                        {
+                            IdUsuario = venta.IdUsuario,
+                            TipoMovimiento = "Reversion",
+                            Puntos = -puntosAcumulados,
+                            Motivo =
+                                "Reversión de puntos por cancelación " +
+                                "administrativa de la orden " +
+                                venta.NumeroOrden,
+                            IdVenta = venta.IdVenta,
+                            FechaMovimiento = fechaActual
+                        });
+                }
+
+                venta.Estado = "Cancelada";
+
+                venta.VentasCancelada = new VentasCancelada
+                {
+                    IdVenta = venta.IdVenta,
+                    MotivoCancelacion = motivo.Trim(),
+                    FechaCancelacion = fechaActual
+                };
+
+                var idsEmprendedores = await _context.Productos
+                    .AsNoTracking()
+                    .Where(p => idsProductos.Contains(p.IdProducto))
+                    .Select(p =>
+                        p.IdEmprendimientoNavigation.IdUsuarioPropietario)
+                    .Distinct()
+                    .ToListAsync();
+
+                // Se guardan las notificaciones de plataforma
+                // junto con la cancelación.
+                _context.Notificaciones.Add(new Notificacione
+                {
+                    IdUsuario = venta.IdUsuario,
+                    NumeroOrden = venta.NumeroOrden,
+                    Titulo = "Pedido cancelado",
+                    Mensaje =
+                        $"Tu pedido {venta.NumeroOrden} fue cancelado " +
+                        $"por administración. Motivo: {motivo.Trim()}",
+                    Tipo = "Compra",
+                    FechaEnvio = fechaActual,
+                    Leida = false,
+                    FechaLectura = null
+                });
+
+                foreach (int idEmprendedor in idsEmprendedores)
+                {
+                    _context.Notificaciones.Add(new Notificacione
+                    {
+                        IdUsuario = idEmprendedor,
+                        NumeroOrden = venta.NumeroOrden,
+                        Titulo = "Pedido cancelado",
+                        Mensaje =
+                            $"La orden {venta.NumeroOrden} fue cancelada " +
+                            "por administración.",
+                        Tipo = "Compra",
+                        FechaEnvio = fechaActual,
+                        Leida = false,
+                        FechaLectura = null
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                await transaccion.CommitAsync();
+
+                TempData["MensajeAdmin"] =
+                    $"La orden {venta.NumeroOrden} fue cancelada correctamente.";
+
+                return RedirectToAction(nameof(DetalleVenta), new { id });
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["ErrorAdmin"] =
+                    "No fue posible cancelar la orden. " +
+                    "No se confirmaron los cambios.";
+
+                return RedirectToAction(nameof(DetalleVenta), new { id });
+            }
         }
 
         private static List<VentaAdminViewModel> ObtenerVentasDemo()

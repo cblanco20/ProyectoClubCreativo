@@ -8,7 +8,7 @@
 <div class="grid-estadisticas-admin">
     <div class="tarjeta-estadistica-admin">
         <div class="icono-estadistica-admin icono-ventas-admin"><i class="bi bi-cash-stack"></i></div>
-        <div><strong>₡@Model.TotalVendido.ToString("N0")</strong><span>Total vendido (pagadas)</span></div>
+        <div><strong>₡@Model.TotalVendido.ToString("N0")</strong><span>Ventas con pago confirmado</span></div>
     </div>
     <div class="tarjeta-estadistica-admin">
         <div class="icono-estadistica-admin icono-productos-admin"><i class="bi bi-receipt"></i></div>
@@ -25,7 +25,16 @@
 </div>
 
 <div class="pestanas-admin">
-    @foreach (var e in new[] { "Todas", "Pagada", "Pendiente", "Cancelada" })
+    @foreach (var e in new[]
+{
+    "Todas",
+    "Pendiente",
+    "Pagada",
+    "En preparacion",
+    "Enviada",
+    "Entregada",
+    "Cancelada"
+})
     {
         <a asp-action="Ventas" asp-route-estado="@e" class="pestana-admin @(Model.FiltroEstado == e ? "activa" : "")">@e</a>
     }
@@ -43,7 +52,15 @@
             <tbody>
                 @foreach (var v in Model.Ventas)
                 {
-                    string clase = v.Estado switch { "Pagada" => "estado-activo", "Cancelada" => "estado-rechazado", _ => "estado-pendiente" };
+                    string clase = v.Estado switch
+                    {
+                        "Pagada" => "estado-activo",
+                        "En preparacion" => "estado-preparacion",
+                        "Enviada" => "estado-enviada",
+                        "Entregada" => "estado-entregada",
+                        "Cancelada" => "estado-rechazado",
+                        _ => "estado-pendiente"
+                    };
                     <tr>
                         <td>@v.NumeroOrden</td>
                         <td>@v.Cliente</td>
