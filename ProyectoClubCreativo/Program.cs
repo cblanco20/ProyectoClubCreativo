@@ -10,6 +10,7 @@ builder.Services.AddScoped<CorreoService>();
 builder.Services.AddScoped<PagoService>();
 builder.Services.AddHostedService<RecordatoriosEventosService>();
 builder.Services.AddScoped<NotificacionService>();
+builder.Services.AddScoped<ActualizacionSuscripcionesService>();
 
 // Conexión a ClubCreativoDB
 builder.Services.AddDbContext<ClubCreativoDbContext>(options =>

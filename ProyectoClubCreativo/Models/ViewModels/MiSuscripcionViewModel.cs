@@ -38,6 +38,16 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         public string? MotivoCancelacionRegistrado { get; set; }
 
+        public bool TienePlanProgramado { get; set; }
+
+        public string? NombrePlanProgramado { get; set; }
+
+        public DateOnly? FechaInicioPlanProgramado { get; set; }
+
+        public DateOnly? FechaFinPlanProgramado { get; set; }
+
+
+        public List<EstadoSolicitudSinpeViewModel> SolicitudesSinpe { get; set; } = new();
 
         // Historial de suscripciones
         public List<MovimientoSuscripcionViewModel> Historial { get; set; } = new();

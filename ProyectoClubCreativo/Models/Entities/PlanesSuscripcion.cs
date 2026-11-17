@@ -19,5 +19,7 @@ public partial class PlanesSuscripcion
 
     public bool Activo { get; set; }
 
+    public int? MaximoProductos { get; set; }
+
     public virtual ICollection<Suscripcione> Suscripciones { get; set; } = new List<Suscripcione>();
 }

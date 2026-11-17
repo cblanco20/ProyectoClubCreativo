@@ -5,6 +5,14 @@
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
+@if (TempData["MensajeAdmin"] is not null)
+{
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        @TempData["MensajeAdmin"]
+    </div>
+}
+
 <article class="bloque-admin">
     <div class="encabezado-bloque-admin">
         <h2>
@@ -33,6 +41,20 @@
                     <span>
                         ₡@plan.Precio.ToString("N0") / @plan.Periodicidad.ToLower()
                     </span>
+
+                    <div style="margin-top:6px;">
+                        <small style="color:#6c757d;">
+                            <i class="bi bi-box-seam"></i>
+                            @if (plan.MaximoProductos.HasValue)
+                            {
+                                <span>Hasta @plan.MaximoProductos.Value productos o servicios</span>
+                            }
+                            else
+                            {
+                                <span>Límite de productos sin configurar</span>
+                            }
+                        </small>
+                    </div>
 
                     <div style="margin-top:8px;">
                         <span class="etiqueta-estado-admin estado-activo">
@@ -114,4 +136,175 @@
             </tbody>
         </table>
     </div>
+</article>
+<!-- SOLICITUDES DE PAGO SINPE -->
+<article class="bloque-admin">
+
+    <div class="encabezado-bloque-admin">
+
+        <h2>
+            <i class="bi bi-phone-fill"></i>
+            Solicitudes de pago SINPE Móvil
+        </h2>
+
+        <span class="etiqueta-estado-admin estado-porvencer">
+            @Model.TotalSolicitudesSinpePendientes pendientes
+        </span>
+
+    </div>
+
+    <div class="tabla-admin-contenedor">
+
+        <table class="tabla-admin">
+
+            <thead>
+                <tr>
+                    <th>Emprendimiento</th>
+                    <th>Plan</th>
+                    <th>Monto</th>
+                    <th>Referencia SINPE</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @if (Model.SolicitudesSinpe.Any())
+                {
+                    @foreach (var solicitud in Model.SolicitudesSinpe)
+                    {
+                        string claseEstado = solicitud.Estado switch
+                        {
+                            "Aprobada" => "estado-vigente",
+                            "Rechazada" => "estado-vencida",
+                            _ => "estado-porvencer"
+                        };
+
+                        <tr>
+                            <td>@solicitud.NombreEmprendimiento</td>
+
+                            <td>
+                                @solicitud.NombrePlan
+
+                                <div>
+                                    <small class="text-muted">
+                                        @(solicitud.TipoSolicitud == "CambioPlan"
+                                            ? "Cambio de plan"
+                                            : solicitud.TipoSolicitud == "Renovacion"
+                                                ? "Renovación"
+                                                : "Nueva suscripción")
+                                    </small>
+                                </div>
+                            </td>
+
+                            <td>
+                                ₡@solicitud.Monto.ToString("N0")
+                            </td>
+
+                            <td>@solicitud.NumeroReferencia</td>
+
+                            <td>
+                                @solicitud.FechaSolicitud.ToString("dd/MM/yyyy")
+                            </td>
+
+                            <td>
+                                <span class="etiqueta-estado-admin @claseEstado">
+                                    @solicitud.Estado
+                                </span>
+                            </td>
+                            <td>
+                                @if (solicitud.Estado == "Pendiente")
+                                {
+                                    <form asp-controller="Admin"
+                                          asp-action="AprobarPagoSinpe"
+                                          method="post"
+                                          class="mb-2">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="idSolicitudPago"
+                                               value="@solicitud.IdSolicitudPago" />
+
+                                        <button type="submit"
+                                                class="boton-admin boton-admin-primario"
+                                                onclick="return confirm('¿Ya verificaste que la transferencia SINPE fue recibida y coincide con el monto y la referencia?');">
+
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            Aprobar pago
+
+                                        </button>
+                                    </form>
+
+                                    <form asp-controller="Admin"
+                                          asp-action="RechazarPagoSinpe"
+                                          method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="IdSolicitudPago"
+                                               value="@solicitud.IdSolicitudPago" />
+
+                                        <label for="motivo-@solicitud.IdSolicitudPago"
+                                               class="form-label">
+                                            Motivo del rechazo
+                                        </label>
+
+                                        <textarea id="motivo-@solicitud.IdSolicitudPago"
+                                                  name="Motivo"
+                                                  class="form-control mb-2"
+                                                  rows="2"
+                                                  maxlength="500"
+                                                  minlength="1"
+                                                  required
+                                                  placeholder="Indica por qué se rechaza el pago"></textarea>
+
+                                        <button type="submit"
+                                                class="boton-admin boton-admin-secundario"
+                                                onclick="return confirm('¿Confirmas el rechazo de esta solicitud SINPE?');">
+
+                                            <i class="bi bi-x-circle"></i>
+                                            Rechazar pago
+
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">
+                                        Solicitud revisada
+                                    </span>
+
+                                    @if (!string.IsNullOrWhiteSpace(solicitud.Observaciones))
+                                    {
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <strong>Observaciones:</strong>
+                                                @solicitud.Observaciones
+                                            </small>
+                                        </div>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            No hay solicitudes de pago SINPE registradas.
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
 </article>

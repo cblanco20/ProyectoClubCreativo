@@ -179,7 +179,7 @@ else
         </span>
 
         <div>
-            <span>Próxima renovación</span>
+            <span>Fecha de vencimiento</span>
             <strong>
                 @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha")
             </strong>
@@ -188,24 +188,19 @@ else
     </article>
 
 
-    <article class="tarjeta-dato-suscripcion">
+    
+        <article class="tarjeta-dato-suscripcion">
 
-        <span class="icono-dato-suscripcion metodo">
-            <i class="bi bi-credit-card-fill"></i>
-        </span>
+            <span class="icono-dato-suscripcion metodo">
+                <i class="bi bi-phone-fill"></i>
+            </span>
 
-        <div>
-            <span>Método de pago</span>
+            <div>
+                <span>Método de pago</span>
+                <strong>SINPE Móvil</strong>
+            </div>
 
-            <strong>
-                <a asp-controller="Emprendedor"
-                   asp-action="ActualizarMetodoPago">
-                    Actualizar método de pago
-                </a>
-            </strong>
-        </div>
-
-    </article>
+        </article>
 
 
     <article class="tarjeta-dato-suscripcion">
@@ -224,7 +219,56 @@ else
 </section>
 
 }
+@if (Model.TienePlanProgramado)
+{
+    <article class="bloque-suscripcion-emprendedor mb-4">
 
+        <div class="encabezado-bloque-suscripcion">
+            <div>
+                <span class="subtitulo-emprendedor">
+                    Próxima suscripción
+                </span>
+
+                <h2>Plan programado</h2>
+
+                <p>
+                    Tu pago SINPE Móvil fue aprobado.
+                    El siguiente período se activará
+                    cuando llegue la fecha programada.
+                </p>
+            </div>
+        </div>
+
+        <div class="detalle-renovacion-suscripcion">
+
+            <div>
+                <span>Próximo plan</span>
+                <strong>@Model.NombrePlanProgramado</strong>
+            </div>
+
+            <div>
+                <span>Fecha de inicio</span>
+                <strong>
+                    @(Model.FechaInicioPlanProgramado?.ToString("dd/MM/yyyy"))
+                </strong>
+            </div>
+
+            <div>
+                <span>Fecha de vencimiento</span>
+                <strong>
+                    @(Model.FechaFinPlanProgramado?.ToString("dd/MM/yyyy"))
+                </strong>
+            </div>
+
+            <div>
+                <span>Estado</span>
+                <strong>Pendiente de activación</strong>
+            </div>
+
+        </div>
+
+    </article>
+}
 <!-- CONTENIDO -->
 <section class="grid-mi-suscripcion">
 
@@ -286,6 +330,123 @@ else
 </section>
 
         }
+
+        <!-- SOLICITUDES DE PAGO SINPE -->
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Pagos SINPE Móvil
+                    </span>
+
+                    <h2>Mis solicitudes de pago</h2>
+
+                    <p>
+                        Consulta las transferencias registradas
+                        y el estado de revisión de cada solicitud.
+                    </p>
+                </div>
+            </div>
+
+            <div class="tabla-historial-suscripcion">
+
+                <div class="fila-historial-suscripcion encabezado-historial">
+                    <span>Fecha</span>
+                    <span>Plan solicitado</span>
+                    <span>Monto</span>
+                    <span>Estado</span>
+                </div>
+
+                @if (Model.SolicitudesSinpe.Any())
+                {
+                    @foreach (var solicitud in Model.SolicitudesSinpe)
+                    {
+                        <div class="fila-historial-suscripcion">
+
+                            <span>
+                                @solicitud.FechaSolicitud.ToString("dd/MM/yyyy")
+                            </span>
+
+                            <span>
+                                @solicitud.NombrePlan
+                            </span>
+
+                            <span>
+                                ₡@solicitud.Monto.ToString("N0")
+                            </span>
+
+                            <span>
+                                @if (solicitud.Estado == "Aprobada")
+                                {
+                                    <span class="estado-pago-suscripcion completado">
+                                        Aprobada
+                                    </span>
+                                }
+                                else if (solicitud.Estado == "Rechazada")
+                                {
+                                    <span class="badge bg-danger">
+                                        Rechazada
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        Pendiente
+                                    </span>
+                                }
+                            </span>
+
+                        </div>
+
+                        <div class="mb-3 p-3 border-bottom">
+                            <p class="mb-1">
+                                <strong>Referencia SINPE:</strong>
+                                @solicitud.NumeroReferencia
+                            </p>
+
+                            @if (solicitud.FechaRevision.HasValue)
+                            {
+                                <p class="mb-1">
+                                    <strong>Fecha de revisión:</strong>
+                                    @solicitud.FechaRevision.Value.ToString("dd/MM/yyyy")
+                                </p>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(solicitud.Observaciones))
+                            {
+                                <p class="mb-0">
+                                    <strong>Observaciones:</strong>
+                                    @solicitud.Observaciones
+                                </p>
+                            }
+
+                            @if (solicitud.Estado == "Pendiente")
+                            {
+                                <p class="text-muted mt-2 mb-0">
+                                    Tu transferencia está pendiente
+                                    de verificación administrativa.
+                                </p>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="fila-historial-suscripcion">
+                        <span>—</span>
+                        <span>No tienes solicitudes SINPE registradas.</span>
+                        <span>—</span>
+                        <span>—</span>
+                    </div>
+                }
+
+            </div>
+
+        </article>
+
+
+
         <!-- HISTORIAL -->
         <article class="bloque-suscripcion-emprendedor">
 
@@ -327,7 +488,7 @@ else
                             <span>
                                 @if (movimiento.Monto == 0)
                                 {
-                                    <text>Gratis</text>
+                                    <text>Sin pago registrado</text>
                                 }
                                 else
                                 {
@@ -367,110 +528,104 @@ else
         @if (Model.TieneSuscripcion)
 {
 
-        <!-- RENOVACIÓN -->
-        <article class="bloque-suscripcion-emprendedor">
+            <!-- RENOVACIÓN MANUAL -->
+            <article class="bloque-suscripcion-emprendedor">
 
-            <div class="encabezado-bloque-suscripcion">
+                <div class="encabezado-bloque-suscripcion">
+                    <div>
+                        <span class="subtitulo-emprendedor">
+                            Renovación
+                        </span>
 
-                <div>
-                    <span class="subtitulo-emprendedor">
-                        Renovación
-                    </span>
-
-                    <h2>Renovación automática</h2>
+                        <h2>Renovar mi suscripción</h2>
+                    </div>
                 </div>
 
-            </div>
+                <div class="estado-renovacion-suscripcion">
 
-            <div class="estado-renovacion-suscripcion">
+                    <span class="icono-renovacion-activa">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </span>
 
-                <span class="icono-renovacion-activa">
-                    <i class="bi bi-arrow-repeat"></i>
-                </span>
-
-                <div>
-                    @if (Model.RenovacionAutomatica)
-                    {
-                        <strong>Renovación activada</strong>
+                    <div>
+                        <strong>Renovación mediante SINPE Móvil</strong>
 
                         <p>
-                            El plan se renovará automáticamente
-                            el @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "fecha pendiente").
+                            Tu plan permanecerá activo hasta el
+                            @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "final del período").
+                            Si deseas continuar, deberás solicitar
+                            una renovación y realizar un nuevo pago SINPE Móvil.
                         </p>
-                    }
-                    else
-                    {
-                        <strong>Renovación desactivada</strong>
+                    </div>
 
-                        <p>
-                            El plan permanecerá activo hasta el
-                            @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "final del período")
-                            y después vencerá.
-                        </p>
-                    }
                 </div>
 
-            </div>
+                <div class="detalle-renovacion-suscripcion">
 
-            <div class="detalle-renovacion-suscripcion">
+                    <div>
+                        <span>Monto del plan</span>
 
-                <div>
-                    <span>
-                        @(Model.RenovacionAutomatica ? "Próximo cobro" : "Monto del plan")
-                    </span>
+                        @if (Model.Precio == 0)
+                        {
+                            <strong>Gratis</strong>
+                        }
+                        else
+                        {
+                            <strong>₡@Model.Precio.ToString("N0")</strong>
+                        }
+                    </div>
 
-                    @if (Model.Precio == 0)
-                    {
-                        <strong>Gratis</strong>
-                    }
-                    else
-                    {
-                        <strong>₡@Model.Precio.ToString("N0")</strong>
-                    }
+                    <div>
+                        <span>Fecha de vencimiento</span>
+
+                        <strong>
+                            @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha")
+                        </strong>
+                    </div>
+
                 </div>
 
-                <div>
-                    <span>
-                        @(Model.RenovacionAutomatica ? "Fecha" : "Vence")
-                    </span>
+                @{
+                    int diasRestantes = Model.FechaFin.HasValue
+                        ? Model.FechaFin.Value.DayNumber -
+                          DateOnly.FromDateTime(DateTime.Today).DayNumber
+                        : int.MaxValue;
+                }
 
-                    <strong>
-                        @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fecha")
-                    </strong>
-                </div>
-
-            </div>
-
-            <form asp-controller="Emprendedor"
-                  asp-action="RenovarSuscripcion"
-                  method="post">
-
-                @Html.AntiForgeryToken()
-
-                @if (Model.RenovacionAutomatica)
+                @if (Model.TieneCancelacionProgramada)
                 {
-                    <button type="submit"
-                            class="boton-renovacion-suscripcion">
+                    <p class="text-muted mt-3">
+                        Esta suscripción tiene una cancelación registrada.
+                        No puedes solicitar su renovación.
+                    </p>
+                }
+                else if (diasRestantes >= 0 && diasRestantes <= 3)
+                {
+                    <form asp-controller="Emprendedor"
+                          asp-action="RenovarSuscripcion"
+                          method="post">
 
-                        <i class="bi bi-x-circle"></i>
-                        Desactivar renovación automática
+                        @Html.AntiForgeryToken()
 
-                    </button>
+                        <button type="submit"
+                                class="boton-renovacion-suscripcion">
+
+                            <i class="bi bi-arrow-repeat"></i>
+                            Solicitar renovación por SINPE
+
+                        </button>
+
+                    </form>
                 }
                 else
                 {
-                    <button type="submit"
-                            class="boton-renovacion-suscripcion">
-
-                        <i class="bi bi-arrow-repeat"></i>
-                        Activar renovación automática
-
-                    </button>
+                    <p class="text-muted mt-3">
+                        Podrás solicitar la renovación cuando falten
+                        3 días o menos para el vencimiento de tu plan.
+                    </p>
                 }
 
-            </form>
-           
-        </article>
+            </article>
         }
 
 
@@ -520,11 +675,11 @@ else
                     {
                         <h2>Cancelación programada</h2>
 
-                        <p>
-                            Tu suscripción continuará activa hasta el
-                            @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "final del período").
-                            Puedes reactivarla antes de esa fecha.
-                        </p>
+                            <p>
+                                Tu cancelación fue registrada correctamente.
+                                Conservarás los beneficios de tu plan hasta el
+                                @(Model.FechaFin?.ToString("dd/MM/yyyy") ?? "final del período").
+                            </p>
                     }
                     else
                     {
@@ -541,21 +696,11 @@ else
 
             @if (Model.TieneCancelacionProgramada)
             {
-                <form asp-controller="Emprendedor"
-                      asp-action="ReactivarSuscripcion"
-                      method="post">
-
-                    @Html.AntiForgeryToken()
-
-                    <button type="submit"
-                            class="boton-abrir-cancelacion">
-
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                        Reactivar suscripción
-
-                    </button>
-
-                </form>
+                <p class="text-muted mt-2">
+                    No se realizarán renovaciones automáticas.
+                    Para contratar otro período deberás realizar
+                    una nueva solicitud de pago.
+                </p>
             }
             else
             {
@@ -637,8 +782,11 @@ else
         </h2>
 
         <p>
-            Al cancelar, conservarás los beneficios hasta finalizar
-            el período actual. Después pasarás al Plan Básico.
+            Al cancelar, conservarás los beneficios de tu plan
+            hasta finalizar el período contratado.
+            Después de esa fecha, necesitarás adquirir
+            una nueva suscripción para continuar
+            publicando productos o servicios.
         </p>
 
         <form asp-controller="Emprendedor"

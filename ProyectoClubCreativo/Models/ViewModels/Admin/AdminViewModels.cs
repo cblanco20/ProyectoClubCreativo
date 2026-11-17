@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using ProyectoClubCreativo.Models.ViewModels;
 
 namespace ProyectoClubCreativo.Models.ViewModels.Admin
 {
@@ -178,6 +179,10 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         [Display(Name = "Beneficios (uno por línea)")]
         public string Beneficios { get; set; } = string.Empty;
 
+        [Display(Name = "Máximo de productos")]
+        [Range(1, 10000, ErrorMessage = "La cantidad de productos debe estar entre 1 y 10000.")]
+        public int? MaximoProductos { get; set; }
+
         public int CantidadSuscriptores { get; set; }
         public bool Activo { get; set; } = true;
     }
@@ -197,6 +202,8 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public List<PlanSuscripcionViewModel> Planes { get; set; } = [];
         public List<SuscripcionActivaViewModel> Activas { get; set; } = [];
         public int TotalPorVencer { get; set; }
+        public List<DetallePagoSinpeAdminViewModel> SolicitudesSinpe { get; set; } = new();
+        public int TotalSolicitudesSinpePendientes { get; set; }
     }
 
     public class ProductoAdminViewModel

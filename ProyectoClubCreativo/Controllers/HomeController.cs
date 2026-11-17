@@ -474,6 +474,9 @@ namespace ProyectoClubCreativo.Controllers
         [HttpGet]
         public async Task<IActionResult> CatalogoProductos()
         {
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
             List<Producto> productos = await _context.Productos
                 .AsNoTracking()
                 .Include(p => p.IdCategoriaNavigation)
@@ -482,7 +485,13 @@ namespace ProyectoClubCreativo.Controllers
                 .Where(p =>
                     p.Estado == "Publicado" &&
                     p.IdEmprendimientoNavigation.Activo &&
-                    p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado")
+                    p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado" &&
+
+                    _context.Suscripciones.Any(s =>
+                        s.IdEmprendimiento == p.IdEmprendimiento &&
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= fechaActual &&
+                        s.FechaFin >= fechaActual))
                 .OrderByDescending(p => p.FechaRegistro)
                 .ToListAsync();
 
@@ -493,6 +502,9 @@ namespace ProyectoClubCreativo.Controllers
         [HttpGet]
         public async Task<IActionResult> HechoEnCR()
         {
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
             var productos = await _context.Productos
                 .AsNoTracking()
                 .Include(p => p.IdCategoriaNavigation)
@@ -503,7 +515,13 @@ namespace ProyectoClubCreativo.Controllers
                     p.Estado == "Publicado" &&
                     p.IdEmprendimientoNavigation.Activo &&
                     p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado" &&
-                    p.IdEmprendimientoNavigation.ParticipaHechoEnCr)
+                    p.IdEmprendimientoNavigation.ParticipaHechoEnCr &&
+
+                    _context.Suscripciones.Any(s =>
+                        s.IdEmprendimiento == p.IdEmprendimiento &&
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= fechaActual &&
+                        s.FechaFin >= fechaActual))
                 .OrderByDescending(p => p.FechaRegistro)
                 .ToListAsync();
 
@@ -514,6 +532,9 @@ namespace ProyectoClubCreativo.Controllers
         [HttpGet]
         public async Task<IActionResult> DetalleProducto(int id)
         {
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
             var producto = await _context.Productos
                 .AsNoTracking()
                 .Include(p => p.IdCategoriaNavigation)
@@ -523,12 +544,17 @@ namespace ProyectoClubCreativo.Controllers
                     p.IdProducto == id &&
                     p.Estado == "Publicado" &&
                     p.IdEmprendimientoNavigation.Activo &&
-                    p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado");
+                    p.IdEmprendimientoNavigation.EstadoAprobacion == "Aprobado" &&
+                    _context.Suscripciones.Any(s =>
+                        s.IdEmprendimiento == p.IdEmprendimiento &&
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= fechaActual &&
+                        s.FechaFin >= fechaActual));
+
             if (producto == null)
             {
                 return NotFound();
             }
-
             var resenas = await _context.ComentariosResenas
                 .AsNoTracking()
                 .Where(c =>

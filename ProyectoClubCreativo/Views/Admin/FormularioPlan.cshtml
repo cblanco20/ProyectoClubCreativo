@@ -49,6 +49,24 @@
         </div>
 
         <div class="grupo-formulario">
+            <label asp-for="MaximoProductos"></label>
+            <input asp-for="MaximoProductos"
+                   type="number"
+                   min="1"
+                   max="10000"
+                   step="1"
+                   placeholder="Ej. 50" />
+
+            <span asp-validation-for="MaximoProductos"
+                  class="mensaje-validacion"></span>
+
+            <small style="color:#6c757d;">
+                Cantidad máxima de productos o servicios que
+                el emprendedor podrá publicar con este plan.
+            </small>
+        </div>
+
+        <div class="grupo-formulario">
             <label>
                 <input asp-for="Activo" type="checkbox" style="width:auto;margin-right:8px;" />
                 Plan activo y disponible para nuevas suscripciones

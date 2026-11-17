@@ -15,19 +15,22 @@ namespace ProyectoClubCreativo.Controllers
         private readonly PagoService _pagoService;
         private readonly CorreoService _correoService;
         private readonly NotificacionService _notificaciones;
+        private readonly ActualizacionSuscripcionesService _actualizacionSuscripciones;
 
         public EmprendedorController(
-    ClubCreativoDbContext context,
-    IWebHostEnvironment entornoWeb,
-    PagoService pagoService,
-    CorreoService correoService,
-    NotificacionService notificaciones)
+            ClubCreativoDbContext context,
+            IWebHostEnvironment entornoWeb,
+            PagoService pagoService,
+            CorreoService correoService,
+            NotificacionService notificaciones,
+           ActualizacionSuscripcionesService actualizacionSuscripciones)
         {
             _context = context;
             _entornoWeb = entornoWeb;
             _pagoService = pagoService;
             _correoService = correoService;
             _notificaciones = notificaciones;
+            _actualizacionSuscripciones = actualizacionSuscripciones;
         }
 
         public override async Task OnActionExecutionAsync(
@@ -1233,26 +1236,23 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             return RedirectToAction(
-                nameof(PagoSuscripcion),
+                nameof(SolicitudPagoSinpe),
                 new
                 {
-                     idPlan = plan.IdPlan
+                    idPlan = plan.IdPlan
                 }
             );
         }
 
         [HttpGet]
-        public async Task<IActionResult> PagoSuscripcion(int idPlan)
+        public async Task<IActionResult> SolicitudPagoSinpe(
+    int idPlan, bool renovacion = false)
         {
-            int? idUsuario =
-                HttpContext.Session.GetInt32("IdUsuario");
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
             if (!idUsuario.HasValue)
             {
-                return RedirectToAction(
-                    "IniciarSesion",
-                    "Cuenta"
-                );
+                return RedirectToAction("IniciarSesion", "Cuenta");
             }
 
             Emprendimiento? emprendimiento =
@@ -1266,244 +1266,342 @@ namespace ProyectoClubCreativo.Controllers
                 emprendimiento.EstadoAprobacion != "Aprobado")
             {
                 TempData["MensajeError"] =
-                    "Debe tener un emprendimiento activo y aprobado para adquirir un plan.";
+                    "Debes tener un emprendimiento activo y aprobado para solicitar un plan.";
 
                 return RedirectToAction(nameof(PlanesSuscripcion));
             }
 
+            // Verificar que el plan seleccionado esté disponible.
             PlanesSuscripcion? plan =
                 await _context.PlanesSuscripcions
                     .AsNoTracking()
                     .FirstOrDefaultAsync(p =>
-                        p.IdPlan == idPlan &&
-                        p.Activo);
+                        p.IdPlan == idPlan && p.Activo);
 
             if (plan is null)
             {
                 TempData["MensajeError"] =
-                    "El plan seleccionado ya no se encuentra disponible.";
+                    "El plan seleccionado no está disponible.";
 
                 return RedirectToAction(nameof(PlanesSuscripcion));
             }
 
+            // No permitir nuevas solicitudes mientras exista una pendiente.
+            bool tieneSolicitudPendiente =
+                await _context.SolicitudesPagoSuscripcion
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente");
+
+            if (tieneSolicitudPendiente)
+            {
+                TempData["MensajeError"] =
+                    "Ya tienes una solicitud de pago pendiente de revisión.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+            DateOnly fechaActual = DateOnly.FromDateTime(DateTime.Today);
+
+            bool tieneSuscripcionProgramada =
+                await _context.Suscripciones
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente" &&
+                        s.FechaInicio > fechaActual);
+
+            if (tieneSuscripcionProgramada)
+            {
+                TempData["MensajeError"] =
+                    "Ya tienes una suscripción pagada y programada.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            // Comprobar si existe una suscripción vigente.
+            DateOnly hoy = DateOnly.FromDateTime(DateTime.Today);
+
             Suscripcione? suscripcionActual =
                 await _context.Suscripciones
                     .AsNoTracking()
-                    .Include(s => s.IdPlanNavigation)
                     .Where(s =>
                         s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa")
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= hoy &&
+                        s.FechaFin >= hoy)
                     .OrderByDescending(s => s.FechaInicio)
                     .FirstOrDefaultAsync();
 
-            PagoSuscripcionViewModel modelo = new()
+            if (suscripcionActual != null &&
+                suscripcionActual.IdPlan == plan.IdPlan &&
+                !renovacion)
             {
-                IdPlan = plan.IdPlan,
-                NombrePlan = plan.Nombre,
-                Precio = plan.Precio,
-                Periodicidad = plan.Periodicidad,
-                TotalPagar = plan.Precio
-            };
+                TempData["MensajeError"] =
+                    "Ya tienes este plan vigente.";
 
-            if (suscripcionActual != null)
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+            if (renovacion)
             {
-                // Si seleccionó exactamente el mismo plan que ya posee,
-                // no es necesario realizar otro pago.
-                if (suscripcionActual.IdPlan == plan.IdPlan)
+                if (suscripcionActual == null ||
+                    suscripcionActual.IdPlan != plan.IdPlan ||
+                    suscripcionActual.FechaFin.DayNumber - hoy.DayNumber > 3)
                 {
                     TempData["MensajeError"] =
-                        "Este es el plan que actualmente tiene activo.";
+                        "La renovación solo está disponible durante " +
+                        "los últimos 3 días de vigencia del mismo plan.";
 
                     return RedirectToAction(nameof(MiSuscripcion));
                 }
 
-                modelo.EsCambioPlan = true;
-                modelo.NombrePlanActual =
-                    suscripcionActual.IdPlanNavigation.Nombre;
+                bool tieneCancelacionRegistrada =
+                    await _context.SuscripcionCancelaciones
+                        .AnyAsync(c =>
+                            c.IdSuscripcion == suscripcionActual.IdSuscripcion);
 
-                modelo.PrecioPlanActual =
-                    suscripcionActual.IdPlanNavigation.Precio;
-
-                DateOnly hoy =
-                    DateOnly.FromDateTime(DateTime.Today);
-
-                int diasTotales =
-                    suscripcionActual.FechaFin.DayNumber -
-                    suscripcionActual.FechaInicio.DayNumber;
-
-                int diasRestantes =
-                    suscripcionActual.FechaFin.DayNumber -
-                    hoy.DayNumber;
-
-                diasRestantes = Math.Max(
-                    0,
-                    Math.Min(diasRestantes, diasTotales)
-                );
-
-                decimal creditoProporcional = 0;
-
-                if (diasTotales > 0)
+                if (tieneCancelacionRegistrada)
                 {
-                    creditoProporcional =
-                        suscripcionActual.IdPlanNavigation.Precio *
-                        diasRestantes /
-                        diasTotales;
+                    TempData["MensajeError"] =
+                        "Esta suscripción tiene una cancelación registrada. " +
+                        "No puedes solicitar su renovación.";
+
+                    return RedirectToAction(nameof(MiSuscripcion));
                 }
-
-                creditoProporcional =
-                    Math.Round(creditoProporcional, 2);
-
-                modelo.CreditoProporcional =
-                    creditoProporcional;
-
-                modelo.TotalPagar =
-                    Math.Max(
-                        0,
-                        plan.Precio - creditoProporcional
-                    );
             }
+            if (!renovacion && suscripcionActual != null)
+            {
+                bool tieneCancelacionRegistrada =
+                    await _context.SuscripcionCancelaciones
+                        .AnyAsync(c =>
+                            c.IdSuscripcion == suscripcionActual.IdSuscripcion);
+
+                if (tieneCancelacionRegistrada)
+                {
+                    TempData["MensajeError"] =
+                        "Esta suscripción tiene una cancelación registrada. " +
+                        "No puedes solicitar un cambio de plan.";
+
+                    return RedirectToAction(nameof(MiSuscripcion));
+                }
+            }
+            // Preparar los datos que se mostrarán en el formulario SINPE.
+            SolicitudPagoSinpeViewModel modelo = new()
+            {
+                IdPlan = plan.IdPlan,
+                NombrePlan = plan.Nombre,
+                Monto = plan.Precio,
+                Periodicidad = plan.Periodicidad,
+                EsRenovacion = renovacion
+            };
 
             return View(modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PagoSuscripcion(
-    PagoSuscripcionViewModel modelo)
+        public async Task<IActionResult> SolicitudPagoSinpe(
+    SolicitudPagoSinpeViewModel modelo)
         {
-            int? idUsuario =
-                HttpContext.Session.GetInt32("IdUsuario");
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
             if (!idUsuario.HasValue)
             {
-                return RedirectToAction(
-                    "IniciarSesion",
-                    "Cuenta"
-                );
+                return RedirectToAction("IniciarSesion", "Cuenta");
             }
 
-            // Consultar nuevamente el plan seleccionado.
-            PlanesSuscripcion? plan =
-                await _context.PlanesSuscripcions
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p =>
-                        p.IdPlan == modelo.IdPlan &&
-                        p.Activo);
-
-            if (plan is null)
-            {
-                TempData["MensajeError"] =
-                    "El plan seleccionado ya no se encuentra disponible.";
-
-                return RedirectToAction(nameof(PlanesSuscripcion));
-            }
-
-            // Comprobar nuevamente el emprendimiento.
             Emprendimiento? emprendimiento =
-    await _context.Emprendimientos
-        .AsNoTracking()
-        .FirstOrDefaultAsync(e =>
-            e.IdUsuarioPropietario == idUsuario.Value);
+                await _context.Emprendimientos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e =>
+                        e.IdUsuarioPropietario == idUsuario.Value);
 
             if (emprendimiento is null ||
                 !emprendimiento.Activo ||
                 emprendimiento.EstadoAprobacion != "Aprobado")
             {
                 TempData["MensajeError"] =
-                    "Debe tener un emprendimiento activo y aprobado para adquirir un plan.";
+                    "Debes tener un emprendimiento activo y aprobado.";
 
                 return RedirectToAction(nameof(PlanesSuscripcion));
             }
 
-            // Buscar la suscripción activa actual.
+            PlanesSuscripcion? plan =
+                await _context.PlanesSuscripcions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p =>
+                        p.IdPlan == modelo.IdPlan && p.Activo);
+
+            if (plan is null)
+            {
+                TempData["MensajeError"] =
+                    "El plan seleccionado ya no está disponible.";
+
+                return RedirectToAction(nameof(PlanesSuscripcion));
+            }
+
+            // Los datos del plan siempre se obtienen desde la BD.
+            modelo.NombrePlan = plan.Nombre;
+            modelo.Monto = plan.Precio;
+            modelo.Periodicidad = plan.Periodicidad;
+
+            modelo.NumeroReferencia =
+                (modelo.NumeroReferencia ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(modelo.NumeroReferencia))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NumeroReferencia),
+                    "Debes ingresar el número de referencia SINPE.");
+            }
+
+            if (!modelo.ConfirmaTransferencia)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.ConfirmaTransferencia),
+                    "Debes confirmar que realizaste la transferencia.");
+            }
+
+            // Impedir solicitudes simultáneas pendientes.
+            bool tienePendiente =
+                await _context.SolicitudesPagoSuscripcion
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente");
+
+            if (tienePendiente)
+            {
+                TempData["MensajeError"] =
+                    "Ya tienes una solicitud pendiente de revisión.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            // Impedir reutilizar referencias de pago.
+            bool referenciaUtilizada =
+                await _context.SolicitudesPagoSuscripcion
+                    .AnyAsync(s =>
+                        s.NumeroReferencia == modelo.NumeroReferencia &&
+                        s.Estado != "Rechazada");
+
+            if (referenciaUtilizada)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NumeroReferencia),
+                    "Este número de referencia ya fue registrado.");
+            }
+
+            DateOnly hoy = DateOnly.FromDateTime(DateTime.Today);
+
+            // Consultar la suscripción vigente.
             Suscripcione? suscripcionActual =
                 await _context.Suscripciones
-                    .Include(s => s.IdPlanNavigation)
+                    .AsNoTracking()
                     .Where(s =>
                         s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa")
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= hoy &&
+                        s.FechaFin >= hoy)
                     .OrderByDescending(s => s.FechaInicio)
                     .FirstOrDefaultAsync();
 
-            // Los datos visibles siempre se vuelven a obtener desde la BD.
-            modelo.NombrePlan = plan.Nombre;
-            modelo.Precio = plan.Precio;
-            modelo.Periodicidad = plan.Periodicidad;
-            modelo.TotalPagar = plan.Precio;
+            string tipoSolicitud = "Nueva";
+            DateOnly? fechaInicioProgramada = null;
+            int? idSuscripcionAnterior = null;
 
-            // Si existe una suscripción activa, estamos ante un cambio de plan.
-            if (suscripcionActual != null)
+            if (modelo.EsRenovacion)
             {
-                if (suscripcionActual.IdPlan == plan.IdPlan)
+                if (suscripcionActual == null ||
+                    suscripcionActual.IdPlan != plan.IdPlan ||
+                    suscripcionActual.FechaFin.DayNumber - hoy.DayNumber > 3)
                 {
                     TempData["MensajeError"] =
-                        "Este es el plan que actualmente tiene activo.";
+                        "Solo puedes renovar tu mismo plan durante " +
+                        "los últimos 3 días de vigencia.";
 
                     return RedirectToAction(nameof(MiSuscripcion));
                 }
 
-                modelo.EsCambioPlan = true;
+                bool tieneCancelacionRegistrada =
+                    await _context.SuscripcionCancelaciones
+                        .AnyAsync(c =>
+                            c.IdSuscripcion == suscripcionActual.IdSuscripcion);
 
-                modelo.NombrePlanActual =
-                    suscripcionActual.IdPlanNavigation.Nombre;
-
-                modelo.PrecioPlanActual =
-                    suscripcionActual.IdPlanNavigation.Precio;
-
-                DateOnly hoy =
-                    DateOnly.FromDateTime(DateTime.Today);
-
-                int diasTotales =
-                    suscripcionActual.FechaFin.DayNumber -
-                    suscripcionActual.FechaInicio.DayNumber;
-
-                int diasRestantes =
-                    suscripcionActual.FechaFin.DayNumber -
-                    hoy.DayNumber;
-
-                diasRestantes = Math.Max(
-                    0,
-                    Math.Min(diasRestantes, diasTotales)
-                );
-
-                decimal creditoProporcional = 0;
-
-                if (diasTotales > 0)
+                if (tieneCancelacionRegistrada)
                 {
-                    creditoProporcional =
-                        suscripcionActual.IdPlanNavigation.Precio *
-                        diasRestantes /
-                        diasTotales;
+                    TempData["MensajeError"] =
+                        "No puedes renovar esta suscripción porque " +
+                        "ya tiene una cancelación registrada.";
+
+                    return RedirectToAction(nameof(MiSuscripcion));
+                }
+                tipoSolicitud = "Renovacion";
+                idSuscripcionAnterior = suscripcionActual.IdSuscripcion;
+
+                fechaInicioProgramada =
+                    suscripcionActual.FechaFin.AddDays(1);
+            }
+            else if (suscripcionActual != null)
+            {
+                if (suscripcionActual.IdPlan == plan.IdPlan)
+                {
+                    TempData["MensajeError"] =
+                        "Ya tienes este plan vigente.";
+
+                    return RedirectToAction(nameof(MiSuscripcion));
                 }
 
-                creditoProporcional =
-                    Math.Round(creditoProporcional, 2);
+                bool tieneCancelacionRegistrada =
+                    await _context.SuscripcionCancelaciones
+                        .AnyAsync(c =>
+                            c.IdSuscripcion == suscripcionActual.IdSuscripcion);
 
-                modelo.CreditoProporcional =
-                    creditoProporcional;
+                if (tieneCancelacionRegistrada)
+                {
+                    TempData["MensajeError"] =
+                        "Esta suscripción tiene una cancelación registrada. " +
+                        "No puedes solicitar un cambio de plan.";
 
-                modelo.TotalPagar =
-                    Math.Max(
-                        0,
-                        plan.Precio - creditoProporcional
-                    );
+                    return RedirectToAction(nameof(MiSuscripcion));
+                }
+                tipoSolicitud = "CambioPlan";
+                idSuscripcionAnterior = suscripcionActual.IdSuscripcion;
+
+                fechaInicioProgramada =
+                    suscripcionActual.FechaFin.AddDays(1);
             }
 
-            // Validar vencimiento de la tarjeta.
-            if (modelo.MesVencimiento.HasValue &&
-                modelo.AnioVencimiento.HasValue)
-            {
-                DateTime hoy = DateTime.Today;
+            // No permitir otro cambio cuando ya exista uno aprobado
+            // y programado para comenzar en el futuro.
+            bool tieneCambioProgramado =
+                await _context.SolicitudesPagoSuscripcion
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        (s.TipoSolicitud == "CambioPlan" ||
+                        s.TipoSolicitud == "Renovacion") &&
+                        s.Estado == "Aprobada" &&
+                        s.FechaInicioProgramada.HasValue &&
+                        s.FechaInicioProgramada.Value > hoy);
 
-                if (modelo.AnioVencimiento.Value < hoy.Year ||
-                    (modelo.AnioVencimiento.Value == hoy.Year &&
-                     modelo.MesVencimiento.Value < hoy.Month))
-                {
-                    ModelState.AddModelError(
-                        nameof(modelo.AnioVencimiento),
-                        "La tarjeta se encuentra vencida."
-                    );
-                }
+            if (tieneCambioProgramado)
+            {
+                TempData["MensajeError"] =
+                    "Ya tienes una renovación o un cambio de plan aprobado y programado.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            bool existeSuscripcionProgramada =
+                await _context.Suscripciones
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente" &&
+                        s.FechaInicio > hoy);
+
+            if (existeSuscripcionProgramada)
+            {
+                TempData["MensajeError"] =
+                    "Ya tienes una suscripción pagada y programada.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
             }
 
             if (!ModelState.IsValid)
@@ -1511,124 +1609,49 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
-            // Procesar el monto calculado por el servidor.
-            ResultadoPago resultadoPago =
-                _pagoService.ProcesarPago(
-                    modelo.NumeroTarjeta,
-                    modelo.TotalPagar
-                );
-
-            if (!resultadoPago.Aprobado)
-            {
-                ModelState.AddModelError(
-                    string.Empty,
-                    resultadoPago.Mensaje
-                );
-
-                modelo.NumeroTarjeta = string.Empty;
-                modelo.Cvv = string.Empty;
-
-                return View(modelo);
-            }
-
-            DateOnly fechaInicio =
-                DateOnly.FromDateTime(DateTime.Today);
-
-            DateOnly fechaFin;
-
-            if (plan.Periodicidad.Equals(
-                "Anual",
-                StringComparison.OrdinalIgnoreCase))
-            {
-                fechaFin = fechaInicio.AddYears(1);
-            }
-            else if (plan.Periodicidad.Equals(
-                "Trimestral",
-                StringComparison.OrdinalIgnoreCase))
-            {
-                fechaFin = fechaInicio.AddMonths(3);
-            }
-            else
-            {
-                fechaFin = fechaInicio.AddMonths(1);
-            }
-
-            // Si es un cambio de plan, cerrar la suscripción anterior
-            // únicamente después de que el pago haya sido aprobado.
-            if (suscripcionActual != null)
-            {
-                suscripcionActual.Estado = "Cancelada";
-            }
-
-            Suscripcione nuevaSuscripcion = new()
+            SolicitudPagoSuscripcion solicitud = new()
             {
                 IdEmprendimiento = emprendimiento.IdEmprendimiento,
-
                 IdPlan = plan.IdPlan,
-                FechaInicio = fechaInicio,
-                FechaFin = fechaFin,
-                Estado = "Activa",
-                RenovacionAutomatica = true
+                Monto = plan.Precio,
+                NumeroReferencia = modelo.NumeroReferencia,
+                FechaSolicitud = DateTime.Now,
+                Estado = "Pendiente",
+                TipoSolicitud = tipoSolicitud,
+                FechaInicioProgramada = fechaInicioProgramada,
+                IdSuscripcionAnterior = idSuscripcionAnterior
             };
 
-            _context.Suscripciones.Add(nuevaSuscripcion);
-
-            // Guardar el método de pago únicamente si el usuario
-            // seleccionó la opción y el pago fue aprobado.
-            if (modelo.GuardarMetodoPago)
-            {
-                // Desactivar cualquier método de pago anterior
-                // del mismo emprendimiento.
-                var metodosAnteriores =
-                    await _context.MetodosPagoSuscripcion
-                        .Where(m =>
-                            m.IdEmprendimiento ==
-                                emprendimiento.IdEmprendimiento &&
-                            m.Activo)
-                        .ToListAsync();
-
-                foreach (var metodoAnterior in metodosAnteriores)
-                {
-                    metodoAnterior.Activo = false;
-                }
-
-                MetodoPagoSuscripcion metodoPago = new()
-                {
-                    IdEmprendimiento =
-                        emprendimiento.IdEmprendimiento,
-
-                    UltimosCuatro =
-                        modelo.NumeroTarjeta[^4..],
-
-                    MesVencimiento =
-                        modelo.MesVencimiento!.Value,
-
-                    AnioVencimiento =
-                        modelo.AnioVencimiento!.Value,
-
-                    EstadoSimulado = "Aprobado",
-
-                    Activo = true
-                };
-
-                _context.MetodosPagoSuscripcion.Add(metodoPago);
-            }
-
+            _context.SolicitudesPagoSuscripcion.Add(solicitud);
 
             await _context.SaveChangesAsync();
 
-            if (suscripcionActual != null)
-            {
-                TempData["MensajeSuscripcion"] =
-                    "El pago fue procesado y el cambio de plan se realizó correctamente.";
-            }
-            else
-            {
-                TempData["MensajeSuscripcion"] =
-                    "El pago fue procesado y tu suscripción fue activada correctamente.";
-            }
+            TempData["MensajeSuscripcion"] =
+                "Tu solicitud de pago fue enviada correctamente. " +
+                "El administrador verificará la transferencia SINPE.";
 
             return RedirectToAction(nameof(MiSuscripcion));
+        }
+
+        [HttpGet]
+        public IActionResult PagoSuscripcion(int idPlan)
+        {
+            return RedirectToAction(
+                nameof(SolicitudPagoSinpe),
+                new { idPlan }
+            );
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult PagoSuscripcion(
+    PagoSuscripcionViewModel modelo)
+        {
+            TempData["MensajeError"] =
+                "El pago con tarjeta ya no está disponible. " +
+                "Para adquirir un plan debes realizar la transferencia SINPE Móvil.";
+
+            return RedirectToAction(nameof(PlanesSuscripcion));
         }
 
         [HttpGet]
@@ -1650,16 +1673,51 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(Panel));
             }
 
+            // Actualizar las suscripciones vencidas y activar
+            // los planes SINPE aprobados cuya fecha ya llegó.
+            await _actualizacionSuscripciones.ActualizarEstadosAsync();
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
             var suscripcion = await _context.Suscripciones
                 .AsNoTracking()
                 .Include(s => s.IdPlanNavigation)
                 .Where(s =>
                     s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                    s.Estado == "Activa")
+                    s.Estado == "Activa" &&
+                    s.FechaInicio <= fechaActual &&
+                    s.FechaFin >= fechaActual)
                 .OrderByDescending(s => s.FechaInicio)
                 .FirstOrDefaultAsync();
 
             MiSuscripcionViewModel modelo = new();
+
+            var planProgramado = await _context.Suscripciones
+                .AsNoTracking()
+                .Include(s => s.IdPlanNavigation)
+                .Where(s =>
+                    s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    s.Estado == "Pendiente" &&
+                    s.FechaInicio > fechaActual &&
+                    _context.SolicitudesPagoSuscripcion.Any(p =>
+                        p.IdSuscripcionGenerada == s.IdSuscripcion &&
+                        p.Estado == "Aprobada"))
+                .OrderBy(s => s.FechaInicio)
+                .FirstOrDefaultAsync();
+
+            if (planProgramado != null)
+            {
+                modelo.TienePlanProgramado = true;
+
+                modelo.NombrePlanProgramado =
+                    planProgramado.IdPlanNavigation.Nombre;
+
+                modelo.FechaInicioPlanProgramado =
+                    planProgramado.FechaInicio;
+
+                modelo.FechaFinPlanProgramado =
+                    planProgramado.FechaFin;
+            }
 
             if (suscripcion != null)
             {
@@ -1715,224 +1773,70 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             var historialSuscripciones = await _context.Suscripciones
-            .AsNoTracking()
-            .Include(s => s.IdPlanNavigation)
-            .Where(s =>
-                s.IdEmprendimiento == emprendimiento.IdEmprendimiento)
-            .OrderByDescending(s => s.FechaInicio)
-            .Select(s => new MovimientoSuscripcionViewModel
-            {
-                Fecha = s.FechaInicio,
-                Descripcion = "Activación del " + s.IdPlanNavigation.Nombre,
-                Monto = s.IdPlanNavigation.Precio,
-                Estado = s.Estado
-            })
-            .ToListAsync();
+                .AsNoTracking()
+                .Where(s =>
+                    s.IdEmprendimiento == emprendimiento.IdEmprendimiento)
+                .OrderByDescending(s => s.FechaInicio)
+                .Select(s => new MovimientoSuscripcionViewModel
+                {
+                    Fecha = s.FechaInicio,
+
+                    Descripcion = "Suscripción al plan " +
+                        s.IdPlanNavigation.Nombre,
+
+                    Monto = _context.SolicitudesPagoSuscripcion
+                        .Where(p =>
+                            p.IdSuscripcionGenerada == s.IdSuscripcion &&
+                            p.Estado == "Aprobada")
+                        .Select(p => (decimal?)p.Monto)
+                        .FirstOrDefault() ?? 0,
+
+                    Estado = s.Estado
+                })
+                .ToListAsync();
 
             modelo.Historial = historialSuscripciones;
+
+            // Consultar las solicitudes SINPE del emprendimiento.
+            modelo.SolicitudesSinpe =
+                await _context.SolicitudesPagoSuscripcion
+                    .AsNoTracking()
+                    .Where(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento)
+                    .OrderByDescending(s => s.FechaSolicitud)
+                    .Select(s => new EstadoSolicitudSinpeViewModel
+                    {
+                        IdSolicitudPago = s.IdSolicitudPago,
+                        NombrePlan = s.IdPlanNavigation.Nombre,
+                        Monto = s.Monto,
+                        NumeroReferencia = s.NumeroReferencia,
+                        FechaSolicitud = s.FechaSolicitud,
+                        Estado = s.Estado,
+                        FechaRevision = s.FechaRevision,
+                        Observaciones = s.Observaciones
+                    })
+                    .ToListAsync();
 
             return View(modelo);
         }
 
         [HttpGet]
-        public async Task<IActionResult> ActualizarMetodoPago()
+        public IActionResult ActualizarMetodoPago()
         {
-            int? idUsuario =
-                HttpContext.Session.GetInt32("IdUsuario");
+            TempData["MensajeError"] =
+                "El pago con tarjeta ya no está disponible. " +
+                "Las suscripciones se gestionan mediante SINPE Móvil.";
 
-            if (!idUsuario.HasValue)
-            {
-                return RedirectToAction(
-                    "IniciarSesion",
-                    "Cuenta"
-                );
-            }
-
-            Emprendimiento? emprendimiento =
-                await _context.Emprendimientos
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(e =>
-                        e.IdUsuarioPropietario == idUsuario.Value);
-
-            if (emprendimiento is null)
-            {
-                TempData["MensajeError"] =
-                    "No se encontró el emprendimiento.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            Suscripcione? suscripcion =
-                await _context.Suscripciones
-                    .AsNoTracking()
-                    .Include(s => s.IdPlanNavigation)
-                    .FirstOrDefaultAsync(s =>
-                        s.IdEmprendimiento ==
-                            emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
-
-            if (suscripcion is null)
-            {
-                TempData["MensajeError"] =
-                    "No se encontró una suscripción activa.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            PagoSuscripcionViewModel modelo = new()
-            {
-                IdPlan = suscripcion.IdPlan,
-                NombrePlan = suscripcion.IdPlanNavigation.Nombre,
-                Precio = suscripcion.IdPlanNavigation.Precio,
-                Periodicidad =
-                    suscripcion.IdPlanNavigation.Periodicidad
-            };
-
-            return View(modelo);
+            return RedirectToAction(nameof(MiSuscripcion));
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ActualizarMetodoPago(
+        public IActionResult ActualizarMetodoPago(
     PagoSuscripcionViewModel modelo)
         {
-            int? idUsuario =
-                HttpContext.Session.GetInt32("IdUsuario");
-
-            if (!idUsuario.HasValue)
-            {
-                return RedirectToAction(
-                    "IniciarSesion",
-                    "Cuenta"
-                );
-            }
-
-            Emprendimiento? emprendimiento =
-                await _context.Emprendimientos
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(e =>
-                        e.IdUsuarioPropietario == idUsuario.Value);
-
-            if (emprendimiento is null)
-            {
-                TempData["MensajeError"] =
-                    "No se encontró el emprendimiento.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            Suscripcione? suscripcion =
-                await _context.Suscripciones
-                    .AsNoTracking()
-                    .Include(s => s.IdPlanNavigation)
-                    .FirstOrDefaultAsync(s =>
-                        s.IdEmprendimiento ==
-                            emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
-
-            if (suscripcion is null)
-            {
-                TempData["MensajeError"] =
-                    "No se encontró una suscripción activa.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            // Estos datos siempre se recuperan desde la BD
-            // y no se confía en los valores enviados por el navegador.
-            modelo.IdPlan = suscripcion.IdPlan;
-            modelo.NombrePlan =
-                suscripcion.IdPlanNavigation.Nombre;
-            modelo.Precio =
-                suscripcion.IdPlanNavigation.Precio;
-            modelo.Periodicidad =
-                suscripcion.IdPlanNavigation.Periodicidad;
-
-            // Validar el vencimiento de la nueva tarjeta.
-            if (modelo.MesVencimiento.HasValue &&
-                modelo.AnioVencimiento.HasValue)
-            {
-                DateTime hoy = DateTime.Today;
-
-                if (modelo.AnioVencimiento.Value < hoy.Year ||
-                    (modelo.AnioVencimiento.Value == hoy.Year &&
-                     modelo.MesVencimiento.Value < hoy.Month))
-                {
-                    ModelState.AddModelError(
-                        nameof(modelo.AnioVencimiento),
-                        "La tarjeta se encuentra vencida."
-                    );
-                }
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return View(modelo);
-            }
-
-            // Validar la nueva tarjeta mediante
-            // la misma pasarela simulada del proyecto.
-            ResultadoPago resultado =
-                _pagoService.ProcesarPago(
-                    modelo.NumeroTarjeta,
-                    suscripcion.IdPlanNavigation.Precio
-                );
-
-            if (!resultado.Aprobado)
-            {
-                ModelState.AddModelError(
-                    string.Empty,
-                    resultado.Mensaje
-                );
-
-                modelo.NumeroTarjeta = string.Empty;
-                modelo.Cvv = string.Empty;
-
-                return View(modelo);
-            }
-
-            // Desactivar cualquier método anterior.
-            List<MetodoPagoSuscripcion> metodosAnteriores =
-                await _context.MetodosPagoSuscripcion
-                    .Where(m =>
-                        m.IdEmprendimiento ==
-                            emprendimiento.IdEmprendimiento &&
-                        m.Activo)
-                    .ToListAsync();
-
-            foreach (MetodoPagoSuscripcion metodoAnterior
-                in metodosAnteriores)
-            {
-                metodoAnterior.Activo = false;
-            }
-
-            // Registrar el nuevo método.
-            MetodoPagoSuscripcion nuevoMetodo = new()
-            {
-                IdEmprendimiento =
-                    emprendimiento.IdEmprendimiento,
-
-                UltimosCuatro =
-                    modelo.NumeroTarjeta[^4..],
-
-                MesVencimiento =
-                    modelo.MesVencimiento!.Value,
-
-                AnioVencimiento =
-                    modelo.AnioVencimiento!.Value,
-
-                EstadoSimulado = "Aprobado",
-
-                Activo = true
-            };
-
-            _context.MetodosPagoSuscripcion.Add(nuevoMetodo);
-
-            await _context.SaveChangesAsync();
-
-            TempData["MensajeSuscripcion"] =
-                "El método de pago fue actualizado correctamente. " +
-                "Ya puedes volver a intentar la renovación de tu suscripción.";
+            TempData["MensajeError"] =
+                "La actualización de tarjetas ya no está disponible. " +
+                "Para renovar tu suscripción debes utilizar SINPE Móvil.";
 
             return RedirectToAction(nameof(MiSuscripcion));
         }
@@ -1991,17 +1895,56 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(MiSuscripcion));
             }
 
+            DateOnly hoy = DateOnly.FromDateTime(DateTime.Today);
+
             Suscripcione? suscripcion =
                 await _context.Suscripciones
                     .FirstOrDefaultAsync(s =>
-                        s.IdEmprendimiento ==
-                            emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= hoy &&
+                        s.FechaFin >= hoy);
 
             if (suscripcion is null)
             {
                 TempData["MensajeError"] =
                     "No tienes una suscripción activa para cancelar.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+            bool tienePagoPendiente =
+                await _context.SolicitudesPagoSuscripcion
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente");
+
+            if (tienePagoPendiente)
+            {
+                TempData["MensajeError"] =
+                    "Tienes una solicitud de pago SINPE pendiente de revisión. " +
+                    "Debes esperar a que el administrador la apruebe " +
+                    "o rechace antes de solicitar la cancelación.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+            
+
+            bool tienePlanFuturoAprobado =
+                await _context.Suscripciones
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente" &&
+                        s.FechaInicio > hoy &&
+                        _context.SolicitudesPagoSuscripcion.Any(p =>
+                            p.IdSuscripcionGenerada == s.IdSuscripcion &&
+                            p.Estado == "Aprobada"));
+
+            if (tienePlanFuturoAprobado)
+            {
+                TempData["MensajeError"] =
+                    "Ya tienes una renovación o cambio de plan pagado " +
+                    "y programado para un período futuro. " +
+                    "Podrás solicitar la cancelación durante ese nuevo período.";
 
                 return RedirectToAction(nameof(MiSuscripcion));
             }
@@ -2047,78 +1990,15 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpPost]
-[ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReactivarSuscripcion()
+        [ValidateAntiForgeryToken]
+        public IActionResult ReactivarSuscripcion()
         {
-            int? idUsuario =
-                HttpContext.Session.GetInt32("IdUsuario");
-
-            if (!idUsuario.HasValue)
-            {
-                return RedirectToAction(
-                    "IniciarSesion",
-                    "Cuenta"
-                );
-            }
-
-            var emprendimiento =
-                await _context.Emprendimientos
-                    .FirstOrDefaultAsync(e =>
-                        e.IdUsuarioPropietario == idUsuario.Value);
-
-            if (emprendimiento == null)
-            {
-                return RedirectToAction(nameof(Panel));
-            }
-
-            var suscripcion =
-                await _context.Suscripciones
-                    .FirstOrDefaultAsync(s =>
-                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
-
-            if (suscripcion == null)
-            {
-                TempData["MensajeError"] =
-                    "No se encontró una suscripción activa.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            var cancelacion =
-                await _context.SuscripcionCancelaciones
-                    .FirstOrDefaultAsync(c =>
-                        c.IdSuscripcion == suscripcion.IdSuscripcion);
-
-            if (cancelacion == null)
-            {
-                TempData["MensajeError"] =
-                    "La suscripción no tiene una cancelación programada.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            if (suscripcion.FechaFin <=
-                DateOnly.FromDateTime(DateTime.Today))
-            {
-                TempData["MensajeError"] =
-                    "La suscripción ya alcanzó la fecha de finalización y no puede reactivarse.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            _context.SuscripcionCancelaciones.Remove(cancelacion);
-
-            suscripcion.RenovacionAutomatica = true;
-
-            await _context.SaveChangesAsync();
-
-            TempData["MensajeSuscripcion"] =
-                "La suscripción fue reactivada correctamente. La renovación continuará activa.";
+            TempData["MensajeError"] =
+                "La renovación automática ya no está disponible. " +
+                "Si deseas continuar con tu plan, debes solicitar una renovación mediante SINPE Móvil.";
 
             return RedirectToAction(nameof(MiSuscripcion));
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -2129,234 +2009,107 @@ namespace ProyectoClubCreativo.Controllers
 
             if (!idUsuario.HasValue)
             {
-                return RedirectToAction(
-                    "IniciarSesion",
-                    "Cuenta"
-                );
+                return RedirectToAction("IniciarSesion", "Cuenta");
             }
 
-            var emprendimiento =
-                await _context.Emprendimientos
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(e =>
-                        e.IdUsuarioPropietario == idUsuario.Value);
+            var emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario.Value &&
+                    e.Activo &&
+                    e.EstadoAprobacion == "Aprobado");
 
             if (emprendimiento == null)
             {
-                return RedirectToAction(nameof(Panel));
+                TempData["MensajeError"] =
+                    "Debes tener un emprendimiento activo y aprobado.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
             }
 
-            var suscripcion =
-                await _context.Suscripciones
-                    .FirstOrDefaultAsync(s =>
-                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
+            DateOnly hoy = DateOnly.FromDateTime(DateTime.Today);
+
+            var suscripcion = await _context.Suscripciones
+                .AsNoTracking()
+                .Where(s =>
+                    s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    s.Estado == "Activa" &&
+                    s.FechaInicio <= hoy &&
+                    s.FechaFin >= hoy)
+                .OrderByDescending(s => s.FechaInicio)
+                .FirstOrDefaultAsync();
 
             if (suscripcion == null)
             {
                 TempData["MensajeError"] =
-                    "No se encontró una suscripción activa.";
+                    "No tienes una suscripción vigente para renovar.";
 
                 return RedirectToAction(nameof(MiSuscripcion));
             }
 
-            if (suscripcion.FechaFin <=
-                DateOnly.FromDateTime(DateTime.Today))
+            bool tieneCancelacionRegistrada =
+                await _context.SuscripcionCancelaciones
+                    .AnyAsync(c =>
+                        c.IdSuscripcion == suscripcion.IdSuscripcion);
+
+            if (tieneCancelacionRegistrada)
             {
                 TempData["MensajeError"] =
-                    "La suscripción ya alcanzó su fecha de vencimiento.";
+                    "Ya solicitaste cancelar esta suscripción. " +
+                    "No puedes renovarla mientras exista una cancelación registrada.";
 
                 return RedirectToAction(nameof(MiSuscripcion));
             }
 
-            suscripcion.RenovacionAutomatica =
-                !suscripcion.RenovacionAutomatica;
+            int diasRestantes =
+                suscripcion.FechaFin.DayNumber - hoy.DayNumber;
 
-            await _context.SaveChangesAsync();
+            if (diasRestantes > 3)
+            {
+                TempData["MensajeError"] =
+                    "Podrás solicitar la renovación cuando falten " +
+                    "3 días o menos para el vencimiento de tu plan.";
 
-            if (suscripcion.RenovacionAutomatica)
-            {
-                TempData["MensajeSuscripcion"] =
-                    "La renovación automática fue activada correctamente.";
-            }
-            else
-            {
-                TempData["MensajeSuscripcion"] =
-                    "La renovación automática fue desactivada. Tu plan permanecerá activo hasta finalizar el período actual.";
+                return RedirectToAction(nameof(MiSuscripcion));
             }
 
-            return RedirectToAction(nameof(MiSuscripcion));
+            bool tieneSolicitudPendiente =
+                await _context.SolicitudesPagoSuscripcion
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente");
+
+            bool tienePlanProgramado =
+                await _context.Suscripciones
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Pendiente" &&
+                        s.FechaInicio > hoy);
+
+            if (tieneSolicitudPendiente || tienePlanProgramado)
+            {
+                TempData["MensajeError"] =
+                    "Ya tienes una solicitud en revisión o un plan programado.";
+
+                return RedirectToAction(nameof(MiSuscripcion));
+            }
+
+            return RedirectToAction(
+                nameof(SolicitudPagoSinpe),
+                new
+                {
+                    idPlan = suscripcion.IdPlan,
+                    renovacion = true
+                });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ProcesarRenovacionesAutomaticas()
+        public IActionResult ProcesarRenovacionesAutomaticas()
         {
-            int? idUsuario =
-                HttpContext.Session.GetInt32("IdUsuario");
-
-            if (!idUsuario.HasValue)
-            {
-                return RedirectToAction(
-                    "IniciarSesion",
-                    "Cuenta"
-                );
-            }
-
-            Emprendimiento? emprendimiento =
-                await _context.Emprendimientos
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(e =>
-                        e.IdUsuarioPropietario == idUsuario.Value);
-
-            if (emprendimiento is null)
-            {
-                TempData["MensajeError"] =
-                    "No se encontró el emprendimiento.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            Suscripcione? suscripcion =
-                await _context.Suscripciones
-                    .Include(s => s.IdPlanNavigation)
-                    .FirstOrDefaultAsync(s =>
-                        s.IdEmprendimiento ==
-                            emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
-
-            if (suscripcion is null)
-            {
-                TempData["MensajeError"] =
-                    "No se encontró una suscripción activa.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            DateOnly hoy =
-    DateOnly.FromDateTime(DateTime.Today);
-
-            // Si la renovación automática fue desactivada,
-            // no se realiza ningún cobro.
-            if (!suscripcion.RenovacionAutomatica)
-            {
-                // Si ya llegó la fecha de vencimiento,
-                // la suscripción pasa a estado Vencida.
-                if (suscripcion.FechaFin <= hoy)
-                {
-                    suscripcion.Estado = "Vencida";
-
-                    await _context.SaveChangesAsync();
-
-                    TempData["MensajeSuscripcion"] =
-                        "La suscripción llegó a su fecha de vencimiento. " +
-                        "No se realizó ningún cobro porque la renovación automática estaba desactivada.";
-                }
-                else
-                {
-                    TempData["MensajeError"] =
-                        $"La renovación automática está desactivada. " +
-                        $"Tu plan permanecerá activo hasta el " +
-                        $"{suscripcion.FechaFin:dd/MM/yyyy}.";
-                }
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            if (suscripcion.FechaFin > hoy)
-            {
-                TempData["MensajeError"] =
-                    $"La suscripción todavía no requiere renovación. " +
-                    $"Su fecha de vencimiento es el " +
-                    $"{suscripcion.FechaFin:dd/MM/yyyy}.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            MetodoPagoSuscripcion? metodoPago =
-                await _context.MetodosPagoSuscripcion
-                    .FirstOrDefaultAsync(m =>
-                        m.IdEmprendimiento ==
-                            emprendimiento.IdEmprendimiento &&
-                        m.Activo);
-
-            if (metodoPago is null)
-            {
-                TempData["MensajeError"] =
-                    "No existe un método de pago registrado para realizar la renovación automática.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            ResultadoPago resultado =
-                _pagoService.ProcesarRenovacionAutomatica(
-                    metodoPago.EstadoSimulado,
-                    suscripcion.IdPlanNavigation.Precio
-                );
-
-            if (!resultado.Aprobado)
-            {
-                DateTime fechaLimite =
-                    DateTime.Now.AddDays(3);
-
-                Notificacione notificacion = new()
-                {
-                    IdUsuario = idUsuario.Value,
-
-                    Titulo = "Fallo en la renovación de la suscripción",
-
-                    Mensaje =
-                        $"No fue posible procesar la renovación automática de tu plan. " +
-                        $"Actualiza tu método de pago antes del " +
-                        $"{fechaLimite:dd/MM/yyyy} para evitar perder el acceso.",
-
-                    Tipo = "Suscripcion",
-
-                    FechaEnvio = DateTime.Now,
-
-                    Leida = false,
-
-                    FechaLectura = null
-                };
-
-                _context.Notificaciones.Add(notificacion);
-
-                await _context.SaveChangesAsync();
-
-                TempData["MensajeError"] =
-                    $"No fue posible procesar la renovación automática. " +
-                    $"Debes actualizar tu método de pago antes del " +
-                    $"{fechaLimite:dd/MM/yyyy}.";
-
-                return RedirectToAction(nameof(MiSuscripcion));
-            }
-
-            // Extender la vigencia del mismo plan.
-            if (suscripcion.IdPlanNavigation.Periodicidad.Equals(
-                "Anual",
-                StringComparison.OrdinalIgnoreCase))
-            {
-                suscripcion.FechaFin =
-                    suscripcion.FechaFin.AddYears(1);
-            }
-            else if (suscripcion.IdPlanNavigation.Periodicidad.Equals(
-                "Trimestral",
-                StringComparison.OrdinalIgnoreCase))
-            {
-                suscripcion.FechaFin =
-                    suscripcion.FechaFin.AddMonths(3);
-            }
-            else
-            {
-                suscripcion.FechaFin =
-                    suscripcion.FechaFin.AddMonths(1);
-            }
-
-            await _context.SaveChangesAsync();
-
-            TempData["MensajeSuscripcion"] =
-                $"La suscripción se renovó automáticamente hasta el " +
-                $"{suscripcion.FechaFin:dd/MM/yyyy}.";
+            TempData["MensajeError"] =
+                "Las renovaciones automáticas ya no están disponibles. " +
+                "Para renovar tu plan debes realizar una nueva solicitud de pago SINPE Móvil.";
 
             return RedirectToAction(nameof(MiSuscripcion));
         }
@@ -2455,6 +2208,25 @@ namespace ProyectoClubCreativo.Controllers
             {
                 TempData["MensajeError"] =
                     "El producto debe estar publicado en el catálogo general antes de incluirlo en Hecho en CR.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+            DateOnly fechaActual =
+    DateOnly.FromDateTime(DateTime.Today);
+
+            bool tieneSuscripcionVigente =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .AnyAsync(s =>
+                        s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= fechaActual &&
+                        s.FechaFin >= fechaActual);
+
+            if (!tieneSuscripcionVigente)
+            {
+                TempData["MensajeError"] =
+                    "Necesitas una suscripción vigente para publicar productos en Hecho en CR.";
 
                 return RedirectToAction(nameof(MisProductos));
             }
@@ -2562,6 +2334,9 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(Panel));
             }
 
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
             Suscripcione? suscripcion =
                 await _context.Suscripciones
                     .AsNoTracking()
@@ -2569,7 +2344,9 @@ namespace ProyectoClubCreativo.Controllers
                     .FirstOrDefaultAsync(s =>
                         s.IdEmprendimiento ==
                             emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= fechaActual &&
+                        s.FechaFin >= fechaActual);
 
             if (suscripcion is null)
             {
@@ -2580,13 +2357,7 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             int limiteProductos =
-                suscripcion.IdPlanNavigation.Nombre switch
-                {
-                    "Plan Básico" => 10,
-                    "Plan Emprendedor" => 20,
-                    "Plan Premium" => 35,
-                    _ => 10
-                };
+                suscripcion.MaximoProductosContratado ?? 10;
 
             int cantidadProductos =
                 await _context.Productos
@@ -2642,6 +2413,10 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(Panel));
             }
 
+
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
             Suscripcione? suscripcion =
                 await _context.Suscripciones
                     .AsNoTracking()
@@ -2649,7 +2424,9 @@ namespace ProyectoClubCreativo.Controllers
                     .FirstOrDefaultAsync(s =>
                         s.IdEmprendimiento ==
                             emprendimiento.IdEmprendimiento &&
-                        s.Estado == "Activa");
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= fechaActual &&
+                        s.FechaFin >= fechaActual);
 
             if (suscripcion is null)
             {
@@ -2660,13 +2437,7 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             int limiteProductos =
-                suscripcion.IdPlanNavigation.Nombre switch
-                {
-                    "Plan Básico" => 10,
-                    "Plan Emprendedor" => 20,
-                    "Plan Premium" => 35,
-                    _ => 10
-                };
+                suscripcion.MaximoProductosContratado ?? 10;
 
             int cantidadProductos =
                 await _context.Productos
@@ -3009,6 +2780,28 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             ValidarImagenesOpcionalesProducto(modelo);
+            if (modelo.Estado == "Publicado")
+            {
+                DateOnly fechaActual =
+                    DateOnly.FromDateTime(DateTime.Today);
+
+                bool tieneSuscripcionVigente =
+                    await _context.Suscripciones
+                        .AsNoTracking()
+                        .AnyAsync(s =>
+                            s.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                            s.Estado == "Activa" &&
+                            s.FechaInicio <= fechaActual &&
+                            s.FechaFin >= fechaActual);
+
+                if (!tieneSuscripcionVigente)
+                {
+                    TempData["MensajeError"] =
+                        "Necesitas una suscripción vigente para publicar productos o servicios.";
+
+                    return RedirectToAction(nameof(MisProductos));
+                }
+            }
 
             if (modelo.TipoPublicacion == "Producto" &&
                 modelo.Inventario is null)
@@ -3252,6 +3045,27 @@ namespace ProyectoClubCreativo.Controllers
             {
                 TempData["MensajeError"] =
                     "Solo se pueden reactivar productos que estén inactivos.";
+
+                return RedirectToAction(nameof(MisProductos));
+            }
+
+            DateOnly fechaActual =
+                DateOnly.FromDateTime(DateTime.Today);
+
+            Suscripcione? suscripcion =
+                await _context.Suscripciones
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s =>
+                        s.IdEmprendimiento ==
+                            emprendimiento.IdEmprendimiento &&
+                        s.Estado == "Activa" &&
+                        s.FechaInicio <= fechaActual &&
+                        s.FechaFin >= fechaActual);
+
+            if (suscripcion is null)
+            {
+                TempData["MensajeError"] =
+                    "Necesitas una suscripción vigente para reactivar productos o servicios.";
 
                 return RedirectToAction(nameof(MisProductos));
             }

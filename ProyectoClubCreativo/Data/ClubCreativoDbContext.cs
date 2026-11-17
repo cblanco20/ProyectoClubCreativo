@@ -92,6 +92,8 @@ public partial class ClubCreativoDbContext : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<SolicitudPagoSuscripcion> SolicitudesPagoSuscripcion { get; set; }
+
     public virtual DbSet<SuscripcionCancelacione> SuscripcionCancelaciones { get; set; }
 
     public virtual DbSet<Suscripcione> Suscripciones { get; set; }
@@ -868,6 +870,7 @@ public partial class ClubCreativoDbContext : DbContext
             entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.Beneficios).HasMaxLength(1500);
             entity.Property(e => e.Descripcion).HasMaxLength(600);
+            entity.Property(e => e.MaximoProductos).HasColumnType("int");
             entity.Property(e => e.Nombre).HasMaxLength(100);
             entity.Property(e => e.Periodicidad).HasMaxLength(20);
             entity.Property(e => e.Precio).HasColumnType("decimal(18, 2)");
@@ -1156,6 +1159,59 @@ public partial class ClubCreativoDbContext : DbContext
             entity.Property(e => e.Nombre).HasMaxLength(50);
         });
 
+        modelBuilder.Entity<SolicitudPagoSuscripcion>(entity =>
+        {
+            entity.ToTable("SolicitudesPagoSuscripcion");
+
+            entity.HasKey(e => e.IdSolicitudPago);
+
+            entity.Property(e => e.Monto)
+                .HasColumnType("decimal(18, 2)");
+
+            entity.Property(e => e.NumeroReferencia)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.FechaSolicitud)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysdatetime())");
+
+            entity.Property(e => e.Estado)
+                .HasMaxLength(20)
+                .HasDefaultValue("Pendiente");
+
+            entity.Property(e => e.FechaRevision)
+                .HasPrecision(0);
+
+            entity.Property(e => e.Observaciones)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.TipoSolicitud)
+                .HasMaxLength(20)
+                .HasDefaultValue("Nueva");
+
+            entity.Property(e => e.FechaInicioProgramada)
+                .HasColumnType("date");
+
+            entity.HasOne(e => e.IdEmprendimientoNavigation)
+                .WithMany()
+                .HasForeignKey(e => e.IdEmprendimiento)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_SolicitudesPago_Emprendimientos");
+
+            entity.HasOne(e => e.IdPlanNavigation)
+                .WithMany()
+                .HasForeignKey(e => e.IdPlan)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_SolicitudesPago_Planes");
+
+            entity.HasOne(e => e.IdSuscripcionGeneradaNavigation)
+                .WithMany()
+                .HasForeignKey(e => e.IdSuscripcionGenerada)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_SolicitudesPago_Suscripciones");
+        });
+
         modelBuilder.Entity<SuscripcionCancelacione>(entity =>
         {
             entity.HasKey(e => e.IdSuscripcion);
@@ -1186,6 +1242,9 @@ public partial class ClubCreativoDbContext : DbContext
 
             entity.Property(e => e.RenovacionAutomatica)
                 .HasDefaultValue(true);
+
+            entity.Property(e => e.MaximoProductosContratado)
+                .HasColumnType("int");
 
             entity.HasOne(d => d.IdEmprendimientoNavigation).WithOne(p => p.Suscripcione)
                 .HasForeignKey<Suscripcione>(d => d.IdEmprendimiento)

@@ -1,0 +1,233 @@
+﻿@model ProyectoClubCreativo.Models.ViewModels.SolicitudPagoSinpeViewModel
+
+@{
+    ViewData["Title"] = "Pago por SINPE Móvil";
+    Layout = "~/Views/Shared/_LayoutEmprendedor.cshtml";
+}
+
+<section class="cabecera-vista-emprendedor">
+
+    <div>
+        <span class="subtitulo-emprendedor">
+            Suscripción
+        </span>
+
+        <h1>Completar solicitud de suscripción</h1>
+
+        <p>
+            Revisa el plan seleccionado, realiza la transferencia
+            por SINPE Móvil y registra el número de referencia
+            para solicitar la aprobación de tu pago.
+        </p>
+    </div>
+
+    <a asp-controller="Emprendedor"
+       asp-action="PlanesSuscripcion"
+       class="boton-volver-emprendedor">
+
+        <i class="bi bi-arrow-left"></i>
+        Volver a planes
+
+    </a>
+
+</section>
+
+<section class="grid-mi-suscripcion">
+
+    <!-- COLUMNA PRINCIPAL -->
+    <div class="columna-principal-suscripcion">
+
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Pago
+                    </span>
+
+                    <h2>Transferencia SINPE Móvil</h2>
+
+                    <p>
+                        Realiza la transferencia por el monto indicado
+                        y completa los datos para enviar tu solicitud.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="detalle-renovacion-suscripcion">
+
+                <div>
+                    <span>Método de pago</span>
+                    <strong>SINPE Móvil</strong>
+                </div>
+
+                <div>
+                    <span>Número SINPE</span>
+                    <strong>
+                        7130 1389
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Monto a transferir</span>
+                    <strong>
+                        ₡@Model.Monto.ToString("N0")
+                    </strong>
+                </div>
+
+            </div>
+
+            <p class="mt-3">
+                Una vez realizada la transferencia, ingresa
+                el número de referencia de la transacción.
+                El administrador verificará el pago antes
+                de aprobar tu solicitud.
+            </p>
+
+            <form asp-controller="Emprendedor"
+                  asp-action="SolicitudPagoSinpe"
+                  method="post"
+                  class="formulario-emprendedor"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+                <input asp-for="IdPlan" type="hidden" />
+                <input asp-for="EsRenovacion" type="hidden" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="resumen-validacion-emprendedor">
+                </div>
+
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="NumeroReferencia"></label>
+
+                    <input asp-for="NumeroReferencia"
+                           class="control-emprendedor"
+                           maxlength="100"
+                           autocomplete="off"
+                           placeholder="Ingresa el número de referencia" />
+
+                    <span asp-validation-for="NumeroReferencia"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+                <div class="form-check mt-4">
+
+                    <input asp-for="ConfirmaTransferencia"
+                           class="form-check-input"
+                           type="checkbox" />
+
+                    <label asp-for="ConfirmaTransferencia"
+                           class="form-check-label">
+                        Confirmo que realicé la transferencia SINPE
+                        por el monto indicado.
+                    </label>
+
+                    <span asp-validation-for="ConfirmaTransferencia"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
+
+                <div class="acciones-formulario-emprendedor">
+
+                    <a asp-controller="Emprendedor"
+                       asp-action="PlanesSuscripcion"
+                       class="boton-cancelar-formulario-emprendedor">
+
+                        Cancelar
+
+                    </a>
+
+                    <button type="submit"
+                            class="boton-guardar-formulario-emprendedor">
+
+                        <i class="bi bi-send-check"></i>
+                        Enviar solicitud de pago
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </article>
+
+    </div>
+
+    <!-- RESUMEN -->
+    <aside class="columna-lateral-suscripcion">
+
+        <article class="bloque-suscripcion-emprendedor">
+
+            <div class="encabezado-bloque-suscripcion">
+
+                <div>
+                    <span class="subtitulo-emprendedor">
+                        Resumen
+                    </span>
+
+                    <h2>Tu plan</h2>
+                </div>
+
+            </div>
+
+            <div class="detalle-renovacion-suscripcion">
+
+                <div>
+                    <span>Plan seleccionado</span>
+                    <strong>@Model.NombrePlan</strong>
+                </div>
+
+                <div>
+                    <span>Periodicidad</span>
+                    <strong>@Model.Periodicidad</strong>
+                </div>
+
+                <div>
+                    <span>Total a pagar</span>
+                    <strong>
+                        ₡@Model.Monto.ToString("N0")
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Estado inicial</span>
+                    <strong>Pendiente de aprobación</strong>
+                </div>
+
+            </div>
+
+        </article>
+
+        <article class="soporte-suscripcion-emprendedor">
+
+            <span>
+                <i class="bi bi-shield-check"></i>
+            </span>
+
+            <div>
+                <h2>Verificación del pago</h2>
+
+                <p>
+                    Tu solicitud será revisada por el administrador.
+                    La suscripción no se activará hasta que
+                    el pago sea aprobado.
+                </p>
+            </div>
+
+        </article>
+
+    </aside>
+
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -19,6 +19,8 @@ public partial class Suscripcione
 
     public bool RenovacionAutomatica { get; set; }
 
+    public int? MaximoProductosContratado { get; set; }
+
     public virtual Emprendimiento IdEmprendimientoNavigation { get; set; } = null!;
 
     public virtual PlanesSuscripcion IdPlanNavigation { get; set; } = null!;
