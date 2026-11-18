@@ -17,50 +17,188 @@
     </div>
 </div>
 
+
+@if (TempData["MensajeResena"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"
+         role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        @TempData["MensajeResena"]
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+                aria-label="Cerrar">
+        </button>
+    </div>
+}
 <section class="lista-comentarios-usuario">
 
-    @foreach (var comentario in Model)
+    @if (!Model.Any())
     {
-        <article class="tarjeta-comentario-usuario">
-
-            <div class="encabezado-comentario">
-                <div>
-                    <span>@comentario.TipoElemento</span>
-                    <h2>@comentario.Elemento</h2>
-                </div>
-
-                <div class="estrellas-comentario">
-                    @for (int i = 1; i <= 5; i++)
-                    {
-                        <i class="bi @(i <= comentario.Valoracion
-                                                    ? "bi-star-fill"
-                                                    : "bi-star")"></i>
-                }
-            </div>
+        <div class="tarjeta-comentario-usuario">
+            <h2>Todavía no tenés reseñas publicadas</h2>
+            <p>
+                Cuando califiqués un producto, emprendimiento o evento,
+                tus opiniones aparecerán aquí.
+            </p>
         </div>
+    }
+    else
+    {
+        @foreach (var comentario in Model)
+        {
+            <article class="tarjeta-comentario-usuario">
 
-        <p>@comentario.Comentario</p>
+                <div class="encabezado-comentario">
+                    <div>
+                        <span>@comentario.TipoElemento</span>
+                        <h2>@comentario.Elemento</h2>
+                    </div>
 
-        <footer>
-            <span>
-                Publicado el @comentario.Fecha.ToString("dd/MM/yyyy")
-            </span>
-
-            <div>
-                <button type="button">
-                    <i class="bi bi-pencil"></i>
-                    Editar
-                </button>
-
-                <button type="button"
-                        class="accion-peligro">
-                    <i class="bi bi-trash3"></i>
-                    Eliminar
-                </button>
+                    <div class="estrellas-comentario">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <i class="bi @(i <= comentario.Valoracion
+                                                            ? "bi-star-fill"
+                                                            : "bi-star")"></i>
+                    }
+                </div>
             </div>
-        </footer>
 
-    </article>
+            <p>@comentario.Comentario</p>
+
+            <footer>
+                <span>
+                    @(comentario.Editada ? "Editado el" : "Publicado el")
+                    @comentario.Fecha.ToString("dd/MM/yyyy")
+                </span>
+
+                <div>
+                    @if (comentario.IdProducto.HasValue)
+                    {
+                        if (!string.IsNullOrWhiteSpace(comentario.NumeroOrden))
+                        {
+                            <a asp-controller="Usuario"
+                               asp-action="DetalleCompra"
+                               asp-route-id="@comentario.NumeroOrden">
+                                <i class="bi bi-pencil"></i>
+                                Editar
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Home"
+                               asp-action="DetalleProducto"
+                               asp-route-id="@comentario.IdProducto">
+                                <i class="bi bi-eye"></i>
+                                Ver producto
+                            </a>
+                        }
+                    }
+                    else if (comentario.IdEmprendimiento.HasValue)
+                    {
+                        <a asp-controller="Home"
+                           asp-action="DetalleEmprendimiento"
+                           asp-route-id="@comentario.IdEmprendimiento">
+                            <i class="bi bi-pencil"></i>
+                            Editar
+                        </a>
+                    }
+                    else if (comentario.IdEvento.HasValue)
+                    {
+                        <a asp-controller="Home"
+                           asp-action="DetalleEvento"
+                           asp-route-id="@comentario.IdEvento">
+                            <i class="bi bi-pencil"></i>
+                            Editar
+                        </a>
+                    }
+
+                    <button type="button"
+                            class="accion-peligro"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalEliminarResena"
+                            data-id="@comentario.Id"
+                            data-orden="@comentario.NumeroOrden"
+                            onclick="prepararEliminacionResena(this)">
+                        <i class="bi bi-trash3"></i>
+                        Eliminar
+                    </button>
+                </div>
+            </footer>
+
+        </article>
+    }
 }
 
 </section>
+<div class="modal fade"
+     id="modalEliminarResena"
+     tabindex="-1"
+     aria-labelledby="tituloEliminarResena"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+
+                <div class="mb-3 text-danger">
+                    <i class="bi bi-trash3 fs-2"></i>
+                </div>
+
+                <h5 id="tituloEliminarResena">
+                    ¿Eliminar tu reseña?
+                </h5>
+
+                <p class="text-muted">
+                    Esta reseña dejará de aparecer públicamente.
+                    Podrás volver a calificar después.
+                </p>
+
+                <form asp-controller="Usuario"
+                      asp-action="EliminarResena"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="origen" value="Comentarios" />
+
+                    <input type="hidden"
+                           name="idComentario"
+                           id="idComentarioEliminar" />
+
+                    <input type="hidden"
+                           name="numeroOrden"
+                           id="numeroOrdenEliminar" />
+
+                    <div class="d-flex justify-content-center gap-2 mt-3">
+
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-danger">
+                            <i class="bi bi-trash3"></i>
+                            Sí, eliminar
+                        </button>
+
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function prepararEliminacionResena(boton) {
+        document.getElementById("idComentarioEliminar").value =
+            boton.dataset.id;
+
+        document.getElementById("numeroOrdenEliminar").value =
+            boton.dataset.orden || "";
+    }
+</script>

@@ -14,6 +14,8 @@
     int? categoriaSeleccionada = ViewBag.CategoriaSeleccionada as int?;
 
     string imagenPorDefecto = Url.Content("~/images/hero-feria.jpg");
+    string estadoEventos =
+    ViewBag.EstadoEventos as string ?? "proximos";
 }
 
 <!-- HERO -->
@@ -48,12 +50,16 @@
                     <i class="bi bi-calendar-heart-fill"></i>
 
                     <div>
-                        <strong>Próximo evento</strong>
+                        <strong>
+                            @(estadoEventos == "finalizados"
+                                ? "Evento realizado"
+                                : "Próximo evento")
+                        </strong>
                         <span>@eventos.First().FechaTexto</span>
                     </div>
                 </div>
             }
-
+        </div>
     </div>
 </section>
 
@@ -82,6 +88,27 @@
     <!-- LISTADO DE EVENTOS -->
     <section class="eventos-listado" id="eventos-listado">
         <div class="container">
+            <div class="filtros-eventos" style="margin-bottom:25px;">
+
+                <a asp-controller="Home"
+                   asp-action="Eventos"
+                   asp-route-estado="proximos"
+                   asp-route-categoria="@categoriaSeleccionada"
+                   class="chip-filtro-evento @(estadoEventos == "proximos" ? "activo" : "")">
+                    <i class="bi bi-calendar-event"></i>
+                    Próximos eventos
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Eventos"
+                   asp-route-estado="finalizados"
+                   asp-route-categoria="@categoriaSeleccionada"
+                   class="chip-filtro-evento @(estadoEventos == "finalizados" ? "activo" : "")">
+                    <i class="bi bi-check-circle"></i>
+                    Eventos finalizados
+                </a>
+
+            </div>
 
             @if (categorias.Any())
             {
@@ -89,6 +116,7 @@
 
                     <a asp-controller="Home"
                        asp-action="Eventos"
+                       asp-route-estado="@estadoEventos"
                        class="chip-filtro-evento @(categoriaSeleccionada is null ? "activo" : "")">
                         Todos
                     </a>
@@ -97,6 +125,7 @@
                     {
                         <a asp-controller="Home"
                            asp-action="Eventos"
+                           asp-route-estado="@estadoEventos"
                            asp-route-categoria="@categoria.IdCategoria"
                            class="chip-filtro-evento @(categoriaSeleccionada == categoria.IdCategoria ? "activo" : "")">
                             @categoria.Nombre
@@ -131,6 +160,7 @@
 
                         <a asp-controller="Home"
                            asp-action="Eventos"
+                           asp-route-estado="@estadoEventos"
                            class="enlace-evento-pagina">
                             Ver todos los eventos
                             <i class="bi bi-arrow-right"></i>
@@ -159,6 +189,14 @@
 
                             <div class="cuerpo-evento-pagina">
                                 <span class="fecha-evento-pagina">@evento.FechaTexto</span>
+
+                                @if (estadoEventos == "finalizados")
+                                {
+                                    <span class="categoria-evento-pagina">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        Evento finalizado
+                                    </span>
+                                }
 
                                 @if (!string.IsNullOrWhiteSpace(evento.Categoria))
                                 {

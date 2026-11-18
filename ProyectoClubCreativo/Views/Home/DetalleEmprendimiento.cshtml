@@ -29,6 +29,14 @@
 
     string? instagram = EnlaceRed(Model.Instagram, "https://instagram.com/");
     string? facebook = EnlaceRed(Model.Facebook, "https://facebook.com/");
+    List<ResenaPublicaViewModel> resenas =
+    ViewBag.Resenas as List<ResenaPublicaViewModel> ?? new();
+
+    ResenaPublicaViewModel? miResena =
+        ViewBag.MiResenaEmprendimiento as ResenaPublicaViewModel;
+
+    bool usuarioAutenticado =
+        ViewBag.UsuarioAutenticado is bool autenticado && autenticado;
 }
 
 <!-- ENCABEZADO -->
@@ -193,6 +201,219 @@
         </aside>
 
     </div>
+</section>
+
+<!-- RESEÑAS DEL EMPRENDIMIENTO -->
+<section class="contenido-detalle-emprendimiento"
+         id="resenas-emprendimiento">
+
+    <div class="container">
+
+        <span class="subtitulo-emprendimientos">
+            EXPERIENCIAS DE LA COMUNIDAD
+        </span>
+
+        <h2>Reseñas del emprendimiento</h2>
+
+        @if (Model.CantidadResenas > 0 && Model.Valoracion.HasValue)
+        {
+            <p>
+                <i class="bi bi-star-fill"
+                   style="color:#f4b400;"></i>
+
+                <strong>@Model.Valoracion.Value.ToString("0.0")</strong>
+                de 5 estrellas
+                (@Model.CantidadResenas
+                @(Model.CantidadResenas == 1 ? "reseña" : "reseñas"))
+            </p>
+        }
+        else
+        {
+            <p>Este emprendimiento todavía no tiene reseñas.</p>
+        }
+
+        @if (TempData["MensajeResena"] is string mensaje)
+        {
+            <div class="alert alert-success">
+                @mensaje
+            </div>
+        }
+
+        @if (TempData["ErrorResena"] is string error)
+        {
+            <div class="alert alert-danger">
+                @error
+            </div>
+        }
+
+        @if (usuarioAutenticado)
+        {
+            <div style="background:#f7f7f7;
+                padding:20px;
+                border-radius:15px;
+                margin-top:20px;
+                margin-bottom:25px;">
+
+                <h3>
+                    @(miResena == null
+                        ? "Calificar este emprendimiento"
+                        : "Editar mi reseña")
+                </h3>
+
+                <p>
+                    Compartí tu experiencia y ayudá a otros usuarios
+                    a conocer este emprendimiento.
+                </p>
+
+                <form asp-controller="Usuario"
+                      asp-action="CalificarEmprendimiento"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="IdEmprendimiento"
+                           value="@Model.IdEmprendimiento" />
+
+                    <div style="margin-bottom:15px;">
+                        <label class="form-label">
+                            <strong>Calificación</strong>
+                        </label>
+
+                        <select name="Valoracion"
+                                class="form-select"
+                                required>
+
+                            <option value="">
+                                Seleccioná una calificación
+                            </option>
+
+                            @for (int estrella = 1; estrella <= 5; estrella++)
+                            {
+                                if (miResena?.Valoracion == estrella)
+                                {
+                                    <option value="@estrella" selected>
+                                        @estrella @(estrella == 1 ? "estrella" : "estrellas")
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@estrella">
+                                        @estrella @(estrella == 1 ? "estrella" : "estrellas")
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label class="form-label">
+                            <strong>Comentario</strong>
+                        </label>
+
+                        <textarea name="Contenido"
+                                  class="form-control"
+                                  rows="4"
+                                  maxlength="1500"
+                                  required
+                                  placeholder="Contanos cómo fue tu experiencia...">@(miResena?.Contenido)</textarea>
+                    </div>
+
+                    <button type="submit"
+                            class="boton-contacto-emprendimiento"
+                            style="border:0;width:100%;cursor:pointer;">
+
+                        <i class="bi bi-star-fill"></i>
+
+                        @(miResena == null
+                            ? "Publicar reseña"
+                            : "Guardar cambios")
+                    </button>
+                </form>
+                @if (miResena != null)
+                {
+                    <form asp-controller="Usuario"
+                          asp-action="EliminarResenaEmprendimiento"
+                          method="post"
+                          style="margin-top:10px;"
+                          onsubmit="return confirm('¿Seguro que querés eliminar tu reseña?');">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               name="idEmprendimiento"
+                               value="@Model.IdEmprendimiento" />
+
+                        <button type="submit"
+                                class="boton-contacto-emprendimiento"
+                                style="background:#b91c1c;
+                            border:0;
+                            width:100%;
+                            cursor:pointer;">
+
+                            <i class="bi bi-trash"></i>
+                            Eliminar mi reseña
+                        </button>
+                    </form>
+                }
+
+            </div>
+        }
+        else
+        {
+            <p style="margin-top:20px;">
+                <a asp-controller="Cuenta"
+                   asp-action="IniciarSesion">
+                    Iniciá sesión
+                </a>
+                para compartir tu experiencia con este emprendimiento.
+            </p>
+        }
+
+        @if (resenas.Any())
+        {
+            <div style="display:grid;gap:15px;margin-top:25px;">
+
+                @foreach (ResenaPublicaViewModel resena in resenas)
+                {
+                    <article style="background:#f7f7f7;
+                        padding:20px;
+                        border-radius:15px;">
+
+                        <div style="display:flex;
+                            justify-content:space-between;
+                            gap:15px;">
+
+                            <strong>@resena.Autor</strong>
+
+                            <span style="color:#f4b400;">
+                                @for (int estrella = 1; estrella <= 5; estrella++)
+                                {
+                                    <i class="bi @(estrella <= resena.Valoracion
+                                                                            ? "bi-star-fill"
+                                                                            : "bi-star")"></i>
+                            }
+                        </span>
+                    </div>
+
+                    <p style="margin-top:12px;">
+                        @resena.Contenido
+                    </p>
+
+                    <small style="color:#64748b;">
+                        @resena.Fecha.ToString("dd/MM/yyyy")
+
+                        @if (resena.Editada)
+                        {
+                            <span> · Editada</span>
+                        }
+                    </small>
+                </article>
+            }
+        </div>
+    }
+
+</div>
 </section>
 
 <!-- EMPRENDIMIENTOS RELACIONADOS -->

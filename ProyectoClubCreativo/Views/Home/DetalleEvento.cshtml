@@ -6,6 +6,9 @@
     ViewData["Title"] = Model.Nombre;
     Layout = "_LayoutExterno";
 
+    bool eventoFinalizado =
+    (Model.FechaFin ?? Model.FechaInicio) < DateTime.Now;
+
     List<Emprendimiento> emprendimientos =
         ViewBag.Emprendimientos as List<Emprendimiento> ?? new();
 
@@ -16,6 +19,19 @@
 
     string ImagenDe(string? url) =>
         string.IsNullOrWhiteSpace(url) ? imagenPorDefecto : Url.Content(url);
+
+
+    List<ResenaPublicaViewModel> resenas =
+        ViewBag.Resenas as List<ResenaPublicaViewModel> ?? new();
+
+    double promedioResenas =
+        ViewBag.PromedioResenas is double promedio
+            ? promedio
+            : 0d;
+    ResenaPublicaViewModel? miResena =
+        ViewBag.MiResenaEvento as ResenaPublicaViewModel;
+
+
 }
 
 <section class="encabezado-detalle-emprendimiento">
@@ -98,7 +114,29 @@
                 <p style="color:#b91c1c; font-weight:600;">@errorEvento</p>
             }
 
-            @if (Model.UsuarioRegistrado)
+            @if (eventoFinalizado)
+            {
+                <p style="font-weight:600; color:#64748b;">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Este evento ya finalizó.
+                </p>
+
+                @if (Model.UsuarioRegistrado)
+                {
+                    <a asp-controller="Usuario"
+                       asp-action="MisInscripciones"
+                       class="boton-contacto-emprendimiento">
+                        Ver mis inscripciones
+                    </a>
+
+                    <a href="#resenas-evento"
+                       class="boton-contacto-emprendimiento"
+                       style="margin-top:10px;">
+                        Ver y calificar evento
+                    </a>
+                }
+            }
+            else if (Model.UsuarioRegistrado)
             {
                 <p style="font-weight:600;"><i class="bi bi-check-circle-fill"></i> Ya estás registrado en este evento.</p>
                 <a asp-controller="Usuario" asp-action="MisInscripciones" class="boton-contacto-emprendimiento">Ver mis inscripciones</a>
@@ -137,6 +175,214 @@
             }
         </aside>
     </div>
+</section>
+
+<section class="contenido-detalle-emprendimiento"
+         id="resenas-evento">
+
+    <div class="container">
+
+        <div style="margin-bottom:25px;">
+            <span class="subtitulo-eventos">
+                Experiencias de participantes
+            </span>
+
+            <h2>Reseñas del evento</h2>
+
+            @if (resenas.Any())
+            {
+                <p>
+                    <i class="bi bi-star-fill"
+                       style="color:#eab308;"></i>
+
+                    <strong>
+                        @promedioResenas.ToString("0.0")
+                    </strong>
+                    de 5 estrellas
+
+                    (@resenas.Count
+                    @(resenas.Count == 1 ? "reseña" : "reseñas"))
+                </p>
+            }
+            else
+            {
+                <p>
+                    Este evento todavía no tiene reseñas.
+                </p>
+            }
+        </div>
+
+        @if (TempData["MensajeResena"] is string mensajeResena)
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill"></i>
+                @mensajeResena
+            </div>
+        }
+
+        @if (TempData["ErrorResena"] is string errorResena)
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                @errorResena
+            </div>
+        }
+
+        @if (eventoFinalizado && Model.UsuarioRegistrado)
+        {
+            <div class="tarjeta-contacto-emprendimiento"
+                 style="margin-bottom:25px;">
+
+                <h3>
+                    @(miResena == null
+                        ? "Calificar este evento"
+                        : "Editar mi reseña")
+                </h3>
+
+                <p>
+                    Comparte tu experiencia y ayuda a otros
+                    usuarios a conocer este evento.
+                </p>
+
+                <form asp-controller="Usuario"
+                      asp-action="CalificarEvento"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="IdEvento"
+                           value="@Model.IdEvento" />
+
+                    <div style="margin-bottom:15px;">
+                        <label for="valoracionEvento"
+                               style="display:block; font-weight:600;">
+                            Calificación
+                        </label>
+
+                        <select id="valoracionEvento"
+                                name="Valoracion"
+                                class="form-select"
+                                required>
+
+                            <option value="">Selecciona una calificación</option>
+
+                            @for (int estrella = 1; estrella <= 5; estrella++)
+                            {
+                                <option value="@estrella"
+                                        selected="@(miResena?.Valoracion == estrella)">
+                                    @estrella @(estrella == 1 ? "estrella" : "estrellas")
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom:15px;">
+                        <label for="comentarioEvento"
+                               style="display:block; font-weight:600;">
+                            Comentario
+                        </label>
+
+                        <textarea id="comentarioEvento"
+                                  name="Contenido"
+                                  class="form-control"
+                                  rows="4"
+                                  maxlength="1500"
+                                  required
+                                  placeholder="Cuéntanos cómo fue tu experiencia...">@(miResena?.Contenido)</textarea>
+                    </div>
+
+                    <button type="submit"
+                            class="boton-contacto-emprendimiento"
+                            style="border:0; cursor:pointer;">
+                        <i class="bi bi-star-fill"></i>
+
+                        @(miResena == null
+                            ? "Publicar reseña"
+                            : "Guardar cambios")
+                    </button>
+
+                </form>
+
+                @if (miResena != null)
+                {
+                    <form asp-controller="Usuario"
+                          asp-action="EliminarResena"
+                          method="post"
+                          style="margin-top:12px;"
+                          onsubmit="return confirm('¿Seguro que deseas eliminar tu reseña?');">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               name="idComentario"
+                               value="@miResena.IdComentario" />
+
+                        <button type="submit"
+                                class="boton-contacto-emprendimiento"
+                                style="border:0; cursor:pointer; background:#b91c1c;">
+                            <i class="bi bi-trash"></i>
+                            Eliminar mi reseña
+                        </button>
+
+                    </form>
+                }
+            </div>
+        }
+        else if (eventoFinalizado && !Model.UsuarioRegistrado)
+        {
+            <p style="color:#64748b; margin-bottom:25px;">
+                Solo los usuarios inscritos en este evento
+                pueden publicar una reseña.
+            </p>
+        }
+
+        @foreach (ResenaPublicaViewModel resena in resenas)
+        {
+            <article class="tarjeta-contacto-emprendimiento"
+                     style="margin-bottom:15px;">
+
+                <div style="display:flex;
+                    justify-content:space-between;
+                    gap:15px;
+                    flex-wrap:wrap;">
+
+                    <strong>@resena.Autor</strong>
+
+                    <span style="color:#eab308;">
+                        @for (int estrella = 1; estrella <= 5; estrella++)
+                        {
+                            <i class="bi @(estrella <= resena.Valoracion
+                                                            ? "bi-star-fill"
+                                                            : "bi-star")"></i>
+                    }
+                </span>
+            </div>
+
+            <p style="margin-top:12px;
+            white-space:pre-wrap;">@resena.Contenido</p>
+
+            <small style="color:#64748b;">
+                @resena.Fecha.ToString("dd/MM/yyyy")
+
+                @if (resena.Editada)
+                {
+                    <span> · Editada</span>
+                }
+            </small>
+
+        </article>
+    }
+
+    @if (!eventoFinalizado)
+    {
+        <p style="margin-top:20px; color:#64748b;">
+            Las reseñas estarán disponibles cuando
+            el evento haya finalizado.
+        </p>
+    }
+
+</div>
 </section>
 
 @if (otrosEventos.Any())

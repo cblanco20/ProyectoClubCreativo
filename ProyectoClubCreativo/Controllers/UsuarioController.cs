@@ -605,6 +605,7 @@ namespace ProyectoClubCreativo.Controllers
                     resenasPrevias.FirstOrDefault(r =>
                         r.IdProducto == producto.IdProducto);
 
+                producto.IdResena = resenaPrevia?.IdComentario;
                 producto.ValoracionPrevia = resenaPrevia?.Valoracion;
                 producto.ComentarioPrevio = resenaPrevia?.Contenido;
             }
@@ -708,6 +709,354 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(
                 nameof(DetalleCompra),
                 new { id = modelo.NumeroOrden });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CalificarEvento(
+    ResenaEventoViewModel modelo)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+
+            if (string.IsNullOrWhiteSpace(modelo.Contenido))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Contenido),
+                    "Debe escribir un comentario.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorResena"] =
+                    ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .FirstOrDefault() ?? "Revisá la información de la reseña.";
+
+                return RedirectToAction(
+                    "DetalleEvento", "Home",
+                    new { id = modelo.IdEvento });
+            }
+
+            var evento = await _context.Eventos
+                .AsNoTracking()
+                .Where(e => e.IdEvento == modelo.IdEvento)
+                .Select(e => new
+                {
+                    e.FechaInicio,
+                    e.FechaFin,
+                    e.Estado
+                })
+                .FirstOrDefaultAsync();
+
+            if (evento == null)
+            {
+                return NotFound();
+            }
+
+            if (evento.Estado != "Programado" &&
+                evento.Estado != "Activo" &&
+                evento.Estado != "Finalizado")
+            {
+                TempData["ErrorResena"] =
+                    "Este evento no está disponible para recibir reseñas.";
+
+                return RedirectToAction(
+                    "Eventos", "Home",
+                    new { estado = "finalizados" });
+            }
+
+            if ((evento.FechaFin ?? evento.FechaInicio) >= DateTime.Now)
+            {
+                TempData["ErrorResena"] =
+                    "Podés calificar este evento después de que finalice.";
+
+                return RedirectToAction(
+                    "DetalleEvento", "Home",
+                    new { id = modelo.IdEvento });
+            }
+
+            bool inscrito = await _context.InscripcionesEventos
+                .AnyAsync(i =>
+                    i.IdEvento == modelo.IdEvento &&
+                    i.IdUsuario == idUsuario.Value &&
+                    i.Estado == "Confirmada");
+
+            if (!inscrito)
+            {
+                TempData["ErrorResena"] =
+                    "Solo podés calificar eventos en los que estés inscrito.";
+
+                return RedirectToAction(
+                    "DetalleEvento", "Home",
+                    new { id = modelo.IdEvento });
+            }
+
+            ComentariosResena? resena = await _context.ComentariosResenas
+                .FirstOrDefaultAsync(c =>
+                    c.IdUsuario == idUsuario.Value &&
+                    c.IdEvento == modelo.IdEvento &&
+                    c.IdProducto == null &&
+                    c.IdEmprendimiento == null &&
+                    c.Estado != "Eliminado");
+
+            bool esEdicion = resena != null;
+
+            if (resena == null)
+            {
+                resena = new ComentariosResena
+                {
+                    IdUsuario = idUsuario.Value,
+                    IdEvento = modelo.IdEvento,
+                    Contenido = modelo.Contenido?.Trim() ?? string.Empty,
+                    Valoracion = modelo.Valoracion,
+                    Estado = "Visible",
+                    CantidadReportes = 0,
+                    FechaPublicacion = DateTime.Now
+                };
+
+                _context.ComentariosResenas.Add(resena);
+            }
+            else
+            {
+                resena.Contenido = modelo.Contenido?.Trim() ?? string.Empty;
+                resena.Valoracion = modelo.Valoracion;
+                resena.FechaEdicion = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeResena"] = esEdicion
+                ? "Tu reseña del evento se actualizó correctamente."
+                : "¡Gracias! Tu reseña del evento se publicó correctamente.";
+
+            return RedirectToAction(
+                "DetalleEvento", "Home",
+                new { id = modelo.IdEvento });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CalificarEmprendimiento(
+    ResenaEmprendimientoViewModel modelo)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+
+            if (string.IsNullOrWhiteSpace(modelo.Contenido))
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.Contenido),
+                    "Debe escribir un comentario.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorResena"] =
+                    ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .FirstOrDefault() ?? "Revisá la información de la reseña.";
+
+                return RedirectToAction(
+                    "DetalleEmprendimiento", "Home",
+                    new { id = modelo.IdEmprendimiento });
+            }
+
+            bool existeEmprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .AnyAsync(e =>
+                    e.IdEmprendimiento == modelo.IdEmprendimiento &&
+                    e.Activo &&
+                    e.EstadoAprobacion == "Aprobado");
+
+            if (!existeEmprendimiento)
+            {
+                return NotFound();
+            }
+
+            ComentariosResena? resena = await _context.ComentariosResenas
+                .FirstOrDefaultAsync(c =>
+                    c.IdUsuario == idUsuario.Value &&
+                    c.IdEmprendimiento == modelo.IdEmprendimiento &&
+                    c.IdProducto == null &&
+                    c.IdEvento == null &&
+                    c.Estado != "Eliminado");
+
+            bool esEdicion = resena != null;
+
+            if (resena == null)
+            {
+                resena = new ComentariosResena
+                {
+                    IdUsuario = idUsuario.Value,
+                    IdEmprendimiento = modelo.IdEmprendimiento,
+                    Contenido = modelo.Contenido?.Trim() ?? string.Empty,
+                    Valoracion = modelo.Valoracion,
+                    Estado = "Visible",
+                    CantidadReportes = 0,
+                    FechaPublicacion = DateTime.Now
+                };
+
+                _context.ComentariosResenas.Add(resena);
+            }
+            else
+            {
+                resena.Contenido = modelo.Contenido?.Trim() ?? string.Empty;
+                resena.Valoracion = modelo.Valoracion;
+                resena.FechaEdicion = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeResena"] = esEdicion
+                ? "Tu reseña del emprendimiento se actualizó correctamente."
+                : "¡Gracias! Tu reseña del emprendimiento se publicó correctamente.";
+
+            return RedirectToAction(
+                "DetalleEmprendimiento", "Home",
+                new { id = modelo.IdEmprendimiento });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarResenaEmprendimiento(
+    int idEmprendimiento)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            ComentariosResena? resena = await _context.ComentariosResenas
+                .FirstOrDefaultAsync(c =>
+                    c.IdEmprendimiento == idEmprendimiento &&
+                    c.IdUsuario == idUsuario.Value &&
+                    c.IdProducto == null &&
+                    c.IdEvento == null &&
+                    c.Estado == "Visible");
+
+            if (resena == null)
+            {
+                TempData["ErrorResena"] =
+                    "No se encontró una reseña tuya para eliminar.";
+
+                return RedirectToAction(
+                    "DetalleEmprendimiento",
+                    "Home",
+                    new { id = idEmprendimiento });
+            }
+
+            // Eliminación lógica: conservamos el registro en la base de datos.
+            resena.Estado = "Eliminado";
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeResena"] =
+                "Tu reseña se eliminó correctamente.";
+
+            return RedirectToAction(
+                "DetalleEmprendimiento",
+                "Home",
+                new { id = idEmprendimiento });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarResena(
+    long idComentario,
+    string? numeroOrden,
+    string? origen)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            ComentariosResena? resena = await _context.ComentariosResenas
+                .FirstOrDefaultAsync(c =>
+                    c.IdComentario == idComentario &&
+                    c.IdUsuario == idUsuario.Value &&
+                    c.Estado != "Eliminado");
+
+            if (resena == null)
+            {
+                return NotFound();
+            }
+
+            int? idEvento = resena.IdEvento;
+            int? idEmprendimiento = resena.IdEmprendimiento;
+            int? idProducto = resena.IdProducto;
+
+            resena.Estado = "Eliminado";
+            resena.FechaEdicion = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeResena"] =
+                "Tu reseña se eliminó correctamente.";
+            if (origen == "Comentarios")
+            {
+                return RedirectToAction(nameof(Comentarios));
+            }
+
+            if (idEvento.HasValue)
+            {
+                return RedirectToAction(
+                    "DetalleEvento", "Home",
+                    new { id = idEvento.Value });
+            }
+
+            if (idEmprendimiento.HasValue)
+            {
+                return RedirectToAction(
+                    "DetalleEmprendimiento", "Home",
+                    new { id = idEmprendimiento.Value });
+            }
+
+            if (idProducto.HasValue)
+            {
+                if (!string.IsNullOrWhiteSpace(numeroOrden))
+                {
+                    bool perteneceCompra = await _context.Ventas
+                        .AnyAsync(v =>
+                            v.NumeroOrden == numeroOrden &&
+                            v.IdUsuario == idUsuario.Value &&
+                            v.VentaDetalles.Any(d =>
+                                d.IdProducto == idProducto.Value));
+
+                    if (perteneceCompra)
+                    {
+                        TempData["MensajeCompra"] =
+                            "Tu reseña se eliminó correctamente.";
+
+                        return RedirectToAction(
+                            nameof(DetalleCompra),
+                            new { id = numeroOrden });
+                    }
+                }
+
+                return RedirectToAction(
+                    "DetalleProducto", "Home",
+                    new { id = idProducto.Value });
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpPost]
@@ -3057,6 +3406,15 @@ namespace ProyectoClubCreativo.Controllers
 
             DateTime ahora = DateTime.Now;
 
+            var eventosCalificados = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c =>
+                    c.IdUsuario == idUsuario.Value &&
+                    c.IdEvento != null &&
+                    c.Estado == "Visible")
+                .Select(c => c.IdEvento!.Value)
+                .ToListAsync();
+
             var eventos = await _context.InscripcionesEventos
                 .AsNoTracking()
                 .Where(i => i.IdUsuario == idUsuario.Value)
@@ -3099,6 +3457,7 @@ namespace ProyectoClubCreativo.Controllers
                 {
                     Id = e.IdEvento,
                     Tipo = "Evento",
+                    TieneResena = eventosCalificados.Contains(e.IdEvento),
                     Nombre = e.Nombre,
                     Fecha = e.FechaInicio.ToString("d 'de' MMMM, h:mm tt", CulturaCr),
                     Ubicacion = e.Ubicacion,
@@ -3340,29 +3699,107 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Comentarios()
+        public async Task<IActionResult> Comentarios()
         {
-            List<ComentarioUsuarioViewModel> modelo =
-            [
-                new()
-        {
-            Id = 1,
-            Elemento = "Feria Creativa San Pedro",
-            TipoElemento = "Evento",
-            Comentario = "La organización estuvo muy bien y había gran variedad de emprendimientos.",
-            Valoracion = 5,
-            Fecha = new DateTime(2026, 7, 20)
-        },
-        new()
-        {
-            Id = 2,
-            Elemento = "Aretes Orquídea",
-            TipoElemento = "Producto",
-            Comentario = "El producto es bonito y llegó en excelentes condiciones.",
-            Valoracion = 4,
-            Fecha = new DateTime(2026, 7, 12)
-        }
-            ];
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var resenas = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c =>
+                    c.IdUsuario == idUsuario.Value &&
+                    c.Estado != "Eliminado")
+                .OrderByDescending(c =>
+                    c.FechaEdicion ?? c.FechaPublicacion)
+                .Select(c => new
+                {
+                    c.IdComentario,
+                    c.IdProducto,
+                    c.IdEmprendimiento,
+                    c.IdEvento,
+                    c.Contenido,
+                    c.Valoracion,
+                    c.FechaPublicacion,
+                    c.FechaEdicion,
+
+                    NombreProducto = c.IdProductoNavigation != null
+                        ? c.IdProductoNavigation.Nombre
+                        : null,
+
+                    NombreEmprendimiento = c.IdEmprendimientoNavigation != null
+                        ? c.IdEmprendimientoNavigation.NombreComercial
+                        : null,
+
+                    NombreEvento = c.IdEventoNavigation != null
+                        ? c.IdEventoNavigation.Nombre
+                        : null
+                })
+                .ToListAsync();
+
+            List<ComentarioUsuarioViewModel> modelo = resenas
+                .Select(c => new ComentarioUsuarioViewModel
+                {
+                    Id = c.IdComentario,
+
+                    IdProducto = c.IdProducto,
+                    IdEmprendimiento = c.IdEmprendimiento,
+                    IdEvento = c.IdEvento,
+
+                    TipoElemento = c.IdProducto.HasValue
+                        ? "Producto"
+                        : c.IdEmprendimiento.HasValue
+                            ? "Emprendimiento"
+                            : "Evento",
+
+                    Elemento = c.NombreProducto
+                        ?? c.NombreEmprendimiento
+                        ?? c.NombreEvento
+                        ?? "Elemento no disponible",
+
+                    Comentario = c.Contenido ?? string.Empty,
+                    Valoracion = c.Valoracion ?? 0,
+
+                    Fecha = c.FechaEdicion ?? c.FechaPublicacion,
+                    Editada = c.FechaEdicion.HasValue
+                })
+                .ToList();
+            var idsProductos = modelo
+                .Where(c => c.IdProducto.HasValue)
+                .Select(c => c.IdProducto!.Value)
+                .Distinct()
+                .ToList();
+
+            if (idsProductos.Count > 0)
+            {
+                var comprasProductos = await _context.VentaDetalles
+                    .AsNoTracking()
+                    .Where(d =>
+                        idsProductos.Contains(d.IdProducto) &&
+                        d.IdVentaNavigation.IdUsuario == idUsuario.Value &&
+                        (d.IdVentaNavigation.Estado == "Pagada" ||
+                         d.IdVentaNavigation.Estado == "En preparacion" ||
+                         d.IdVentaNavigation.Estado == "Enviada" ||
+                         d.IdVentaNavigation.Estado == "Entregada"))
+                    .Select(d => new
+                    {
+                        d.IdProducto,
+                        d.IdVentaNavigation.NumeroOrden,
+                        d.IdVentaNavigation.FechaVenta
+                    })
+                    .OrderByDescending(d => d.FechaVenta)
+                    .ToListAsync();
+
+                foreach (var comentario in modelo.Where(c => c.IdProducto.HasValue))
+                {
+                    comentario.NumeroOrden = comprasProductos
+                        .FirstOrDefault(d => d.IdProducto == comentario.IdProducto)
+                        ?.NumeroOrden;
+                }
+            }
 
             return View(modelo);
         }

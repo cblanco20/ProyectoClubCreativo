@@ -2447,3 +2447,106 @@
     border-radius: 13px;
     font-size: 12px;
 }
+.boton-eliminar-resena {
+    color: #c62828;
+    border-color: #c62828;
+    background-color: transparent;
+}
+
+    .boton-eliminar-resena:hover {
+        background-color: #c62828;
+        color: white;
+    }
+
+/* Botón eliminar reseña */
+
+.boton-eliminar-resena {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border: 1px solid #c62828;
+    border-radius: 20px;
+    background: transparent;
+    color: #c62828;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.formulario-eliminar-resena {
+    margin-top: 8px;
+}
+
+.boton-eliminar-resena:hover {
+    background: #c62828;
+    color: white;
+}
+
+/* Modal de confirmación */
+
+.modal-confirmacion-resena {
+    max-width: 420px;
+    text-align: center;
+}
+
+.icono-confirmacion-resena {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: #fff0f0;
+    color: #c62828;
+    font-size: 25px;
+}
+
+.modal-confirmacion-resena h2 {
+    margin-bottom: 12px;
+}
+
+.modal-confirmacion-resena p {
+    margin-bottom: 24px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.acciones-confirmacion-resena {
+    display: flex;
+    gap: 12px;
+}
+
+.boton-cancelar-eliminacion,
+.boton-confirmar-eliminacion {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.boton-cancelar-eliminacion {
+    background: white;
+    border: 1px solid #ddd;
+    color: #333;
+}
+
+.boton-confirmar-eliminacion {
+    background: #c62828;
+    border: 1px solid #c62828;
+    color: white;
+}
+
+    .boton-confirmar-eliminacion:hover {
+        background: #a91f1f;
+    }
+
+@media (max-width: 480px) {
+    .acciones-confirmacion-resena {
+        flex-direction: column;
+    }
+}

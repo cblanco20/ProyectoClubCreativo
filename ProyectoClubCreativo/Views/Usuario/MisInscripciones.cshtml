@@ -76,6 +76,17 @@
                        class="boton-inscripcion">
                         Ver información
                     </a>
+                    @if (item.Tipo == "Evento" && item.Estado == "Finalizado")
+                    {
+                        <a asp-controller="Home"
+                           asp-action="DetalleEvento"
+                           asp-route-id="@item.Id"
+                           asp-fragment="resenas-evento"
+                           class="boton-inscripcion">
+                            <i class="bi bi-star-fill"></i>
+                            @(item.TieneResena ? "Editar reseña" : "Calificar evento")
+                        </a>
+                    }
 
                     @if (item.Estado == "Próximo" && item.Tipo == "Taller")
                     {

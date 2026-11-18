@@ -82,6 +82,31 @@
                                     : "Editar reseña")
 
                             </button>
+                            @if (producto.IdResena.HasValue)
+                            {
+                                <form asp-controller="Usuario"
+                                      asp-action="EliminarResena"
+                                      method="post"
+                                      class="formulario-eliminar-resena">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="idComentario"
+                                           value="@producto.IdResena.Value" />
+
+                                    <input type="hidden"
+                                           name="numeroOrden"
+                                           value="@Model.NumeroOrden" />
+
+                                    <button type="button"
+                                            class="boton-eliminar-resena"
+                                            data-formulario-eliminar>
+                                        <i class="bi bi-trash"></i>
+                                        Eliminar reseña
+                                    </button>
+                                </form>
+                            }
                         }
                     </div>
 
@@ -154,6 +179,52 @@
 
     </aside>
 </section>
+<!-- MODAL CONFIRMAR ELIMINACIÓN DE RESEÑA -->
+<div id="modalEliminarResena"
+     class="modal-resena"
+     aria-hidden="true">
+
+    <div id="fondoModalEliminar"
+         class="fondo-modal-resena">
+    </div>
+
+    <div class="contenido-modal-resena modal-confirmacion-resena"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="tituloEliminarResena">
+
+        <div class="icono-confirmacion-resena">
+            <i class="bi bi-trash"></i>
+        </div>
+
+        <h2 id="tituloEliminarResena">
+            ¿Eliminar tu reseña?
+        </h2>
+
+        <p>
+            Esta reseña dejará de aparecer públicamente.
+            Podrás volver a calificar el producto después.
+        </p>
+
+        <div class="acciones-confirmacion-resena">
+
+            <button type="button"
+                    id="cancelarEliminarResena"
+                    class="boton-cancelar-eliminacion">
+                Cancelar
+            </button>
+
+            <button type="button"
+                    id="confirmarEliminarResena"
+                    class="boton-confirmar-eliminacion">
+                <i class="bi bi-trash"></i>
+                Sí, eliminar
+            </button>
+
+        </div>
+    </div>
+</div>
+
 <!-- MODAL CALIFICAR PRODUCTO -->
 <div id="modalResena"
      class="modal-resena"
@@ -355,6 +426,54 @@
                     campoContenido.value =
                         @Html.Raw(System.Text.Json.JsonSerializer.Serialize(contenidoError));
                 }
+            }
+        });
+        // Confirmación personalizada para eliminar reseñas
+
+        const modalEliminar = document.getElementById("modalEliminarResena");
+        const botonCancelarEliminar = document.getElementById("cancelarEliminarResena");
+        const botonConfirmarEliminar = document.getElementById("confirmarEliminarResena");
+        const fondoModalEliminar = document.getElementById("fondoModalEliminar");
+
+        let formularioSeleccionado = null;
+
+        function cerrarModalEliminar() {
+            modalEliminar.classList.remove("visible");
+            modalEliminar.setAttribute("aria-hidden", "true");
+            formularioSeleccionado = null;
+        }
+
+        document.querySelectorAll("[data-formulario-eliminar]")
+            .forEach(boton => {
+
+                boton.addEventListener("click", () => {
+
+                    formularioSeleccionado = boton.closest("form");
+
+                    modalEliminar.classList.add("visible");
+                    modalEliminar.setAttribute("aria-hidden", "false");
+
+                    botonCancelarEliminar.focus();
+                });
+            });
+
+        botonCancelarEliminar.addEventListener("click", cerrarModalEliminar);
+
+        fondoModalEliminar.addEventListener("click", cerrarModalEliminar);
+
+        botonConfirmarEliminar.addEventListener("click", () => {
+
+            if (formularioSeleccionado) {
+                botonConfirmarEliminar.disabled = true;
+                formularioSeleccionado.requestSubmit();
+            }
+        });
+
+        document.addEventListener("keydown", evento => {
+            if (evento.key === "Escape" &&
+                modalEliminar.classList.contains("visible")) {
+
+                cerrarModalEliminar();
             }
         });
     </script>

@@ -44,6 +44,7 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         public byte? ValoracionPrevia { get; set; }
         public string? ComentarioPrevio { get; set; }
+        public long? IdResena { get; set; }
     }
 
     public class CarritoUsuarioViewModel
@@ -103,6 +104,7 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public string Ubicacion { get; set; } = string.Empty;
         public string Estado { get; set; } = string.Empty;
         public string Imagen { get; set; } = string.Empty;
+        public bool TieneResena { get; set; }
     }
 
     public class MovimientoPuntosViewModel
@@ -144,12 +146,21 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
     public class ComentarioUsuarioViewModel
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
+
+        public int? IdProducto { get; set; }
+        public int? IdEmprendimiento { get; set; }
+        public int? IdEvento { get; set; }
+
+        public string? NumeroOrden { get; set; }
+
         public string Elemento { get; set; } = string.Empty;
         public string TipoElemento { get; set; } = string.Empty;
         public string Comentario { get; set; } = string.Empty;
+
         public int Valoracion { get; set; }
         public DateTime Fecha { get; set; }
+        public bool Editada { get; set; }
     }
 
     public class EncuestaUsuarioViewModel
@@ -228,10 +239,13 @@ namespace ProyectoClubCreativo.Models.ViewModels
     }
     public class ResenaPublicaViewModel
     {
+        public long IdComentario { get; set; }
+        public int IdUsuario { get; set; }
         public string Autor { get; set; } = string.Empty;
         public int Valoracion { get; set; }
         public string Contenido { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
         public bool Editada { get; set; }
+        
     }
 }

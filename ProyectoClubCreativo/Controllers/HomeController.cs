@@ -246,7 +246,7 @@ namespace ProyectoClubCreativo.Controllers
                         : e.EmprendimientoImagene.UrlImagen,
                     e.LogoUrl,
                     Valoraciones = e.ComentariosResenas
-                        .Where(c => c.Estado != "Eliminado" && c.Valoracion != null)
+                        .Where(c => c.Estado == "Visible" && c.Valoracion != null)
                         .Select(c => (int)c.Valoracion!.Value)
                         .ToList(),
                     Imagenes = e.Galeria
@@ -329,25 +329,90 @@ namespace ProyectoClubCreativo.Controllers
                 Relacionados = relacionados
             };
 
+            int idUsuarioActual =
+    HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+
+            // Obtener las reseñas visibles del emprendimiento.
+            var resenas = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c =>
+                    c.IdEmprendimiento == datos.IdEmprendimiento &&
+                    c.Estado == "Visible" &&
+                    c.Valoracion != null)
+                .OrderByDescending(c =>
+                    c.FechaEdicion ?? c.FechaPublicacion)
+                .Select(c => new
+                {
+                    c.IdComentario,
+                    c.IdUsuario,
+                    Autor = c.IdUsuarioNavigation.Nombre,
+                    Valoracion = c.Valoracion!.Value,
+                    c.Contenido,
+                    Fecha = c.FechaEdicion ?? c.FechaPublicacion,
+                    Editada = c.FechaEdicion != null
+                })
+                .ToListAsync();
+
+            // Preparar las reseñas para la vista pública.
+            ViewBag.Resenas = resenas
+                .Select(r => new ResenaPublicaViewModel
+                {
+                    IdComentario = r.IdComentario,
+                    IdUsuario = r.IdUsuario,
+                    Autor = r.Autor,
+                    Valoracion = r.Valoracion,
+                    Contenido = r.Contenido,
+                    Fecha = r.Fecha,
+                    Editada = r.Editada
+                })
+                .ToList();
+
+            // Identificar si el usuario ya publicó una reseña.
+            ViewBag.MiResenaEmprendimiento =
+                (ViewBag.Resenas as List<ResenaPublicaViewModel>)?
+                    .FirstOrDefault(r => r.IdUsuario == idUsuarioActual);
+
+            // Saber si existe una sesión iniciada.
+            ViewBag.UsuarioAutenticado = idUsuarioActual != 0;
             return View(modelo);
         }
-        public async Task<IActionResult> Eventos(int? categoria)
+        public async Task<IActionResult> Eventos(
+            int? categoria,
+            string estado = "proximos")
         {
             DateTime ahora = DateTime.Now;
 
+            bool mostrarFinalizados = estado == "finalizados";
+
             IQueryable<Evento> consulta = _context.Eventos
-                .AsNoTracking()
-                .Where(e =>
-                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                .AsNoTracking();
+
+            if (mostrarFinalizados)
+            {
+                consulta = consulta.Where(e =>
+                    (e.Estado == "Programado" ||
+                     e.Estado == "Activo" ||
+                     e.Estado == "Finalizado") &&
+                    (e.FechaFin ?? e.FechaInicio) < ahora);
+            }
+            else
+            {
+                consulta = consulta.Where(e =>
+                    (e.Estado == "Programado" ||
+                     e.Estado == "Activo") &&
                     (e.FechaFin ?? e.FechaInicio) >= ahora);
+            }
 
             if (categoria.HasValue)
             {
                 consulta = consulta.Where(e => e.IdCategoria == categoria.Value);
             }
 
-            var eventos = await consulta
-                .OrderBy(e => e.FechaInicio)
+            var eventos = await (
+                mostrarFinalizados
+                    ? consulta.OrderByDescending(e => e.FechaInicio)
+                    : consulta.OrderBy(e => e.FechaInicio)
+                )
                 .Select(e => new
                 {
                     e.IdEvento,
@@ -384,6 +449,9 @@ namespace ProyectoClubCreativo.Controllers
                 .ToListAsync();
 
             ViewBag.CategoriaSeleccionada = categoria;
+            ViewBag.EstadoEventos = mostrarFinalizados
+                ? "finalizados"
+                : "proximos";
 
             return View();
         }
@@ -597,7 +665,9 @@ namespace ProyectoClubCreativo.Controllers
                 .AsNoTracking()
                 .Where(e =>
                     e.IdEvento == id &&
-                    (e.Estado == "Programado" || e.Estado == "Activo"))
+                    (e.Estado == "Programado" ||
+                     e.Estado == "Activo" ||
+                     e.Estado == "Finalizado"))
                 .Select(e => new EventoPublicoViewModel
                 {
                     IdEvento = e.IdEvento,
@@ -638,7 +708,8 @@ namespace ProyectoClubCreativo.Controllers
                 .AsNoTracking()
                 .Where(e =>
                     e.IdEvento != id &&
-                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                    (e.Estado == "Programado" ||
+                     e.Estado == "Activo") &&
                     (e.FechaFin ?? e.FechaInicio) >= ahora)
                 .OrderBy(e => e.FechaInicio)
                 .Take(2)
@@ -662,6 +733,48 @@ namespace ProyectoClubCreativo.Controllers
                     FechaFin = e.FechaFin
                 })
                 .ToList();
+            var resenas = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c =>
+                    c.IdEvento == id &&
+                    c.Estado == "Visible" &&
+                    c.Valoracion != null)
+                .OrderByDescending(c =>
+                    c.FechaEdicion ?? c.FechaPublicacion)
+                .Select(c => new
+                {
+                    c.IdUsuario,
+                    c.IdComentario,
+                    Autor = c.IdUsuarioNavigation.Nombre,
+                    Valoracion = c.Valoracion!.Value,
+                    c.Contenido,
+                    Fecha = c.FechaEdicion ?? c.FechaPublicacion,
+                    Editada = c.FechaEdicion != null
+                })
+                .ToListAsync();
+
+            ViewBag.Resenas = resenas
+                .Select(r => new ResenaPublicaViewModel
+                {
+                    Autor = r.Autor,
+                    Valoracion = r.Valoracion,
+                    Contenido = r.Contenido,
+                    Fecha = r.Fecha,
+                    IdComentario = r.IdComentario,
+                    IdUsuario = r.IdUsuario,
+                    Editada = r.Editada
+                })
+                .ToList();
+
+            ViewBag.PromedioResenas = resenas.Count > 0
+                ? Math.Round(resenas.Average(r => (double)r.Valoracion), 1)
+                : 0d;
+            ViewBag.MiResenaEvento =
+                (ViewBag.Resenas as List<ResenaPublicaViewModel>)?
+                    .FirstOrDefault(r => r.IdUsuario == idUsuarioActual);
+
+            ViewBag.EventoFinalizado =
+                (evento.FechaFin ?? evento.FechaInicio) < DateTime.Now;
 
             return View(evento);
         }
