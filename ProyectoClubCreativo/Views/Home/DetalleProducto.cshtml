@@ -21,6 +21,23 @@
         ViewBag.PromedioValoracion is double valorPromedio ? valorPromedio : 0;
 }
 
+
+@if (TempData["MensajeFavorito"] != null)
+{
+    <div class="container" style="margin-top: 20px;">
+        <div role="status"
+             style="padding: 14px 18px;
+            background-color: #e8f5e9;
+            color: #256029;
+            border-radius: 8px;
+            font-weight: 500;">
+            <i class="bi bi-check-circle-fill"></i>
+            @TempData["MensajeFavorito"]
+        </div>
+    </div>
+}
+
+
 <section class="encabezado-detalle-emprendimiento">
     <div class="container">
 
@@ -209,6 +226,25 @@
                 </button>
             }
 
+            
+            <form asp-controller="Usuario"
+                  asp-action="AgregarFavoritoProducto"
+                  method="post"
+                  style="margin-bottom: 15px;">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="idProducto"
+                       value="@Model.IdProducto" />
+
+                <button type="submit"
+                        class="boton-contacto-emprendimiento">
+                    <i class="bi bi-heart"></i>
+                    Agregar a favoritos
+                </button>
+
+            </form>
 
 
             <a asp-controller="Home"

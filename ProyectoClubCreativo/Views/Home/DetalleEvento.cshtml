@@ -34,6 +34,23 @@
 
 }
 
+
+@if (TempData["MensajeFavorito"] != null)
+{
+    <div class="container" style="margin-top: 20px;">
+        <div role="status"
+             style="padding: 14px 18px;
+            background-color: #e8f5e9;
+            color: #256029;
+            border-radius: 8px;
+            font-weight: 500;">
+            <i class="bi bi-check-circle-fill"></i>
+            @TempData["MensajeFavorito"]
+        </div>
+    </div>
+}
+
+
 <section class="encabezado-detalle-emprendimiento">
     <div class="container">
         <nav class="migas-detalle-emprendimiento" aria-label="Navegación secundaria">
@@ -173,6 +190,29 @@
                     </button>
                 </form>
             }
+
+            
+            <form asp-controller="Usuario"
+                  asp-action="AgregarEventoFavorito"
+                  method="post"
+                  style="margin-top: 12px;">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="idEvento"
+                       value="@Model.IdEvento" />
+
+                <button type="submit"
+                        class="boton-contacto-emprendimiento"
+                        style="border: 0; width: 100%; cursor: pointer;">
+
+                    <i class="bi bi-heart"></i>
+                    Agregar a favoritos
+
+                </button>
+            </form>
+
         </aside>
     </div>
 </section>

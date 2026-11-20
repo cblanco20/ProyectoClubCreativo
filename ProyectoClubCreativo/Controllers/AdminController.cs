@@ -5913,56 +5913,201 @@ namespace ProyectoClubCreativo.Controllers
             return View(modelo);
         }
 
-        [HttpGet]
-        public IActionResult Comentarios(string? busqueda, string estado = "Todos", string origen = "Todos")
-        {
-            var comentarios = ObtenerComentariosDemo();
 
+        [HttpGet]
+        public async Task<IActionResult> Comentarios(
+            string? busqueda,
+            string estado = "Todos",
+            string origen = "Todos")
+        {
+            // HU-67: Consultar comentarios reales de la base de datos.
+            var consulta = _context.ComentariosResenas
+                .AsNoTracking()
+                .AsQueryable();
+
+            // Filtrar por contenido o nombre del autor.
             if (!string.IsNullOrWhiteSpace(busqueda))
             {
-                comentarios = comentarios
-                    .Where(c => c.Contenido.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ||
-                                c.Autor.Contains(busqueda, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                string termino = busqueda.Trim();
+
+                consulta = consulta.Where(c =>
+                    c.Contenido.Contains(termino) ||
+                    c.IdUsuarioNavigation.Nombre.Contains(termino) ||
+                    c.IdUsuarioNavigation.ApellidoPaterno.Contains(termino));
             }
 
-            if (estado != "Todos") comentarios = comentarios.Where(c => c.Estado == estado).ToList();
-            if (origen != "Todos") comentarios = comentarios.Where(c => c.Origen == origen).ToList();
+            // Filtrar por estado.
+            if (!string.IsNullOrWhiteSpace(estado) && estado != "Todos")
+            {
+                consulta = consulta.Where(c => c.Estado == estado);
+            }
 
-            return View(new ListadoComentariosAdminViewModel
+            // Filtrar por origen.
+            if (!string.IsNullOrWhiteSpace(origen) && origen != "Todos")
+            {
+                consulta = origen switch
+                {
+                    "Producto" => consulta.Where(c => c.IdProducto != null),
+                    "Emprendimiento" => consulta.Where(c => c.IdEmprendimiento != null),
+                    "Evento" => consulta.Where(c => c.IdEvento != null),
+                    _ => consulta
+                };
+            }
+
+            var comentarios = await consulta
+                .OrderByDescending(c => c.FechaPublicacion)
+                .Select(c => new
+                {
+                    c.IdComentario,
+                    c.Contenido,
+                    c.Estado,
+                    c.CantidadReportes,
+                    c.FechaPublicacion,
+                    Autor = c.IdUsuarioNavigation.Nombre + " " +
+                            c.IdUsuarioNavigation.ApellidoPaterno,
+                    Origen = c.IdProducto != null ? "Producto" :
+                             c.IdEmprendimiento != null ? "Emprendimiento" :
+                             "Evento",
+                    ElementoRelacionado = c.IdProductoNavigation != null
+                        ? c.IdProductoNavigation.Nombre
+                        : c.IdEmprendimientoNavigation != null
+                            ? c.IdEmprendimientoNavigation.NombreComercial
+                            : c.IdEventoNavigation != null
+                                ? c.IdEventoNavigation.Nombre
+                                : "Sin información"
+                })
+                .ToListAsync();
+
+            var modelo = new ListadoComentariosAdminViewModel
             {
                 Busqueda = busqueda,
                 FiltroEstado = estado,
                 FiltroOrigen = origen,
-                Comentarios = comentarios
-            });
+                Comentarios = comentarios.Select(c => new ComentarioAdminViewModel
+                {
+                    Id = c.IdComentario,
+                    Autor = c.Autor,
+                    Contenido = c.Contenido,
+                    Origen = c.Origen,
+                    ElementoRelacionado = c.ElementoRelacionado,
+                    Fecha = c.FechaPublicacion.ToString("dd/MM/yyyy"),
+                    Estado = c.Estado,
+                    Reportes = c.CantidadReportes
+                }).ToList()
+            };
+
+            return View(modelo);
         }
+
+
 
         [HttpGet]
-        public IActionResult VerComentario(int id = 1)
+        public async Task<IActionResult> VerComentario(long id)
         {
-            var comentario = ObtenerComentariosDemo().FirstOrDefault(c => c.Id == id) ?? ObtenerComentariosDemo().First();
-            return View(comentario);
+            // HU-67: Consultar el comentario real seleccionado.
+            var comentario = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c => c.IdComentario == id)
+                .Select(c => new
+                {
+                    c.IdComentario,
+                    c.Contenido,
+                    c.Estado,
+                    c.CantidadReportes,
+                    c.FechaPublicacion,
+
+                    Autor = c.IdUsuarioNavigation.Nombre + " " +
+                            c.IdUsuarioNavigation.ApellidoPaterno,
+
+                    Origen = c.IdProducto != null ? "Producto" :
+                             c.IdEmprendimiento != null ? "Emprendimiento" :
+                             "Evento",
+
+                    ElementoRelacionado = c.IdProductoNavigation != null
+                        ? c.IdProductoNavigation.Nombre
+                        : c.IdEmprendimientoNavigation != null
+                            ? c.IdEmprendimientoNavigation.NombreComercial
+                            : c.IdEventoNavigation != null
+                                ? c.IdEventoNavigation.Nombre
+                                : "Sin información"
+                })
+                .FirstOrDefaultAsync();
+
+            if (comentario == null)
+            {
+                TempData["MensajeAdmin"] = "El comentario seleccionado no existe.";
+                return RedirectToAction(nameof(Comentarios));
+            }
+
+            var modelo = new ComentarioAdminViewModel
+            {
+                Id = comentario.IdComentario,
+                Autor = comentario.Autor,
+                Contenido = comentario.Contenido,
+                Origen = comentario.Origen,
+                ElementoRelacionado = comentario.ElementoRelacionado,
+                Fecha = comentario.FechaPublicacion.ToString("dd/MM/yyyy"),
+                Estado = comentario.Estado,
+                Reportes = comentario.CantidadReportes
+            };
+
+            return View(modelo);
         }
 
+
+        // HU-67: Eliminar comentarios inapropiados y registrar la acción.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EliminarComentario(int id)
+        public async Task<IActionResult> EliminarComentario(long id)
         {
-            TempData["MensajeAdmin"] = "El comentario fue eliminado por contenido inapropiado.";
+            int? idAdministrador = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idAdministrador.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var comentario = await _context.ComentariosResenas
+                .FirstOrDefaultAsync(c => c.IdComentario == id);
+
+            if (comentario == null)
+            {
+                TempData["MensajeAdmin"] = "El comentario seleccionado no existe.";
+                return RedirectToAction(nameof(Comentarios));
+            }
+
+            if (comentario.Estado == "Eliminado")
+            {
+                TempData["MensajeAdmin"] = "Este comentario ya fue eliminado.";
+                return RedirectToAction(nameof(Comentarios));
+            }
+
+            comentario.Estado = "Eliminado";
+
+            var auditoria = new Auditorium
+            {
+                IdUsuario = idAdministrador.Value,
+                Modulo = "Comentarios",
+                Accion = "Eliminar",
+                Entidad = "ComentariosResenas",
+                IdRegistro = comentario.IdComentario.ToString(),
+                Descripcion = $"El administrador eliminó el comentario con ID {comentario.IdComentario} por contenido inapropiado.",
+                DireccionIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Nivel = "Informativo",
+                FechaHora = DateTime.Now
+            };
+
+            _context.Auditoria.Add(auditoria);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                "El comentario fue eliminado correctamente y la acción quedó registrada.";
+
             return RedirectToAction(nameof(Comentarios));
         }
 
-        private static List<ComentarioAdminViewModel> ObtenerComentariosDemo()
-        {
-            return
-            [
-                new() { Id = 1, Autor = "Maria Montero Cruz", Contenido = "¡Excelente producto, llegó muy rápido y en perfecto estado!", Origen = "Producto", ElementoRelacionado = "Aretes Orquídea", Fecha = "03/08/2026", Estado = "Visible", Reportes = 0 },
-                new() { Id = 2, Autor = "Usuario anónimo", Contenido = "Contenido inapropiado reportado por varios usuarios de la comunidad.", Origen = "Noticia", ElementoRelacionado = "Cambios en el horario de atención", Fecha = "02/08/2026", Estado = "Reportado", Reportes = 4 },
-                new() { Id = 3, Autor = "Luis Fernández Rojas", Contenido = "Muy buen taller, aprendí bastante sobre cerámica.", Origen = "Taller", ElementoRelacionado = "Cerámica para principiantes", Fecha = "24/08/2026", Estado = "Visible", Reportes = 0 },
-                new() { Id = 4, Autor = "Carla Ramírez Solís", Contenido = "El evento estuvo muy desorganizado, no lo recomiendo para nada.", Origen = "Evento", ElementoRelacionado = "Feria Creativa Santa Ana", Fecha = "07/09/2026", Estado = "Reportado", Reportes = 2 }
-            ];
-        }
+
 
         [HttpGet]
         public IActionResult Categorias(string tipo = "Categoria")

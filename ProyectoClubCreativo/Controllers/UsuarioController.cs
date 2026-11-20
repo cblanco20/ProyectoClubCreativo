@@ -1059,6 +1059,330 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarFavoritoProducto(int idProducto)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool productoExiste = await _context.Productos
+                .AnyAsync(p =>
+                    p.IdProducto == idProducto &&
+                    p.TipoPublicacion == "Producto" &&
+                    p.Estado == "Publicado");
+
+            if (!productoExiste)
+            {
+                return NotFound();
+            }
+
+            bool yaEsFavorito = await _context.Favoritos
+                .AnyAsync(f =>
+                    f.IdUsuario == idUsuario.Value &&
+                    f.IdProducto == idProducto);
+
+            if (yaEsFavorito)
+            {
+                TempData["MensajeFavorito"] =
+                    "Este producto ya se encuentra en tus favoritos.";
+
+                return RedirectToAction(
+                    "DetalleProducto",
+                    "Home",
+                    new { id = idProducto });
+            }
+
+            Favorito favorito = new()
+            {
+                IdUsuario = idUsuario.Value,
+                IdProducto = idProducto,
+                FechaRegistro = DateTime.Now
+            };
+
+            _context.Favoritos.Add(favorito);
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeFavorito"] =
+                "Producto agregado a favoritos correctamente.";
+
+            return RedirectToAction(
+                "DetalleProducto",
+                "Home",
+                new { id = idProducto });
+        }
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarEmprendimientoFavorito(int idEmprendimiento)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool emprendimientoExiste = await _context.Emprendimientos
+                .AnyAsync(e =>
+                    e.IdEmprendimiento == idEmprendimiento &&
+                    e.EstadoAprobacion == "Aprobado" &&
+                    e.Activo);
+
+            if (!emprendimientoExiste)
+            {
+                return NotFound();
+            }
+
+            bool yaEsFavorito = await _context.Favoritos
+                .AnyAsync(f =>
+                    f.IdUsuario == idUsuario.Value &&
+                    f.IdEmprendimiento == idEmprendimiento);
+
+            if (yaEsFavorito)
+            {
+                TempData["MensajeFavorito"] =
+                    "Este emprendimiento ya se encuentra en tus favoritos.";
+
+                return RedirectToAction(
+                    "DetalleEmprendimiento",
+                    "Home",
+                    new { id = idEmprendimiento });
+            }
+
+            Favorito favorito = new()
+            {
+                IdUsuario = idUsuario.Value,
+                IdEmprendimiento = idEmprendimiento,
+                FechaRegistro = DateTime.Now
+            };
+
+            _context.Favoritos.Add(favorito);
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeFavorito"] =
+                "Emprendimiento agregado a favoritos correctamente.";
+
+            return RedirectToAction(
+                "DetalleEmprendimiento",
+                "Home",
+                new { id = idEmprendimiento });
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarEventoFavorito(int idEvento)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool eventoExiste = await _context.Eventos
+                .AnyAsync(e => e.IdEvento == idEvento);
+
+            if (!eventoExiste)
+            {
+                return NotFound();
+            }
+
+            bool yaEsFavorito = await _context.Favoritos
+                .AnyAsync(f =>
+                    f.IdUsuario == idUsuario.Value &&
+                    f.IdEvento == idEvento);
+
+            if (yaEsFavorito)
+            {
+                TempData["MensajeFavorito"] =
+                    "Este evento ya se encuentra en tus favoritos.";
+
+                return RedirectToAction(
+                    "DetalleEvento",
+                    "Home",
+                    new { id = idEvento });
+            }
+
+            Favorito favorito = new()
+            {
+                IdUsuario = idUsuario.Value,
+                IdEvento = idEvento,
+                FechaRegistro = DateTime.Now
+            };
+
+            _context.Favoritos.Add(favorito);
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeFavorito"] =
+                "Evento agregado a favoritos correctamente.";
+
+            return RedirectToAction(
+                "DetalleEvento",
+                "Home",
+                new { id = idEvento });
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarTallerFavorito(int idTaller)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool tallerExiste = await _context.Talleres
+                .AnyAsync(t => t.IdTaller == idTaller);
+
+            if (!tallerExiste)
+            {
+                return NotFound();
+            }
+
+            bool yaEsFavorito = await _context.Favoritos
+                .AnyAsync(f =>
+                    f.IdUsuario == idUsuario.Value &&
+                    f.IdTaller == idTaller);
+
+            if (yaEsFavorito)
+            {
+                TempData["MensajeFavorito"] =
+                    "Este taller ya se encuentra en tus favoritos.";
+
+                return RedirectToAction(
+                    "DetalleTaller",
+                    "Home",
+                    new { id = idTaller });
+            }
+
+            Favorito favorito = new()
+            {
+                IdUsuario = idUsuario.Value,
+                IdTaller = idTaller,
+                FechaRegistro = DateTime.Now
+            };
+
+            _context.Favoritos.Add(favorito);
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeFavorito"] =
+                "Taller agregado a favoritos correctamente.";
+
+            return RedirectToAction(
+                "DetalleTaller",
+                "Home",
+                new { id = idTaller });
+        }
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarFavorito(string tipo, int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Favorito? favorito = await _context.Favoritos
+                .FirstOrDefaultAsync(f =>
+                    f.IdUsuario == idUsuario.Value &&
+                    (
+                        (tipo == "Producto" && f.IdProducto == id) ||
+                        (tipo == "Emprendimiento" && f.IdEmprendimiento == id) ||
+                        (tipo == "Evento" && f.IdEvento == id) ||
+                        (tipo == "Taller" && f.IdTaller == id)
+                    ));
+
+            if (favorito == null)
+            {
+                TempData["ErrorFavoritos"] =
+                    "No se encontró el elemento en tus favoritos.";
+
+                return RedirectToAction(nameof(Favoritos));
+            }
+
+            _context.Favoritos.Remove(favorito);
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeFavoritos"] =
+                "El elemento se eliminó de tus favoritos correctamente.";
+
+            return RedirectToAction(nameof(Favoritos));
+        }
+
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AgregarAlCarrito(int idProducto)
@@ -3669,47 +3993,96 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(PuntosRecompensas));
         }
 
+
         [HttpGet]
-        public IActionResult Favoritos()
+        public async Task<IActionResult> Favoritos()
         {
-            List<FavoritoUsuarioViewModel> modelo =
-            [
-                new()
-        {
-            Id = 1,
-            Tipo = "Producto",
-            Nombre = "Aretes Orquídea",
-            Descripcion = "Accesorios artesanales",
-            Imagen = "/images/producto-1.jpg"
-        },
-        new()
-        {
-            Id = 2,
-            Tipo = "Emprendimiento",
-            Nombre = "Luz Natural",
-            Descripcion = "Velas artesanales",
-            Imagen = "/images/producto-3.jpg"
-        },
-        new()
-        {
-            Id = 3,
-            Tipo = "Evento",
-            Nombre = "Feria Creativa Santa Ana",
-            Descripcion = "5 al 7 de septiembre",
-            Imagen = "/images/evento-santa-ana.jpg"
-        },
-        new()
-        {
-            Id = 4,
-            Tipo = "Taller",
-            Nombre = "Bordado creativo",
-            Descripcion = "Taller para principiantes",
-            Imagen = "/images/taller-bordado.jpg"
-        }
-            ];
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            bool usuarioActivo = await _context.Usuarios
+                .AnyAsync(u =>
+                    u.IdUsuario == idUsuario.Value &&
+                    u.Estado == "Activo");
+
+            if (!usuarioActivo)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            List<Favorito> favoritos = await _context.Favoritos
+                .AsNoTracking()
+                .Where(f => f.IdUsuario == idUsuario.Value)
+                .Include(f => f.IdProductoNavigation)
+                    .ThenInclude(p => p!.ProductoImagene)
+                .Include(f => f.IdEmprendimientoNavigation)
+                .Include(f => f.IdEventoNavigation)
+                .Include(f => f.IdTallerNavigation)
+                .OrderByDescending(f => f.FechaRegistro)
+                .ToListAsync();
+
+            List<FavoritoUsuarioViewModel> modelo = new();
+
+            foreach (Favorito favorito in favoritos)
+            {
+                if (favorito.IdProductoNavigation is Producto producto)
+                {
+                    modelo.Add(new FavoritoUsuarioViewModel
+                    {
+                        Id = producto.IdProducto,
+                        Tipo = "Producto",
+                        Nombre = producto.Nombre,
+                        Descripcion = producto.Descripcion,
+                        Imagen = producto.ProductoImagene?.UrlImagen
+                            ?? "/images/logo.jpg"
+                    });
+                }
+                else if (favorito.IdEmprendimientoNavigation is Emprendimiento emprendimiento)
+                {
+                    modelo.Add(new FavoritoUsuarioViewModel
+                    {
+                        Id = emprendimiento.IdEmprendimiento,
+                        Tipo = "Emprendimiento",
+                        Nombre = emprendimiento.NombreComercial,
+                        Descripcion = emprendimiento.Descripcion,
+                        Imagen = emprendimiento.LogoUrl
+                            ?? "/images/logo.jpg"
+                    });
+                }
+                else if (favorito.IdEventoNavigation is Evento evento)
+                {
+                    modelo.Add(new FavoritoUsuarioViewModel
+                    {
+                        Id = evento.IdEvento,
+                        Tipo = "Evento",
+                        Nombre = evento.Nombre,
+                        Descripcion = evento.Descripcion,
+                        Imagen = evento.ImagenUrl
+                            ?? "/images/hero-feria.jpg"
+                    });
+                }
+                else if (favorito.IdTallerNavigation is Tallere taller)
+                {
+                    modelo.Add(new FavoritoUsuarioViewModel
+                    {
+                        Id = taller.IdTaller,
+                        Tipo = "Taller",
+                        Nombre = taller.Nombre,
+                        Descripcion = taller.Descripcion ?? "",
+                        Imagen = taller.ImagenUrl
+                            ?? "/images/taller-ceramica.jpg"
+                    });
+                }
+            }
 
             return View(modelo);
         }
+
 
         [HttpGet]
         public async Task<IActionResult> Comentarios()

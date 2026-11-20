@@ -190,7 +190,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     // ---------- MODERACIÓN DE COMENTARIOS ----------
     public class ComentarioAdminViewModel
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Autor { get; set; } = "";
         public string Contenido { get; set; } = "";
         public string Origen { get; set; } = "";

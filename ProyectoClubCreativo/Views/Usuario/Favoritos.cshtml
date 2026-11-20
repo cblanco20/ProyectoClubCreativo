@@ -14,29 +14,61 @@
         </p>
     </div>
 </div>
+@if (TempData["MensajeFavoritos"] != null)
+{
+    <div class="alert alert-success" role="alert">
+        @TempData["MensajeFavoritos"]
+    </div>
+}
 
+@if (TempData["ErrorFavoritos"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["ErrorFavoritos"]
+    </div>
+}
 <div class="filtros-modulo-usuario">
-    <button class="filtro-activo">Todos</button>
-    <button>Productos</button>
-    <button>Emprendimientos</button>
-    <button>Eventos</button>
-    <button>Talleres</button>
+    <button type="button" class="filtro-activo" data-filtro="Todos">
+        Todos
+    </button>
+    <button type="button" data-filtro="Producto">
+        Productos
+    </button>
+    <button type="button" data-filtro="Emprendimiento">
+        Emprendimientos
+    </button>
+    <button type="button" data-filtro="Evento">
+        Eventos
+    </button>
+    <button type="button" data-filtro="Taller">
+        Talleres
+    </button>
 </div>
 
 <section class="cuadricula-favoritos">
 
     @foreach (var favorito in Model)
     {
-        <article class="tarjeta-favorito">
+        <article class="tarjeta-favorito" data-tipo="@favorito.Tipo">
 
             <div class="imagen-favorito">
                 <img src="@favorito.Imagen"
                      alt="@favorito.Nombre" />
+                <form asp-controller="Usuario"
+                      asp-action="EliminarFavorito"
+                      method="post"
+                      onsubmit="return confirm('¿Estás seguro de que deseas eliminar este elemento de tus favoritos?');">
 
-                <button type="button"
-                        aria-label="Eliminar favorito">
-                    <i class="bi bi-heart-fill"></i>
-                </button>
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="tipo" value="@favorito.Tipo" />
+                    <input type="hidden" name="id" value="@favorito.Id" />
+
+                    <button type="submit"
+                            aria-label="Eliminar favorito">
+                        <i class="bi bi-heart-fill"></i>
+                    </button>
+                </form>
             </div>
 
             <div class="contenido-favorito">
@@ -44,12 +76,64 @@
                 <h2>@favorito.Nombre</h2>
                 <p>@favorito.Descripcion</p>
 
-                <a href="#">
-                    Ver información →
-                </a>
+                @if (favorito.Tipo == "Producto")
+                {
+                    <a asp-controller="Home"
+                       asp-action="DetalleProducto"
+                       asp-route-id="@favorito.Id">
+                        Ver información →
+                    </a>
+                }
+                else if (favorito.Tipo == "Emprendimiento")
+                {
+                    <a asp-controller="Home"
+                       asp-action="DetalleEmprendimiento"
+                       asp-route-id="@favorito.Id">
+                        Ver información →
+                    </a>
+                }
+                else if (favorito.Tipo == "Evento")
+                {
+                    <a asp-controller="Home"
+                       asp-action="DetalleEvento"
+                       asp-route-id="@favorito.Id">
+                        Ver información →
+                    </a>
+                }
+                else if (favorito.Tipo == "Taller")
+                {
+                    <a asp-controller="Home"
+                       asp-action="DetalleTaller"
+                       asp-route-id="@favorito.Id">
+                        Ver información →
+                    </a>
+                }
             </div>
 
         </article>
     }
 
 </section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const botones = document.querySelectorAll("[data-filtro]");
+        const tarjetas = document.querySelectorAll(".tarjeta-favorito");
+
+        botones.forEach(boton => {
+            boton.addEventListener("click", function () {
+                const filtro = this.dataset.filtro;
+
+                botones.forEach(b => b.classList.remove("filtro-activo"));
+                this.classList.add("filtro-activo");
+
+                tarjetas.forEach(tarjeta => {
+                    const mostrar = filtro === "Todos" ||
+                        tarjeta.dataset.tipo === filtro;
+
+                    tarjeta.style.display = mostrar ? "" : "none";
+                });
+            });
+        });
+    });
+</script>
