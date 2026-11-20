@@ -22,6 +22,8 @@
     </div>
 }
 
+
+
 <article class="bloque-admin">
     <div class="encabezado-bloque-admin">
         <h2><i class="bi bi-receipt"></i> @Model.NumeroOrden</h2>
@@ -38,6 +40,19 @@
                 <label>Estado del pago</label>
                 <p>@Model.EstadoPago</p>
             </div>
+
+            @if (Model.MetodoPago == "SINPE Móvil")
+            {
+                <div>
+                    <label>Número de referencia SINPE Móvil</label>
+                    <p>
+                        @(string.IsNullOrWhiteSpace(Model.NumeroReferenciaSinpe)
+                            ? "No registrada"
+                            : Model.NumeroReferenciaSinpe)
+                    </p>
+                </div>
+            }
+
         </div>
     </div>
 
@@ -54,6 +69,35 @@
     </div>
 
     <h2 style="text-align:right; margin-top:14px;">Total: ₡@Model.Total.ToString("N0")</h2>
+
+        
+    @if (Model.MetodoPago == "SINPE Móvil" &&
+         Model.EstadoPago == "Pendiente" &&
+         Model.Estado != "Cancelada" &&
+         Model.Estado != "Entregada" &&
+         !string.IsNullOrWhiteSpace(Model.NumeroReferenciaSinpe))
+    {
+        <div class="mt-4 mb-4">
+            <form asp-controller="Admin"
+                  asp-action="AprobarPagoVentaSinpe"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="id"
+                       value="@Model.Id" />
+
+                <button type="submit"
+                        class="btn btn-success"
+                        onclick="return confirm('¿Ya verificó que la transferencia SINPE Móvil fue recibida correctamente?');">
+                    <i class="bi bi-check-circle"></i>
+                    Aprobar pago SINPE
+                </button>
+            </form>
+        </div>
+    }
+
 
     @if (Model.Estado == "Cancelada")
     {
@@ -95,10 +139,12 @@
                    value="@Model.Id" />
 
             <div class="mb-3">
+
                 <label for="motivoCancelacion"
                        class="form-label">
-                    Motivo de cancelación
+                    Motivo de cancelación o rechazo del pago SINPE
                 </label>
+
 
                 <textarea id="motivoCancelacion"
                           name="motivo"

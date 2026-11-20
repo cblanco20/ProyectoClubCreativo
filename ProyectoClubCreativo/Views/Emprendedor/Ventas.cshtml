@@ -899,21 +899,44 @@ else
             });
 
 
+            
             if (modal?.classList.contains("visible")) {
 
                 document.body.classList.add(
                     "modal-venta-abierto"
                 );
 
-                detalleOrden.textContent =
-                    campoOrden?.value || "Orden";
+                const botonVenta = Array.from(botonesDetalle)
+                    .find(boton =>
+                        boton.dataset.id === campoId?.value
+                    );
 
-                detalleCliente.textContent =
-                    "Cliente seleccionado";
+                if (botonVenta) {
+                    detalleOrden.textContent =
+                        botonVenta.dataset.orden;
 
-                detalleEstado.textContent =
-                    nuevoEstado?.value || "Sin seleccionar";
+                    detalleCliente.textContent =
+                        botonVenta.dataset.cliente;
+
+                    detalleCorreo.textContent =
+                        botonVenta.dataset.correo;
+
+                    detalleFecha.textContent =
+                        botonVenta.dataset.fecha;
+
+                    detalleTotal.textContent =
+                        botonVenta.dataset.total;
+
+                    detalleProductos.textContent =
+                        botonVenta.dataset.productos;
+
+                    detalleEstado.textContent =
+                        botonVenta.dataset.estado === "En preparacion"
+                            ? "En preparación"
+                            : botonVenta.dataset.estado;
+                }
             }
+
         });
     </script>
 }

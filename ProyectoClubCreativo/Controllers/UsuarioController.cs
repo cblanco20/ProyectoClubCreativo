@@ -1455,14 +1455,14 @@ namespace ProyectoClubCreativo.Controllers
                     "Seleccione un tipo de entrega válido.");
             }
 
-            if (modelo.MetodoPago != "Tarjeta de crédito o débito" &&
-                modelo.MetodoPago != "SINPE Móvil" &&
-                modelo.MetodoPago != "Pago al retirar")
+
+            if (modelo.MetodoPago != "SINPE Móvil")
             {
                 ModelState.AddModelError(
                     nameof(modelo.MetodoPago),
-                    "Seleccione un método de pago válido.");
+                    "El único método de pago disponible es SINPE Móvil.");
             }
+
 
             if (!ModelState.IsValid)
             {
@@ -1478,18 +1478,17 @@ namespace ProyectoClubCreativo.Controllers
                 "DatosEntregaCompra",
                 JsonSerializer.Serialize(modelo));
 
-            if (modelo.MetodoPago == "Tarjeta de crédito o débito")
-            {
-                return RedirectToAction(nameof(PagoCompra));
-            }
 
             return RedirectToAction(nameof(ConfirmacionPedido));
+
         }
 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmarPedido()
+        public async Task<IActionResult> ConfirmarPedido(
+            string NumeroReferenciaSinpe)
+
         {
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
@@ -1508,6 +1507,19 @@ namespace ProyectoClubCreativo.Controllers
                 HttpContext.Session.Clear();
                 return RedirectToAction("IniciarSesion", "Cuenta");
             }
+
+
+            if (string.IsNullOrWhiteSpace(NumeroReferenciaSinpe) ||
+                NumeroReferenciaSinpe.Trim().Length > 100)
+            {
+                TempData["ErrorCompra"] =
+                    "Ingrese un número de referencia SINPE Móvil válido.";
+
+                return RedirectToAction(nameof(ConfirmacionPedido));
+            }
+
+            NumeroReferenciaSinpe = NumeroReferenciaSinpe.Trim();
+
 
             string? datosEntrega = HttpContext.Session
                 .GetString("DatosEntregaCompra");
@@ -1529,9 +1541,9 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(ProcesoCompra));
             }
 
+
             if (entrega == null ||
-                (entrega.MetodoPago != "SINPE Móvil" &&
-                 entrega.MetodoPago != "Pago al retirar") ||
+                entrega.MetodoPago != "SINPE Móvil" ||
                 (entrega.TipoEntrega != "Retiro" &&
                  entrega.TipoEntrega != "Domicilio") ||
                 (entrega.TipoEntrega == "Domicilio" &&
@@ -1539,6 +1551,7 @@ namespace ProyectoClubCreativo.Controllers
             {
                 return RedirectToAction(nameof(ProcesoCompra));
             }
+
 
             var carrito = ObtenerCarrito();
 
@@ -1614,6 +1627,7 @@ namespace ProyectoClubCreativo.Controllers
                     Descuento = 0,
                     Total = subtotal,
                     MetodoPago = entrega.MetodoPago,
+                    NumeroReferenciaSinpe = NumeroReferenciaSinpe,
                     TipoEntrega = entrega.TipoEntrega,
                     DireccionEntrega = entrega.TipoEntrega == "Domicilio"
                         ? entrega.Direccion
@@ -1741,8 +1755,7 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             if (entrega == null ||
-                (entrega.MetodoPago != "SINPE Móvil" &&
-                 entrega.MetodoPago != "Pago al retirar"))
+               entrega.MetodoPago != "SINPE Móvil")
             {
                 return RedirectToAction(nameof(ProcesoCompra));
             }

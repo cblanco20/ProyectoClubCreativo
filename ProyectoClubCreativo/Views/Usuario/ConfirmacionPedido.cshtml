@@ -33,15 +33,60 @@
                 ₡@(((decimal)ViewBag.Total).ToString("N0"))
             </p>
 
+            
             <div class="alert alert-info">
-                Tu pedido se registrará con el pago pendiente.
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-phone"></i>
+                    Pago mediante SINPE Móvil
+                </h5>
+
+                <p class="mb-2">
+                    Realiza la transferencia SINPE Móvil al siguiente número:
+                </p>
+
+                <p class="fs-4 fw-bold text-center mb-2">
+                    7130 1389
+                </p>
+
+                <p class="mb-2">
+                    <strong>Monto a transferir:</strong>
+                    ₡@(((decimal)ViewBag.Total).ToString("N0"))
+                </p>
+
+                <p class="mb-0">
+                    Después de realizar la transferencia, ingresa el número
+                    de referencia en el campo de abajo para registrar tu pedido.
+                    El administrador verificará el pago antes de aprobarlo.
+                </p>
             </div>
+
 
             <form asp-controller="Usuario"
                   asp-action="ConfirmarPedido"
                   method="post">
 
                 @Html.AntiForgeryToken()
+
+                
+                <div class="mb-3">
+                    <label for="NumeroReferenciaSinpe" class="form-label">
+                        Número de referencia SINPE Móvil
+                    </label>
+
+                    <input type="text"
+                           id="NumeroReferenciaSinpe"
+                           name="NumeroReferenciaSinpe"
+                           class="form-control"
+                           maxlength="100"
+                           required
+                           placeholder="Ingrese el número de referencia" />
+
+                    <small class="text-muted">
+                        Realiza la transferencia SINPE Móvil e ingresa
+                        el número de referencia para registrar tu pedido.
+                    </small>
+                </div>
+
 
                 <div class="d-flex justify-content-between mt-4">
 

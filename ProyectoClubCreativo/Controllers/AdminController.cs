@@ -3078,6 +3078,7 @@ namespace ProyectoClubCreativo.Controllers
                     v.Estado,
                     v.EstadoPago,
                     v.MetodoPago,
+                    v.NumeroReferenciaSinpe,
 
                     Cliente = v.IdUsuarioNavigation.Nombre + " " +
                               v.IdUsuarioNavigation.ApellidoPaterno,
@@ -3124,6 +3125,7 @@ namespace ProyectoClubCreativo.Controllers
                 Estado = venta.Estado,
                 EstadoPago = venta.EstadoPago,
                 MetodoPago = venta.MetodoPago,
+                NumeroReferenciaSinpe = venta.NumeroReferenciaSinpe,
                 MotivoCancelacion = venta.MotivoCancelacion,
 
                 Items = venta.Productos
@@ -3138,6 +3140,122 @@ namespace ProyectoClubCreativo.Controllers
 
             return View(modelo);
         }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AprobarPagoVentaSinpe(int id)
+        {
+            await using var transaccion =
+                await _context.Database.BeginTransactionAsync(
+                    System.Data.IsolationLevel.Serializable);
+
+            try
+            {
+                Venta? venta = await _context.Ventas
+                    .FirstOrDefaultAsync(v => v.IdVenta == id);
+
+                if (venta == null)
+                {
+                    await transaccion.RollbackAsync();
+                    return NotFound();
+                }
+
+                if (venta.MetodoPago != "SINPE Móvil" ||
+                    venta.EstadoPago != "Pendiente" ||
+                    venta.Estado == "Cancelada" ||
+                    venta.Estado == "Entregada" ||
+                    string.IsNullOrWhiteSpace(venta.NumeroReferenciaSinpe))
+                {
+                    await transaccion.RollbackAsync();
+
+                    TempData["ErrorAdmin"] =
+                        "No se puede aprobar el pago de esta orden.";
+
+                    return RedirectToAction(
+                        nameof(DetalleVenta), new { id });
+                }
+
+                venta.EstadoPago = "Aprobado";
+
+                var existeAcumulacion = await _context.MovimientosPuntos
+                    .AnyAsync(m =>
+                        m.IdVenta == venta.IdVenta &&
+                        m.TipoMovimiento == "Acumulacion");
+
+                if (!existeAcumulacion)
+                {
+                    var configuracionPuntos = await _context.ConfiguracionPuntos
+                        .AsNoTracking()
+                        .OrderByDescending(c => c.FechaActualizacion)
+                        .FirstOrDefaultAsync();
+
+                    if (configuracionPuntos == null ||
+                        configuracionPuntos.ColonesPorPunto <= 0)
+                    {
+                        throw new InvalidOperationException(
+                            "No existe una configuración válida para los puntos.");
+                    }
+
+                    int puntosGanados = (int)Math.Floor(
+                        venta.Subtotal / configuracionPuntos.ColonesPorPunto);
+
+                    if (puntosGanados > 0)
+                    {
+                        var movimientoPuntos = new MovimientosPunto
+                        {
+                            IdUsuario = venta.IdUsuario,
+                            TipoMovimiento = "Acumulacion",
+                            Puntos = puntosGanados,
+                            Motivo = "Puntos ganados por la compra " + venta.NumeroOrden,
+                            FechaMovimiento = DateTime.Now,
+                            IdVenta = venta.IdVenta
+                        };
+
+                        _context.MovimientosPuntos.Add(movimientoPuntos);
+                    }
+                }
+
+
+                _context.Notificaciones.Add(new Notificacione
+                {
+                    IdUsuario = venta.IdUsuario,
+                    NumeroOrden = venta.NumeroOrden,
+                    Titulo = "Pago confirmado",
+                    Mensaje =
+                        $"¡Tu pago SINPE Móvil del pedido {venta.NumeroOrden} " +
+                        "fue aprobado correctamente! " +
+                        "Los puntos correspondientes a tu compra ya fueron acreditados. " +
+                        "Tu pedido continuará con el proceso de preparación.",
+                    Tipo = "Compra",
+                    FechaEnvio = DateTime.Now,
+                    Leida = false,
+                    FechaLectura = null
+                });
+
+
+
+                await _context.SaveChangesAsync();
+                await transaccion.CommitAsync();
+
+                TempData["MensajeAdmin"] =
+                    "El pago SINPE Móvil fue aprobado correctamente.";
+
+                return RedirectToAction(
+                    nameof(DetalleVenta), new { id });
+            }
+            catch (Exception)
+            {
+                await transaccion.RollbackAsync();
+
+                TempData["ErrorAdmin"] =
+                    "Ocurrió un error al aprobar el pago.";
+
+                return RedirectToAction(
+                    nameof(DetalleVenta), new { id });
+            }
+        }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -3307,6 +3425,12 @@ namespace ProyectoClubCreativo.Controllers
                 }
 
                 venta.Estado = "Cancelada";
+
+                if (venta.MetodoPago == "SINPE Móvil")
+                {
+                    venta.EstadoPago = "Rechazado";
+                }
+
 
                 venta.VentasCancelada = new VentasCancelada
                 {

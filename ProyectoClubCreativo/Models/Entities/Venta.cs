@@ -21,6 +21,8 @@ public partial class Venta
 
     public string MetodoPago { get; set; } = null!;
 
+    public string? NumeroReferenciaSinpe { get; set; }
+
     public string TipoEntrega { get; set; } = null!;
 
     public string? DireccionEntrega { get; set; }

@@ -1,138 +1,113 @@
 ﻿@{
-    ViewData["Title"] = "Mi código QR";
+    ViewData["Title"] = "Asistencia y puntos";
     Layout = "~/Views/Shared/_LayoutUsuario.cshtml";
 }
 
 <div class="encabezado-pagina-usuario">
-
     <div>
-
         <span class="etiqueta-pagina-usuario">
             Creativo Frecuente
         </span>
 
         <h1 class="titulo-pagina-usuario">
-            Mi código QR
+            Asistencia y puntos
         </h1>
 
         <p class="descripcion-pagina-usuario">
-            Presenta este código para acumular puntos en tus visitas,
-            compras y actividades de Club Creativo.
+            Participa en los talleres de Club Creativo MiVo,
+            registra tu asistencia y acumula puntos que podrás
+            utilizar en las recompensas disponibles.
         </p>
-
     </div>
-
 </div>
 
-<section class="contenedor-qr-usuario">
+<!-- Contenedor centrado -->
+<section style="
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 25px 20px 50px;
+    box-sizing: border-box;
+    ">
 
-    <article class="tarjeta-qr-usuario">
-
-        <div class="encabezado-qr-usuario">
-
-            <span class="icono-qr-usuario">
-                <i class="bi bi-qr-code"></i>
-            </span>
-
-            <div>
-                <span>
-                    Tarjeta personal
-                </span>
-
-                <h2>
-                    Creativo Frecuente
-                </h2>
-            </div>
-
-        </div>
-
-        <div class="codigo-qr-usuario">
-
-            <img src="~/images/qr-club.jpg"
-                 alt="Código QR personal de Creativo Frecuente" />
-
-        </div>
-
-        <div class="datos-qr-usuario">
-
-            <span>
-                Titular
-            </span>
-
-            <strong>
-                Maria
-            </strong>
-
-            <span>
-                Código de cliente
-            </span>
-
-            <strong>
-                CC-MARIA-1280
-            </strong>
-
-        </div>
-
-    </article>
-
-    <aside class="informacion-qr-usuario">
+    <!-- Tarjeta de información -->
+    <div style="
+        width: 100%;
+        max-width: 760px;
+        background: white;
+        border-radius: 22px;
+        padding: 35px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+        box-sizing: border-box;
+        ">
 
         <span class="etiqueta-pagina-usuario">
             ¿Cómo funciona?
         </span>
 
-        <h2>
-            Escanea tu QR y acumula puntos
+        <h2 style="
+            font-size: clamp(25px, 3vw, 34px);
+            margin-top: 18px;
+            margin-bottom: 12px;
+            ">
+            Registra tu asistencia y gana puntos
         </h2>
 
-        <p>
-            Muestra este código al realizar compras, visitar ferias
-            o participar en actividades seleccionadas.
+        <p style="
+            font-size: 15px;
+            line-height: 1.7;
+            color: #666;
+            margin-bottom: 28px;
+            ">
+            Al participar en los talleres de Club Creativo MiVo,
+            puedes ganar puntos por tu asistencia.
+            Sigue estos pasos para registrarla correctamente.
         </p>
 
+        <!-- Pasos -->
         <div class="pasos-qr-usuario">
 
-            <div class="paso-qr-usuario">
+            <!-- Paso 1 -->
+            <div class="paso-qr-usuario"
+                 style="margin-bottom: 14px; padding: 18px;">
 
-                <span>
-                    1
-                </span>
-
-                <div>
-                    <strong>
-                        Presenta tu código
-                    </strong>
-
-                    <p>
-                        Muéstralo desde tu teléfono al personal de Club Creativo.
-                    </p>
-                </div>
-
-            </div>
-
-            <div class="paso-qr-usuario">
-
-                <span>
-                    2
-                </span>
+                <span>1</span>
 
                 <div>
                     <strong>
-                        Registra tu actividad
+                        Inscríbete en un taller
                     </strong>
 
                     <p>
-                        El código se utiliza para identificar tu cuenta.
+                        Selecciona un taller disponible
+                        y completa tu inscripción.
                     </p>
                 </div>
-
             </div>
 
-            <div class="paso-qr-usuario">
+            <!-- Paso 2 -->
+            <div class="paso-qr-usuario"
+                 style="margin-bottom: 14px; padding: 18px;">
 
-                <span>
-                    3
-                </span>
+                <span>2</span>
+
+                <div>
+                    <strong>
+                        Registra tu asistencia
+                    </strong>
+
+                    <p>
+                        El día del taller, sigue las indicaciones
+                        del encargado para confirmar tu participación.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Paso 3 -->
+            <div class="paso-qr-usuario"
+                 style="margin-bottom: 25px; padding: 18px;">
+
+                <span>3</span>
 
                 <div>
                     <strong>
@@ -140,23 +115,33 @@
                     </strong>
 
                     <p>
-                        Los puntos aparecerán en tu historial de recompensas.
+                        Una vez registrada tu asistencia,
+                        consulta los puntos ganados en
+                        "Puntos y recompensas".
                     </p>
                 </div>
-
             </div>
 
         </div>
 
-        <a asp-controller="Usuario"
-           asp-action="PuntosRecompensas"
-           class="boton-accion-usuario">
+        <!-- Botón centrado -->
+        <div style="
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+            ">
 
-            <i class="bi bi-star-fill"></i>
-            Ver puntos y recompensas
+            <a asp-controller="Usuario"
+               asp-action="PuntosRecompensas"
+               class="boton-accion-usuario">
 
-        </a>
+                <i class="bi bi-star-fill"></i>
+                Ver puntos y recompensas
 
-    </aside>
+            </a>
+
+        </div>
+
+    </div>
 
 </section>

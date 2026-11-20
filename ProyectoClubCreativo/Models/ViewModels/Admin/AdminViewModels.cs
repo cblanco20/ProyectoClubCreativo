@@ -248,6 +248,7 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public string Estado { get; set; } = "";
         public string EstadoPago { get; set; } = string.Empty;
         public string MetodoPago { get; set; } = "";
+        public string? NumeroReferenciaSinpe { get; set; }
         public List<ItemVentaAdminViewModel> Items { get; set; } = [];
         public string? MotivoCancelacion { get; set; }
     }

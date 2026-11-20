@@ -109,13 +109,12 @@
             <div class="seccion-formulario-perfil">
                 <h3>Método de pago</h3>
 
+                
                 <select asp-for="MetodoPago"
                         class="control-formulario">
-                    <option value="">Seleccione un método</option>
-                    <option>Tarjeta de crédito o débito</option>
-                    <option>SINPE Móvil</option>
-                    <option>Pago al retirar</option>
+                    <option value="SINPE Móvil">SINPE Móvil</option>
                 </select>
+
 
                 <span asp-validation-for="MetodoPago"
                       class="mensaje-validacion"></span>

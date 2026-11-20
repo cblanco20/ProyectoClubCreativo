@@ -57,8 +57,23 @@ namespace ProyectoClubCreativo.Controllers
 
             ViewBag.EstadoEmprendimiento =
                 emprendimiento?.EstadoAprobacion ?? "Pendiente";
-
             ViewBag.TieneEmprendimiento = emprendimiento is not null;
+
+            // Cantidad de productos que necesitan atención
+            int productosConAlerta = 0;
+
+            if (emprendimiento is not null)
+            {
+                productosConAlerta = await _context.Productos
+                    .AsNoTracking()
+                    .CountAsync(p =>
+                        p.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                        p.TipoPublicacion == "Producto" &&
+                        p.Estado == "Publicado" &&
+                        p.StockActual <= 3);
+            }
+
+            ViewBag.ProductosConAlertaInventario = productosConAlerta;
 
             await next();
         }
@@ -118,8 +133,49 @@ namespace ProyectoClubCreativo.Controllers
 
             ViewBag.ProductosInventarioBajo = productosInventarioBajo;
 
+            // Cargar las ventas reales del emprendimiento
+            await CargarVentasEmprendimientoAsync();
+
+            // Contar los productos publicados del emprendimiento
+            ViewBag.TotalProductosPublicados = await _context.Productos
+                .AsNoTracking()
+                .CountAsync(p =>
+                    p.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    p.TipoPublicacion == "Producto" &&
+                    p.Estado == "Publicado");
+
+            // Cargar los próximos eventos reales
+            DateTime ahora = DateTime.Now;
+
+            ViewBag.ProximosEventos = await _context.Eventos
+                .AsNoTracking()
+                .Where(e =>
+                    (e.Estado == "Programado" ||
+                     e.Estado == "Activo") &&
+                    (e.FechaFin ?? e.FechaInicio) >= ahora)
+                .OrderBy(e => e.FechaInicio)
+                .Take(2)
+                .Select(e => new EventoPublicoViewModel
+                {
+                    IdEvento = e.IdEvento,
+                    Nombre = e.Nombre,
+                    Ubicacion = e.Ubicacion,
+                    ImagenUrl = e.ImagenUrl,
+                    FechaInicio = e.FechaInicio,
+                    FechaFin = e.FechaFin
+                })
+                .ToListAsync();
+
+            // Cargar las últimas 3 notificaciones reales del emprendedor
+            ViewBag.ActividadReciente = await _context.Notificaciones
+                .AsNoTracking()
+                .Where(n => n.IdUsuario == idUsuario.Value)
+                .OrderByDescending(n => n.FechaEnvio)
+                .Take(3)
+                .ToListAsync();
 
             return View();
+
         }
 
 
@@ -3287,42 +3343,162 @@ namespace ProyectoClubCreativo.Controllers
             }
         }
 
-        [HttpGet]
-        public IActionResult Inventario()
+
+        private async Task<InventarioEmprendedorViewModel> CargarInventarioAsync(
+            int idUsuario)
         {
-            return View(new AjustarInventarioViewModel());
+            InventarioEmprendedorViewModel modelo = new();
+
+            Emprendimiento? emprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e =>
+                    e.IdUsuarioPropietario == idUsuario);
+
+            if (emprendimiento is null)
+            {
+                return modelo;
+            }
+
+            var productos = await _context.Productos
+                .AsNoTracking()
+                .Include(p => p.IdCategoriaNavigation)
+                .Include(p => p.ProductoImagene)
+                .Where(p =>
+                    p.IdEmprendimiento == emprendimiento.IdEmprendimiento &&
+                    p.TipoPublicacion == "Producto" &&
+                    p.Estado == "Publicado")
+                .OrderBy(p => p.Nombre)
+                .ToListAsync();
+
+            modelo.Productos = productos.Select(p => new ProductoInventarioViewModel
+            {
+                IdProducto = p.IdProducto,
+                Nombre = p.Nombre,
+                Categoria = p.IdCategoriaNavigation?.Nombre ?? "Sin categoría",
+                ImagenUrl = p.ProductoImagene?.UrlImagen ?? "/images/logo.jpg",
+                StockActual = p.StockActual,
+                EstadoInventario = p.StockActual == 0
+                    ? "agotado"
+                    : p.StockActual <= 3
+                        ? "bajo"
+                        : "disponible"
+            }).ToList();
+
+            modelo.UnidadesDisponibles = productos.Sum(p => p.StockActual);
+
+            modelo.ProductosDisponibles = productos.Count(p =>
+                p.StockActual > 0);
+
+            modelo.ProductosInventarioBajo = productos.Count(p =>
+                p.StockActual > 0 && p.StockActual <= 3);
+
+            modelo.ProductosAgotados = productos.Count(p =>
+                p.StockActual == 0);
+
+            return modelo;
         }
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> Inventario()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            InventarioEmprendedorViewModel modelo =
+                await CargarInventarioAsync(idUsuario.Value);
+
+            return View(modelo);
+        }
+
+
 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AjustarInventario(
-            AjustarInventarioViewModel modelo)
+        public async Task<IActionResult> AjustarInventario(
+            [Bind(Prefix = "Ajuste")] AjustarInventarioViewModel modelo)
         {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
             if (!modelo.ConfirmaAjuste)
             {
                 ModelState.AddModelError(
-                    nameof(modelo.ConfirmaAjuste),
-                    "Debe confirmar el ajuste de inventario."
-                );
+                    "Ajuste.ConfirmaAjuste",
+                    "Debe confirmar el ajuste de inventario.");
             }
 
             if (!ModelState.IsValid)
             {
+                InventarioEmprendedorViewModel vista =
+                    await CargarInventarioAsync(idUsuario.Value);
+
+                vista.Ajuste = modelo;
+
                 ViewBag.AbrirModalInventario = true;
 
-                return View(
-                    "Inventario",
-                    modelo
-                );
+                return View("Inventario", vista);
             }
 
+            var producto = await _context.Productos
+                .FirstOrDefaultAsync(p =>
+                    p.IdProducto == modelo.IdProducto &&
+                    p.IdEmprendimientoNavigation.IdUsuarioPropietario == idUsuario.Value &&
+                    p.TipoPublicacion == "Producto" &&
+                    p.Estado == "Publicado");
+
+            if (producto == null)
+            {
+                ModelState.AddModelError(
+                    "Ajuste.IdProducto",
+                    "No se encontró el producto o no pertenece a tu emprendimiento.");
+
+                InventarioEmprendedorViewModel vista =
+                    await CargarInventarioAsync(idUsuario.Value);
+
+                vista.Ajuste = modelo;
+
+                ViewBag.AbrirModalInventario = true;
+
+                return View("Inventario", vista);
+            }
+
+            int stockAnterior = producto.StockActual;
+            int stockNuevo = modelo.NuevaCantidad!.Value;
+
+            producto.StockActual = stockNuevo;
+
+            _context.MovimientosInventarios.Add(new MovimientosInventario
+            {
+                IdProducto = producto.IdProducto,
+                IdUsuario = idUsuario.Value,
+                TipoMovimiento = "Ajuste",
+                Cantidad = Math.Abs(stockNuevo - stockAnterior),
+                StockAnterior = stockAnterior,
+                StockNuevo = stockNuevo,
+                Observacion = modelo.Observacion,
+                FechaMovimiento = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajeInventario"] =
-                $"El inventario de «{modelo.NombreProducto}» fue actualizado a " +
-                $"{modelo.NuevaCantidad} unidades.";
+                $"El inventario de «{producto.Nombre}» fue actualizado a " +
+                $"{stockNuevo} unidades.";
 
             return RedirectToAction(nameof(Inventario));
         }
+
 
         [HttpGet]
         public async Task<IActionResult> Ventas()
@@ -3466,6 +3642,26 @@ namespace ProyectoClubCreativo.Controllers
                     "La venta ya fue cancelada y no puede modificarse."
                 );
             }
+
+            else if (venta.MetodoPago == "SINPE Móvil" &&
+                     modelo.NuevoEstado == "Cancelada")
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevoEstado),
+                    "Las cancelaciones de pedidos SINPE Móvil deben gestionarse desde administración."
+                );
+            }
+            else if (venta.MetodoPago == "SINPE Móvil" &&
+                     venta.EstadoPago != "Aprobado" &&
+                     modelo.NuevoEstado != "Pendiente")
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevoEstado),
+                    "El administrador debe aprobar el pago SINPE Móvil antes de avanzar el pedido."
+                );
+            }
+
+
 
             else if (modelo.NuevoEstado == "Cancelada" &&
          await _context.VentaDetalles

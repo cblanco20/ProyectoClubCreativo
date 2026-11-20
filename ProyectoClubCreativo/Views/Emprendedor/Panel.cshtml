@@ -1,4 +1,5 @@
 ﻿@using ProyectoClubCreativo.Models.Entities
+@using ProyectoClubCreativo.Models.ViewModels
 
 @{
     ViewData["Title"] = "Panel del emprendedor";
@@ -10,8 +11,27 @@
     List<Producto> productosInventarioBajo =
         ViewBag.ProductosInventarioBajo as List<Producto>
         ?? new List<Producto>();
-}
 
+    List<VentaEmprendedorViewModel> ventasRecientes =
+        (ViewBag.Ventas as List<VentaEmprendedorViewModel>
+        ?? new List<VentaEmprendedorViewModel>())
+        .Take(3)
+        .ToList();
+
+    decimal totalVentas =
+        (ViewBag.Ventas as List<VentaEmprendedorViewModel>
+        ?? new List<VentaEmprendedorViewModel>())
+        .Where(v => v.Estado == "Entregada")
+        .Sum(v => v.Monto);
+
+    List<EventoPublicoViewModel> proximosEventos =
+        ViewBag.ProximosEventos as List<EventoPublicoViewModel>
+        ?? new List<EventoPublicoViewModel>();
+
+    List<Notificacione> actividadReciente =
+        ViewBag.ActividadReciente as List<Notificacione>
+        ?? new List<Notificacione>();
+}
 
 @if (TempData["MensajeEmprendedor"] is not null)
 {
@@ -84,7 +104,7 @@
         </span>
 
         <div>
-            <strong>8</strong>
+            <strong>@(ViewBag.TotalProductosPublicados ?? 0)</strong>
             <span>Productos publicados</span>
         </div>
     </article>
@@ -95,8 +115,8 @@
         </span>
 
         <div>
-            <strong>₡145.000</strong>
-            <span>Ventas del período</span>
+            <strong>₡@totalVentas.ToString("N0")</strong>
+            <span>Ventas entregadas (total histórico)</span>
         </div>
     </article>
 
@@ -123,7 +143,6 @@
                 </a>
             </div>
 
-            
             <div class="lista-inventario-panel">
 
                 @if (productosInventarioBajo.Any())
@@ -150,7 +169,6 @@
                         </div>
                     }
                 }
-
                 else
                 {
                     <div style="width: 100%; padding: 20px 15px; text-align: center;">
@@ -166,7 +184,6 @@
                         </p>
                     </div>
                 }
-
 
             </div>
 
@@ -198,32 +215,38 @@
                     <span>Estado</span>
                 </div>
 
-                <div class="fila-tabla-emprendedor">
-                    <span>#CC-1048</span>
-                    <span>María Gómez</span>
-                    <span>₡18.500</span>
-                    <span class="estado-venta entregada">
-                        Entregada
-                    </span>
-                </div>
+                @if (ventasRecientes.Any())
+                {
+                    foreach (var venta in ventasRecientes)
+                    {
+                        string claseEstado = venta.Estado switch
+                        {
+                            "Entregada" => "entregada",
+                            "Pendiente" => "pendiente",
+                            "En preparación" => "preparacion",
+                            "Preparación" => "preparacion",
+                            _ => "pendiente"
+                        };
 
-                <div class="fila-tabla-emprendedor">
-                    <span>#CC-1047</span>
-                    <span>Daniel Rojas</span>
-                    <span>₡12.000</span>
-                    <span class="estado-venta pendiente">
-                        Pendiente
-                    </span>
-                </div>
+                        <div class="fila-tabla-emprendedor">
+                            <span>@venta.NumeroOrden</span>
 
-                <div class="fila-tabla-emprendedor">
-                    <span>#CC-1046</span>
-                    <span>Ana Solano</span>
-                    <span>₡24.500</span>
-                    <span class="estado-venta preparacion">
-                        Preparación
-                    </span>
-                </div>
+                            <span>@venta.NombreComprador</span>
+
+                            <span>₡@venta.Monto.ToString("N0")</span>
+
+                            <span class="estado-venta @claseEstado">
+                                @venta.Estado
+                            </span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="padding: 20px; text-align: center; color: #777;">
+                        Todavía no tienes ventas registradas.
+                    </div>
+                }
 
             </div>
 
@@ -247,43 +270,40 @@
 
             <div class="lista-eventos-emprendedor">
 
-                <article class="evento-panel-emprendedor">
-                    <img src="~/images/evento-san-pedro.jpg"
-                         alt="Feria creativa" />
+                @if (proximosEventos.Any())
+                {
+                    foreach (var evento in proximosEventos)
+                    {
+                        <article class="evento-panel-emprendedor">
+                            <img src="@(string.IsNullOrWhiteSpace(evento.ImagenUrl)
+                                            ? "/images/hero-feria.jpg"
+                                            : evento.ImagenUrl)"
+                                 alt="@evento.Nombre" />
 
-                    <div>
-                        <strong>Feria Creativa San Pedro</strong>
+                            <div>
+                                <strong>@evento.Nombre</strong>
 
-                        <span>
-                            <i class="bi bi-calendar3"></i>
-                            18 de agosto
-                        </span>
+                                <span>
+                                    <i class="bi bi-calendar3"></i>
+                                    @evento.FechaInicio.ToString(
+                                        "d 'de' MMMM",
+                                        new System.Globalization.CultureInfo("es-CR"))
+                                </span>
 
-                        <span>
-                            <i class="bi bi-geo-alt-fill"></i>
-                            San Pedro
-                        </span>
+                                <span>
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    @evento.Ubicacion
+                                </span>
+                            </div>
+                        </article>
+                    }
+                }
+                else
+                {
+                    <div style="padding: 20px; text-align: center; color: #777;">
+                        No hay próximos eventos disponibles.
                     </div>
-                </article>
-
-                <article class="evento-panel-emprendedor">
-                    <img src="~/images/evento-santa-ana.jpg"
-                         alt="Feria de emprendimientos" />
-
-                    <div>
-                        <strong>Encuentro de Emprendimientos</strong>
-
-                        <span>
-                            <i class="bi bi-calendar3"></i>
-                            25 de agosto
-                        </span>
-
-                        <span>
-                            <i class="bi bi-geo-alt-fill"></i>
-                            Santa Ana
-                        </span>
-                    </div>
-                </article>
+                }
 
             </div>
 
@@ -307,7 +327,6 @@
                 </div>
             </div>
 
-           
             @if (productosInventarioBajo.Any())
             {
                 <div class="notificacion-emprendedor">
@@ -317,14 +336,8 @@
 
                     <div>
                         <p>
-                            @if (productosInventarioBajo.Count == 1)
-                            {
-                                <text>Tienes 1 producto con inventario bajo.</text>
-                            }
-                            else
-                            {
-                                <text>Tienes @productosInventarioBajo.Count productos con inventario bajo.</text>
-                            }
+                            Tienes @productosInventarioBajo.Count producto(s)
+                            con inventario bajo.
                         </p>
 
                         <span>
@@ -334,20 +347,39 @@
                 </div>
             }
 
+            @if (actividadReciente.Any())
+            {
+                foreach (var notificacion in actividadReciente)
+                {
+                    string icono = notificacion.Tipo switch
+                    {
+                        "Compra" => "bi-bag-check-fill",
+                        "Evento" => "bi-calendar-check-fill",
+                        "Puntos" => "bi-star-fill",
+                        _ => "bi-bell-fill"
+                    };
 
-            <div class="notificacion-emprendedor">
-                <span class="icono-notificacion-emprendedor">
-                    <i class="bi bi-calendar-check-fill"></i>
-                </span>
+                    <div class="notificacion-emprendedor">
+                        <span class="icono-notificacion-emprendedor">
+                            <i class="bi @icono"></i>
+                        </span>
 
-                <div>
-                    <p>
-                        Tu participación en la feria está pendiente.
-                    </p>
+                        <div>
+                            <p>@notificacion.Mensaje</p>
 
-                    <span>Ayer</span>
+                            <span>
+                                @notificacion.FechaEnvio.ToString("dd/MM/yyyy HH:mm")
+                            </span>
+                        </div>
+                    </div>
+                }
+            }
+            else if (!productosInventarioBajo.Any())
+            {
+                <div style="padding: 20px; text-align: center; color: #777;">
+                    No tienes actividad reciente.
                 </div>
-            </div>
+            }
 
         </article>
 
