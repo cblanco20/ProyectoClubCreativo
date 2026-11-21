@@ -369,6 +369,31 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+    .Distinct()
+    .ToList();
+
+            if (idsEtiquetas.Count > 0)
+            {
+                int cantidadEtiquetasValidas = await _context.Etiquetas
+                    .CountAsync(e =>
+                        idsEtiquetas.Contains(e.IdEtiqueta) &&
+                        e.Activa
+                    );
+
+                if (cantidadEtiquetasValidas != idsEtiquetas.Count)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.IdEtiquetas),
+                        "Una o más etiquetas seleccionadas no son válidas."
+                    );
+
+                    await CargarDatosRegistroEmprendedorAsync(modelo);
+
+                    return View(modelo);
+                }
+            }
+
             Role? rolEmprendedor = await _context.Roles
                 .FirstOrDefaultAsync(r =>
                     r.Nombre == "Emprendedor" &&
@@ -458,6 +483,22 @@ namespace ProyectoClubCreativo.Controllers
 
                 await _context.Emprendimientos.AddAsync(emprendimiento);
                 await _context.SaveChangesAsync();
+
+                if (idsEtiquetas.Count > 0)
+                {
+                    var etiquetasSeleccionadas = await _context.Etiquetas
+                        .Where(e =>
+                            idsEtiquetas.Contains(e.IdEtiqueta) &&
+                            e.Activa)
+                        .ToListAsync();
+
+                    foreach (var etiqueta in etiquetasSeleccionadas)
+                    {
+                        emprendimiento.IdEtiqueta.Add(etiqueta);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
 
                 EmprendimientoRevisione revision = new()
                 {
@@ -758,6 +799,17 @@ namespace ProyectoClubCreativo.Controllers
                     Text = c.Nombre
                 })
                 .ToListAsync();
+
+            modelo.EtiquetasDisponibles = await _context.Etiquetas
+    .AsNoTracking()
+    .Where(e => e.Activa)
+    .OrderBy(e => e.Nombre)
+    .Select(e => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+    {
+        Value = e.IdEtiqueta.ToString(),
+        Text = e.Nombre
+    })
+    .ToListAsync();
         }
     }
 }

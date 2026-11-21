@@ -171,6 +171,29 @@
                 </div>
 
                 <div class="grupo-formulario">
+
+                    <label asp-for="IdEtiquetas">
+                        Etiquetas (opcional)
+                    </label>
+
+                    <select asp-for="IdEtiquetas"
+                            asp-items="Model.EtiquetasDisponibles"
+                            class="control-formulario"
+                            multiple
+                            size="5">
+                    </select>
+
+                    <small>
+                        Puedes seleccionar varias etiquetas manteniendo
+                        presionada la tecla Ctrl mientras haces clic.
+                    </small>
+
+                    <span asp-validation-for="IdEtiquetas"
+                          class="mensaje-validacion"></span>
+
+                </div>
+
+                <div class="grupo-formulario">
                     <label asp-for="Descripcion"></label>
 
                     <textarea asp-for="Descripcion"

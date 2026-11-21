@@ -5,6 +5,15 @@
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
+
+@if (TempData["MensajeError"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        @TempData["MensajeError"]
+    </div>
+}
+
 <div class="pestanas-admin">
     <a asp-action="Categorias" asp-route-tipo="Categoria" class="pestana-admin @(Model.FiltroTipo == "Categoria" ? "activa" : "")">
         <i class="bi bi-folder-fill"></i> Categorías
@@ -50,7 +59,10 @@
                         </td>
                         <td>
                             <div class="grupo-acciones-admin">
-                                <a asp-action="EditarCategoria" asp-route-id="@categoria.Id" class="boton-admin boton-admin-secundario">
+                                <a asp-action="EditarCategoria"
+                                   asp-route-id="@categoria.Id"
+                                   asp-route-tipo="@categoria.Tipo"
+                                   class="boton-admin boton-admin-secundario">
                                     <i class="bi bi-pencil-fill"></i>
                                 </a>
                                 <form asp-action="EliminarCategoria" method="post" onsubmit="return confirm('¿Eliminar este elemento de forma permanente?');">

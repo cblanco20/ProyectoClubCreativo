@@ -99,6 +99,29 @@
                           class="mensaje-validacion-emprendedor"></span>
                 </div>
 
+                <div class="grupo-campo-emprendedor">
+
+                    <label asp-for="IdEtiquetas">
+                        Etiquetas (opcional)
+                    </label>
+
+                    <select asp-for="IdEtiquetas"
+                            asp-items="Model.EtiquetasDisponibles"
+                            class="control-emprendedor"
+                            multiple
+                            size="5">
+                    </select>
+
+                    <div class="ayuda-campo-emprendedor">
+                        Puedes seleccionar varias etiquetas manteniendo
+                        presionada la tecla Ctrl mientras haces clic.
+                    </div>
+
+                    <span asp-validation-for="IdEtiquetas"
+                          class="mensaje-validacion-emprendedor">
+                    </span>
+
+                </div>
 
                 <div class="grupo-campo-emprendedor">
                     <label asp-for="Descripcion"></label>

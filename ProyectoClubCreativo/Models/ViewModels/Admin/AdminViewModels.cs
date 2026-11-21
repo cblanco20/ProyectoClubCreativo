@@ -301,6 +301,9 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         [Display(Name = "Categoría")]
         public int? IdCategoria { get; set; }
 
+        [Display(Name = "Etiquetas")]
+        public List<int> IdEtiquetas { get; set; } = new();
+
         [Range(1, 100000, ErrorMessage = "El cupo debe ser mayor a 0.")]
         [Display(Name = "Cupo total")]
         public int CupoTotal { get; set; }
@@ -362,9 +365,13 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         [StringLength(1500, ErrorMessage = "La descripción no puede superar los 1500 caracteres.")]
         [Display(Name = "Descripción")]
         public string? Descripcion { get; set; }
-
+        // HU-73: La categoría es obligatoria para los talleres.
         [Display(Name = "Categoría")]
         public int? IdCategoria { get; set; }
+
+        // HU-73: Etiquetas opcionales del taller.
+        [Display(Name = "Etiquetas")]
+        public List<int> IdEtiquetas { get; set; } = new();
 
         [Range(0, 100000, ErrorMessage = "El cupo máximo debe ser un número válido.")]
         [Display(Name = "Cupo máximo")]

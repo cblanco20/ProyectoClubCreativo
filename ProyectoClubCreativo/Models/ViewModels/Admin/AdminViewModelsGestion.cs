@@ -216,12 +216,11 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         [Required(ErrorMessage = "El nombre es obligatorio.")]
         public string Nombre { get; set; } = "";
 
-        public string Descripcion { get; set; } = "";
+        public string? Descripcion { get; set; }
 
         [Required(ErrorMessage = "Seleccione el tipo.")]
         public string Tipo { get; set; } = "Categoria";
 
-        [Required(ErrorMessage = "Seleccione el módulo.")]
         public string Modulo { get; set; } = "Productos";
 
         public int ElementosAsociados { get; set; }

@@ -66,7 +66,8 @@
     @Html.AntiForgeryToken()
 
     <div asp-validation-summary="All"
-         class="resumen-validacion-emprendedor">
+         class="resumen-validacion-emprendedor"
+         style="display: none;">
     </div>
 
     <div class="grid-formulario-producto">
@@ -141,24 +142,17 @@
 
                     <div class="grupo-campo-emprendedor">
 
-                        <label asp-for="Categoria"></label>
+                        <label asp-for="IdCategoria"></label>
 
-                        <select asp-for="Categoria"
+                        <select asp-for="IdCategoria"
+                                asp-items="Model.CategoriasDisponibles"
                                 class="control-emprendedor">
 
                             <option value="">Seleccione una categoría</option>
-                            <option>Artesanía</option>
-                            <option>Moda y accesorios</option>
-                            <option>Gastronomía</option>
-                            <option>Arte y diseño</option>
-                            <option>Belleza y cuidado personal</option>
-                            <option>Hogar y decoración</option>
-                            <option>Joyería y bisutería</option>
-                            <option>Otros</option>
 
                         </select>
 
-                        <span asp-validation-for="Categoria"
+                        <span asp-validation-for="IdCategoria"
                               class="mensaje-validacion-emprendedor">
                         </span>
 
@@ -191,17 +185,22 @@
 
                 <div class="grupo-campo-emprendedor">
 
-                    <label asp-for="Etiquetas"></label>
+                    <label asp-for="IdEtiquetas"></label>
 
-                    <input asp-for="Etiquetas"
-                           class="control-emprendedor"
-                           placeholder="artesanal, regalo, accesorios" />
+                    <select asp-for="IdEtiquetas"
+                            asp-items="Model.EtiquetasDisponibles"
+                            class="control-emprendedor"
+                            multiple
+                            size="4">
+                    </select>
 
                     <div class="ayuda-campo-emprendedor">
-                        Separa las etiquetas utilizando comas.
+                        Puedes seleccionar varias etiquetas manteniendo
+                        presionada la tecla Ctrl mientras haces clic.
+                        Las etiquetas son opcionales.
                     </div>
 
-                    <span asp-validation-for="Etiquetas"
+                    <span asp-validation-for="IdEtiquetas"
                           class="mensaje-validacion-emprendedor">
                     </span>
 
@@ -242,9 +241,11 @@
                             <span>₡</span>
 
                             <input asp-for="Precio"
+                                   asp-format="{0:0.##}"
                                    class="control-emprendedor"
                                    step="0.01"
                                    placeholder="8500" />
+
 
                         </div>
 

@@ -26,6 +26,11 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         public List<SelectListItem> Categorias { get; set; } = new();
 
+        [Display(Name = "Etiquetas")]
+        public List<int>? IdEtiquetas { get; set; }
+
+        public List<SelectListItem> EtiquetasDisponibles { get; set; } = new();
+
 
         // Se mantiene porque otras vistas del módulo
         // todavía utilizan la categoría por nombre.

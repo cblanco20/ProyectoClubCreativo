@@ -6,6 +6,8 @@
     bool esNuevo = Model.Id == 0;
     bool esBorrador = esNuevo || Model.Estado == "Borrador";
     List<Categoria> categorias = ViewBag.CategoriasTaller as List<Categoria> ?? new();
+    // HU-73: Etiquetas disponibles para los talleres.
+    List<Etiqueta> etiquetas = ViewBag.EtiquetasTaller as List<Etiqueta> ?? new();
 }
 
 <a asp-action="Talleres" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;"><i class="bi bi-arrow-left"></i> Volver a talleres</a>
@@ -60,6 +62,25 @@
                 </select>
             </div>
         }
+
+        @* HU-73: Selección de etiquetas para el taller. *@
+        <div class="grupo-formulario">
+            <label asp-for="IdEtiquetas"></label>
+
+            <select asp-for="IdEtiquetas" multiple size="5">
+                @foreach (Etiqueta etiqueta in etiquetas)
+                {
+                    <option value="@etiqueta.IdEtiqueta"
+                            selected="@Model.IdEtiquetas.Contains(etiqueta.IdEtiqueta)">
+                        @etiqueta.Nombre
+                    </option>
+                }
+            </select>
+
+            <small>
+                Opcional. Mantén presionada la tecla Ctrl para seleccionar varias etiquetas.
+            </small>
+        </div>
 
         <div class="grupo-formulario"><label asp-for="Descripcion"></label><textarea asp-for="Descripcion" rows="3"></textarea></div>
 

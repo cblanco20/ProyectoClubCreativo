@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ProyectoClubCreativo.Models.ViewModels
 {
@@ -35,17 +37,17 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public decimal? Precio { get; set; }
 
 
-        [Required(ErrorMessage = "Debe seleccionar una categoría.")]
-        [Display(Name = "Categoría")]
-        public string Categoria { get; set; } = string.Empty;
+        [Display(Name = "Categoría anterior")]
+        public string? Categoria { get; set; }
 
 
-        [StringLength(
-            250,
-            ErrorMessage = "Las etiquetas no pueden superar los 250 caracteres."
-        )]
+
+
+        [ValidateNever]
+        [StringLength(250, ErrorMessage = "Las etiquetas no pueden superar los 250 caracteres.")]
         [Display(Name = "Etiquetas")]
         public string? Etiquetas { get; set; }
+
 
 
         [Required(ErrorMessage = "Debe seleccionar el tipo de publicación.")]
@@ -81,5 +83,16 @@ namespace ProyectoClubCreativo.Models.ViewModels
 
         [Display(Name = "Confirmo que la información es correcta")]
         public bool ConfirmaInformacion { get; set; }
+
+        [Required(ErrorMessage = "Debe seleccionar una categoría.")]
+        [Display(Name = "Categoría")]
+        public int? IdCategoria { get; set; }
+
+        [Display(Name = "Etiquetas")]
+        public List<int>? IdEtiquetas { get; set; }
+
+        public List<SelectListItem> CategoriasDisponibles { get; set; } = new();
+
+        public List<SelectListItem> EtiquetasDisponibles { get; set; } = new();
     }
 }

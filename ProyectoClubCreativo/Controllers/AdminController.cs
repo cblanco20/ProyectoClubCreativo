@@ -1971,6 +1971,13 @@ namespace ProyectoClubCreativo.Controllers
                 .OrderBy(c => c.Nombre)
                 .ToListAsync();
 
+            // HU-73: Cargar etiquetas activas para los eventos.
+            ViewBag.EtiquetasEvento = await _context.Etiquetas
+                .AsNoTracking()
+                .Where(e => e.Activa)
+                .OrderBy(e => e.Nombre)
+                .ToListAsync();
+
             ViewBag.EmprendimientosEvento = await _context.Emprendimientos
                 .AsNoTracking()
                 .Where(e => e.EstadoAprobacion == "Aprobado")
@@ -2077,6 +2084,22 @@ namespace ProyectoClubCreativo.Controllers
 
             await ValidarDatosEventoAsync(modelo, idsEmprendimientos);
 
+            // HU-73: Validar las etiquetas seleccionadas.
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+                .Distinct()
+                .ToList();
+
+            List<Etiqueta> etiquetasSeleccionadas = await _context.Etiquetas
+                .Where(e => idsEtiquetas.Contains(e.IdEtiqueta) && e.Activa)
+                .ToListAsync();
+
+            if (etiquetasSeleccionadas.Count != idsEtiquetas.Count)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdEtiquetas),
+                    "Una o varias etiquetas seleccionadas no son válidas.");
+            }
+
             if (!ModelState.IsValid)
             {
                 await CargarOpcionesEventoAsync();
@@ -2116,6 +2139,12 @@ namespace ProyectoClubCreativo.Controllers
                 evento.ImagenUrl = await GuardarImagenEventoAsync(modelo.Imagen);
             }
 
+            // HU-73: Asociar las etiquetas seleccionadas al evento.
+            foreach (Etiqueta etiqueta in etiquetasSeleccionadas)
+            {
+                evento.IdEtiqueta.Add(etiqueta);
+            }
+
             _context.Eventos.Add(evento);
 
             await _context.SaveChangesAsync();
@@ -2132,9 +2161,10 @@ namespace ProyectoClubCreativo.Controllers
             ViewData["Titulo"] = "Editar evento";
 
             Evento? evento = await _context.Eventos
-                .AsNoTracking()
-                .Include(e => e.ParticipacionesEventos)
-                .FirstOrDefaultAsync(e => e.IdEvento == id);
+    .AsNoTracking()
+    .Include(e => e.ParticipacionesEventos)
+    .Include(e => e.IdEtiqueta)
+    .FirstOrDefaultAsync(e => e.IdEvento == id);
             if (evento is null || evento.Estado == "Eliminado")
             {
                 TempData["ErrorAdmin"] =
@@ -2154,6 +2184,12 @@ namespace ProyectoClubCreativo.Controllers
                 Ubicacion = evento.Ubicacion,
                 Descripcion = evento.Descripcion,
                 IdCategoria = evento.IdCategoria,
+
+                // HU-73: Cargar las etiquetas asociadas al evento.
+                IdEtiquetas = evento.IdEtiqueta
+    .Select(e => e.IdEtiqueta)
+    .ToList(),
+
                 CupoTotal = evento.CupoMaximo ?? 0,
                 Estado = evento.Estado,
                 ImagenUrl = evento.ImagenUrl,
@@ -2171,8 +2207,9 @@ namespace ProyectoClubCreativo.Controllers
             ViewData["Titulo"] = "Editar evento";
 
             Evento? evento = await _context.Eventos
-                .Include(e => e.ParticipacionesEventos)
-                .FirstOrDefaultAsync(e => e.IdEvento == modelo.Id);
+    .Include(e => e.ParticipacionesEventos)
+    .Include(e => e.IdEtiqueta)
+    .FirstOrDefaultAsync(e => e.IdEvento == modelo.Id);
 
             if (evento is null || evento.Estado == "Eliminado")
             {
@@ -2186,6 +2223,22 @@ namespace ProyectoClubCreativo.Controllers
                 modelo.IdsEmprendimientos.Distinct().ToList();
 
             await ValidarDatosEventoAsync(modelo, idsEmprendimientos);
+
+            // HU-73: Validar las etiquetas seleccionadas.
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+                .Distinct()
+                .ToList();
+
+            List<Etiqueta> etiquetasSeleccionadas = await _context.Etiquetas
+                .Where(e => idsEtiquetas.Contains(e.IdEtiqueta) && e.Activa)
+                .ToListAsync();
+
+            if (etiquetasSeleccionadas.Count != idsEtiquetas.Count)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdEtiquetas),
+                    "Una o varias etiquetas seleccionadas no son válidas.");
+            }
 
             string[] estadosPermitidos =
                 { "Programado", "Finalizado", evento.Estado };
@@ -2232,6 +2285,14 @@ namespace ProyectoClubCreativo.Controllers
             if (modelo.Imagen is { Length: > 0 })
             {
                 evento.ImagenUrl = await GuardarImagenEventoAsync(modelo.Imagen);
+            }
+
+            // HU-73: Actualizar las etiquetas asociadas al evento.
+            evento.IdEtiqueta.Clear();
+
+            foreach (Etiqueta etiqueta in etiquetasSeleccionadas)
+            {
+                evento.IdEtiqueta.Add(etiqueta);
             }
 
             foreach (int idEmprendimiento in idsEmprendimientos)
@@ -2531,6 +2592,13 @@ namespace ProyectoClubCreativo.Controllers
                 .Where(c => c.Modulo == "Talleres" && c.Activa)
                 .OrderBy(c => c.Nombre)
                 .ToListAsync();
+
+            // HU-73: Cargar etiquetas disponibles para los talleres.
+            ViewBag.EtiquetasTaller = await _context.Etiquetas
+                .AsNoTracking()
+                .Where(e => e.Activa)
+                .OrderBy(e => e.Nombre)
+                .ToListAsync();
         }
 
         private async Task<string> GuardarImagenTallerAsync(IFormFile imagen)
@@ -2604,6 +2672,14 @@ namespace ProyectoClubCreativo.Controllers
             if (!publicar)
             {
                 return;
+            }
+
+            // HU-73: La categoría es obligatoria al publicar talleres.
+            if (!modelo.IdCategoria.HasValue)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdCategoria),
+                    "Seleccione una categoría.");
             }
 
             if (string.IsNullOrWhiteSpace(modelo.Descripcion))
@@ -2710,6 +2786,22 @@ namespace ProyectoClubCreativo.Controllers
 
             await ValidarTallerAsync(modelo, publicar, 0);
 
+            // HU-73: Validar las etiquetas seleccionadas.
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+                .Distinct()
+                .ToList();
+
+            List<Etiqueta> etiquetasSeleccionadas = await _context.Etiquetas
+                .Where(e => idsEtiquetas.Contains(e.IdEtiqueta) && e.Activa)
+                .ToListAsync();
+
+            if (etiquetasSeleccionadas.Count != idsEtiquetas.Count)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdEtiquetas),
+                    "Una o varias etiquetas seleccionadas no son válidas.");
+            }
+
             if (publicar &&
                 modelo.FechaInicio.HasValue &&
                 modelo.FechaInicio.Value < DateTime.Now)
@@ -2742,6 +2834,12 @@ namespace ProyectoClubCreativo.Controllers
                 taller.ImagenUrl = await GuardarImagenTallerAsync(modelo.Imagen);
             }
 
+            // HU-73: Asociar las etiquetas seleccionadas al taller.
+            foreach (Etiqueta etiqueta in etiquetasSeleccionadas)
+            {
+                taller.IdEtiqueta.Add(etiqueta);
+            }
+
             _context.Talleres.Add(taller);
 
             await _context.SaveChangesAsync();
@@ -2759,9 +2857,10 @@ namespace ProyectoClubCreativo.Controllers
             ViewData["Titulo"] = "Editar taller";
 
             Tallere? taller = await _context.Talleres
-                .AsNoTracking()
-                .Include(t => t.InscripcionesTallers)
-                .FirstOrDefaultAsync(t => t.IdTaller == id);
+     .AsNoTracking()
+     .Include(t => t.InscripcionesTallers)
+     .Include(t => t.IdEtiqueta)
+     .FirstOrDefaultAsync(t => t.IdTaller == id);
 
             if (taller is null)
             {
@@ -2788,6 +2887,12 @@ namespace ProyectoClubCreativo.Controllers
                 FechaFin = taller.FechaFin,
                 Ubicacion = taller.Ubicacion,
                 IdCategoria = taller.IdCategoria,
+
+                // HU-73: Cargar las etiquetas asociadas al taller.
+                IdEtiquetas = taller.IdEtiqueta
+    .Select(e => e.IdEtiqueta)
+    .ToList(),
+
                 CupoTotal = taller.CupoMaximo,
                 ResponsableNombre = taller.ResponsableNombre,
                 ResponsableCorreo = taller.ResponsableCorreo,
@@ -2805,8 +2910,9 @@ namespace ProyectoClubCreativo.Controllers
             ViewData["Titulo"] = "Editar taller";
 
             Tallere? taller = await _context.Talleres
-                .Include(t => t.InscripcionesTallers)
-                .FirstOrDefaultAsync(t => t.IdTaller == modelo.Id);
+    .Include(t => t.InscripcionesTallers)
+    .Include(t => t.IdEtiqueta)
+    .FirstOrDefaultAsync(t => t.IdTaller == modelo.Id);
 
             if (taller is null ||
                 taller.Estado == ReglasTalleres.Cancelado ||
@@ -2822,6 +2928,22 @@ namespace ProyectoClubCreativo.Controllers
             int inscritosActivos = taller.InscripcionesTallers.Count(i => i.Estado != "Cancelada");
 
             await ValidarTallerAsync(modelo, publicar, inscritosActivos);
+
+            // HU-73: Validar las etiquetas seleccionadas.
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+                .Distinct()
+                .ToList();
+
+            List<Etiqueta> etiquetasSeleccionadas = await _context.Etiquetas
+                .Where(e => idsEtiquetas.Contains(e.IdEtiqueta) && e.Activa)
+                .ToListAsync();
+
+            if (etiquetasSeleccionadas.Count != idsEtiquetas.Count)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdEtiquetas),
+                    "Una o varias etiquetas seleccionadas no son válidas.");
+            }
 
             if (eraBorrador &&
                 publicar &&
@@ -2876,6 +2998,14 @@ namespace ProyectoClubCreativo.Controllers
             if (modelo.Imagen is { Length: > 0 })
             {
                 taller.ImagenUrl = await GuardarImagenTallerAsync(modelo.Imagen);
+            }
+
+            // HU-73: Actualizar las etiquetas asociadas al taller.
+            taller.IdEtiqueta.Clear();
+
+            foreach (Etiqueta etiqueta in etiquetasSeleccionadas)
+            {
+                taller.IdEtiqueta.Add(etiqueta);
             }
 
             // HU-70: Notificar novedades a usuarios con este taller favorito.
@@ -6258,15 +6388,58 @@ namespace ProyectoClubCreativo.Controllers
         }
 
 
-
         [HttpGet]
-        public IActionResult Categorias(string tipo = "Categoria")
+        public async Task<IActionResult> Categorias(string tipo = "Categoria")
         {
-            var categorias = ObtenerCategoriasDemo();
+            List<CategoriaAdminViewModel> categorias = new();
+
+            if (tipo == "Etiqueta")
+            {
+                categorias = await _context.Etiquetas
+                    .AsNoTracking()
+                    .OrderBy(e => e.Nombre)
+                    .Select(e => new CategoriaAdminViewModel
+                    {
+                        Id = e.IdEtiqueta,
+                        Nombre = e.Nombre,
+                        Tipo = "Etiqueta",
+                        Modulo = "",
+                        Descripcion = "",
+                        ElementosAsociados =
+                            e.IdEmprendimientos.Count() +
+                            e.IdProductos.Count() +
+                            e.IdEventos.Count() +
+                            e.IdTallers.Count()
+                    })
+                    .ToListAsync();
+            }
+            else
+            {
+                tipo = "Categoria";
+
+                categorias = await _context.Categorias
+                    .AsNoTracking()
+                    .OrderBy(c => c.Nombre)
+                    .Select(c => new CategoriaAdminViewModel
+                    {
+                        Id = c.IdCategoria,
+                        Nombre = c.Nombre,
+                        Descripcion = c.Descripcion ?? "",
+                        Tipo = "Categoria",
+                        Modulo = c.Modulo,
+                        ElementosAsociados =
+                            c.Emprendimientos.Count() +
+                            c.Productos.Count() +
+                            c.Eventos.Count() +
+                            c.Talleres.Count()
+                    })
+                    .ToListAsync();
+            }
+
             return View(new ListadoCategoriasAdminViewModel
             {
                 FiltroTipo = tipo,
-                Categorias = categorias.Where(c => c.Tipo == tipo).ToList()
+                Categorias = categorias
             });
         }
 
@@ -6279,39 +6452,344 @@ namespace ProyectoClubCreativo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearCategoria(CategoriaAdminViewModel modelo)
+        public async Task<IActionResult> CrearCategoria(CategoriaAdminViewModel modelo)
         {
-            ViewData["Titulo"] = modelo.Tipo == "Etiqueta" ? "Crear etiqueta" : "Crear categoría";
-            if (!ModelState.IsValid) return View("FormularioCategoria", modelo);
-            TempData["MensajeAdmin"] = $"\"{modelo.Nombre}\" fue creada correctamente.";
-            return RedirectToAction(nameof(Categorias), new { tipo = modelo.Tipo });
+            ViewData["Titulo"] = modelo.Tipo == "Etiqueta"
+                ? "Crear etiqueta"
+                : "Crear categoría";
+
+            // Validar el tipo seleccionado.
+            if (modelo.Tipo != "Categoria" && modelo.Tipo != "Etiqueta")
+            {
+                ModelState.AddModelError(nameof(modelo.Tipo),
+                    "Seleccione un tipo válido.");
+            }
+
+            // Validar que el nombre no esté vacío.
+            string nombre = modelo.Nombre?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                ModelState.AddModelError(nameof(modelo.Nombre),
+                    "El nombre es obligatorio.");
+            }
+
+            // Validar el módulo únicamente para categorías.
+            if (modelo.Tipo == "Categoria")
+            {
+                string[] modulosValidos =
+                {
+            "Emprendimientos",
+            "Productos",
+            "Eventos",
+            "Talleres",
+            "Noticias"
+        };
+
+                if (!modulosValidos.Contains(modelo.Modulo))
+                {
+                    ModelState.AddModelError(nameof(modelo.Modulo),
+                        "Seleccione un módulo válido.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View("FormularioCategoria", modelo);
+            }
+
+            // Registrar una categoría.
+            if (modelo.Tipo == "Categoria")
+            {
+                bool existe = await _context.Categorias.AnyAsync(c =>
+                    c.Nombre == nombre &&
+                    c.Modulo == modelo.Modulo);
+
+                if (existe)
+                {
+                    ModelState.AddModelError(nameof(modelo.Nombre),
+                        "Ya existe una categoría con ese nombre en el módulo seleccionado.");
+
+                    return View("FormularioCategoria", modelo);
+                }
+
+                Categoria categoria = new()
+                {
+                    Nombre = nombre,
+                    Descripcion = modelo.Descripcion?.Trim(),
+                    Modulo = modelo.Modulo,
+                    Activa = true
+                };
+
+                _context.Categorias.Add(categoria);
+            }
+            else
+            {
+                // Registrar una etiqueta.
+                bool existe = await _context.Etiquetas.AnyAsync(e =>
+                    e.Nombre == nombre);
+
+                if (existe)
+                {
+                    ModelState.AddModelError(nameof(modelo.Nombre),
+                        "Ya existe una etiqueta con ese nombre.");
+
+                    return View("FormularioCategoria", modelo);
+                }
+
+                Etiqueta etiqueta = new()
+                {
+                    Nombre = nombre,
+                    Activa = true
+                };
+
+                _context.Etiquetas.Add(etiqueta);
+            }
+
+            // Guardar realmente en SQL Server.
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"\"{nombre}\" fue creada correctamente.";
+
+            return RedirectToAction(nameof(Categorias),
+                new { tipo = modelo.Tipo });
         }
 
         [HttpGet]
-        public IActionResult EditarCategoria(int id = 1)
+        public async Task<IActionResult> EditarCategoria(int id, string tipo = "Categoria")
         {
-            var categoria = ObtenerCategoriasDemo().FirstOrDefault(c => c.Id == id) ?? new CategoriaAdminViewModel { Id = id };
-            ViewData["Titulo"] = categoria.Tipo == "Etiqueta" ? "Editar etiqueta" : "Editar categoría";
-            return View("FormularioCategoria", categoria);
+            CategoriaAdminViewModel? modelo = null;
+
+            if (tipo == "Etiqueta")
+            {
+                var etiqueta = await _context.Etiquetas
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.IdEtiqueta == id);
+
+                if (etiqueta == null)
+                    return NotFound();
+
+                modelo = new CategoriaAdminViewModel
+                {
+                    Id = etiqueta.IdEtiqueta,
+                    Nombre = etiqueta.Nombre,
+                    Tipo = "Etiqueta",
+                    Descripcion = null
+                };
+            }
+            else if (tipo == "Categoria")
+            {
+                var categoria = await _context.Categorias
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.IdCategoria == id);
+
+                if (categoria == null)
+                    return NotFound();
+
+                modelo = new CategoriaAdminViewModel
+                {
+                    Id = categoria.IdCategoria,
+                    Nombre = categoria.Nombre,
+                    Descripcion = categoria.Descripcion,
+                    Modulo = categoria.Modulo,
+                    Tipo = "Categoria"
+                };
+            }
+            else
+            {
+                return BadRequest();
+            }
+
+            ViewData["Titulo"] = tipo == "Etiqueta"
+                ? "Editar etiqueta"
+                : "Editar categoría";
+
+            return View("FormularioCategoria", modelo);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarCategoria(CategoriaAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = modelo.Tipo == "Etiqueta"
+                ? "Editar etiqueta"
+                : "Editar categoría";
+
+            string nombre = modelo.Nombre?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                ModelState.AddModelError(nameof(modelo.Nombre),
+                    "El nombre es obligatorio.");
+            }
+
+            if (modelo.Tipo != "Categoria" && modelo.Tipo != "Etiqueta")
+            {
+                ModelState.AddModelError(nameof(modelo.Tipo),
+                    "Seleccione un tipo válido.");
+            }
+
+            if (modelo.Tipo == "Categoria")
+            {
+                string[] modulosValidos =
+                {
+            "Emprendimientos",
+            "Productos",
+            "Eventos",
+            "Talleres",
+            "Noticias"
+        };
+
+                if (!modulosValidos.Contains(modelo.Modulo))
+                {
+                    ModelState.AddModelError(nameof(modelo.Modulo),
+                        "Seleccione un módulo válido.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+                return View("FormularioCategoria", modelo);
+
+            if (modelo.Tipo == "Categoria")
+            {
+                var categoria = await _context.Categorias
+                    .FirstOrDefaultAsync(c => c.IdCategoria == modelo.Id);
+
+                if (categoria == null)
+                    return NotFound();
+
+                bool existe = await _context.Categorias.AnyAsync(c =>
+                    c.IdCategoria != modelo.Id &&
+                    c.Nombre == nombre &&
+                    c.Modulo == modelo.Modulo);
+
+                if (existe)
+                {
+                    ModelState.AddModelError(nameof(modelo.Nombre),
+                        "Ya existe una categoría con ese nombre en el módulo seleccionado.");
+
+                    return View("FormularioCategoria", modelo);
+                }
+
+                categoria.Nombre = nombre;
+                categoria.Descripcion = modelo.Descripcion?.Trim();
+                categoria.Modulo = modelo.Modulo;
+            }
+            else
+            {
+                var etiqueta = await _context.Etiquetas
+                    .FirstOrDefaultAsync(e => e.IdEtiqueta == modelo.Id);
+
+                if (etiqueta == null)
+                    return NotFound();
+
+                bool existe = await _context.Etiquetas.AnyAsync(e =>
+                    e.IdEtiqueta != modelo.Id &&
+                    e.Nombre == nombre);
+
+                if (existe)
+                {
+                    ModelState.AddModelError(nameof(modelo.Nombre),
+                        "Ya existe una etiqueta con ese nombre.");
+
+                    return View("FormularioCategoria", modelo);
+                }
+
+                etiqueta.Nombre = nombre;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"\"{nombre}\" fue actualizada correctamente.";
+
+            return RedirectToAction(nameof(Categorias),
+                new { tipo = modelo.Tipo });
+        }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarCategoria(CategoriaAdminViewModel modelo)
+        public async Task<IActionResult> EliminarCategoria(
+            int id, string tipo = "Categoria")
         {
-            ViewData["Titulo"] = modelo.Tipo == "Etiqueta" ? "Editar etiqueta" : "Editar categoría";
-            if (!ModelState.IsValid) return View("FormularioCategoria", modelo);
-            TempData["MensajeAdmin"] = $"\"{modelo.Nombre}\" fue actualizada correctamente.";
-            return RedirectToAction(nameof(Categorias), new { tipo = modelo.Tipo });
-        }
+            if (tipo != "Categoria" && tipo != "Etiqueta")
+            {
+                return BadRequest();
+            }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EliminarCategoria(int id, string tipo = "Categoria")
-        {
-            TempData["MensajeAdmin"] = "El elemento fue eliminado correctamente.";
+            if (tipo == "Categoria")
+            {
+                var categoria = await _context.Categorias
+                    .FirstOrDefaultAsync(c => c.IdCategoria == id);
+
+                if (categoria == null)
+                {
+                    return NotFound();
+                }
+
+                bool tieneAsociaciones =
+                    await _context.Emprendimientos.AnyAsync(e => e.IdCategoria == id) ||
+                    await _context.Productos.AnyAsync(p => p.IdCategoria == id) ||
+                    await _context.Eventos.AnyAsync(e => e.IdCategoria == id) ||
+                    await _context.Talleres.AnyAsync(t => t.IdCategoria == id) ||
+                    await _context.Noticias.AnyAsync(n => n.IdCategoria == id) ||
+                    await _context.Galerias.AnyAsync(g => g.IdCategoria == id);
+
+                if (tieneAsociaciones)
+                {
+                    TempData["MensajeError"] =
+                        "No se puede eliminar la categoría porque tiene elementos asociados.";
+
+                    return RedirectToAction(nameof(Categorias), new { tipo });
+                }
+
+                _context.Categorias.Remove(categoria);
+            }
+            else
+            {
+                var etiqueta = await _context.Etiquetas
+                    .FirstOrDefaultAsync(e => e.IdEtiqueta == id);
+
+                if (etiqueta == null)
+                {
+                    return NotFound();
+                }
+
+                bool tieneAsociaciones = await _context.Etiquetas
+                    .AnyAsync(e => e.IdEtiqueta == id &&
+                        (e.IdEmprendimientos.Any() ||
+                         e.IdProductos.Any() ||
+                         e.IdEventos.Any() ||
+                         e.IdTallers.Any()));
+
+                if (tieneAsociaciones)
+                {
+                    TempData["MensajeError"] =
+                        "No se puede eliminar la etiqueta porque tiene elementos asociados.";
+
+                    return RedirectToAction(nameof(Categorias), new { tipo });
+                }
+
+                _context.Etiquetas.Remove(etiqueta);
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+
+                TempData["MensajeAdmin"] =
+                    "El elemento fue eliminado correctamente.";
+            }
+            catch (DbUpdateException)
+            {
+                TempData["MensajeError"] =
+                    "No se puede eliminar el elemento porque está siendo utilizado por otros registros.";
+            }
+
             return RedirectToAction(nameof(Categorias), new { tipo });
         }
+
 
         [HttpGet]
         public IActionResult ElementosCategoria(int id = 1)

@@ -82,6 +82,11 @@ namespace ProyectoClubCreativo.Models.ViewModels
         [Display(Name = "Categoría")]
         public int? IdCategoria { get; set; }
 
+        [Display(Name = "Etiquetas")]
+        public List<int>? IdEtiquetas { get; set; }
+
+        public List<SelectListItem> EtiquetasDisponibles { get; set; } = new();
+
 
         [Required(ErrorMessage = "Describa brevemente el emprendimiento.")]
         [StringLength(

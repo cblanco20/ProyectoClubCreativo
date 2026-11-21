@@ -17,7 +17,7 @@
     <form asp-action="@(esNueva ? "CrearCategoria" : "EditarCategoria")" method="post" class="formulario-admin">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
-        <div asp-validation-summary="ModelOnly"></div>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
         <div class="grupo-formulario">
             <label asp-for="Nombre"></label>
@@ -38,15 +38,20 @@
                     <option value="Etiqueta">Etiqueta</option>
                 </select>
             </div>
-            <div class="grupo-formulario">
-                <label asp-for="Modulo"></label>
-                <select asp-for="Modulo">
-                    <option>Productos</option>
-                    <option>Eventos</option>
-                    <option>Talleres</option>
-                    <option>Noticias</option>
-                </select>
-            </div>
+            @if (Model.Tipo == "Categoria")
+            {
+                <div class="grupo-formulario">
+                    <label asp-for="Modulo"></label>
+                    <select asp-for="Modulo">
+                        <option value="Emprendimientos">Emprendimientos</option>
+                        <option value="Productos">Productos</option>
+                        <option value="Eventos">Eventos</option>
+                        <option value="Talleres">Talleres</option>
+                        <option value="Noticias">Noticias</option>
+                    </select>
+                    <span class="mensaje-validacion" asp-validation-for="Modulo"></span>
+                </div>
+            }
         </div>
 
         <button type="submit" class="boton-admin boton-admin-primario">

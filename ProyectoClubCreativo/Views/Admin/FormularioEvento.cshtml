@@ -8,6 +8,10 @@
     List<Categoria> categorias =
         ViewBag.CategoriasEvento as List<Categoria> ?? new();
 
+    // HU-73: Etiquetas disponibles para eventos.
+    List<Etiqueta> etiquetas =
+        ViewBag.EtiquetasEvento as List<Etiqueta> ?? new();
+
     List<Emprendimiento> emprendimientos =
         ViewBag.EmprendimientosEvento as List<Emprendimiento> ?? new();
 }
@@ -55,6 +59,25 @@
                     }
                 </select>
             </div>
+        </div>
+
+        @* HU-73: Selección de etiquetas para el evento. *@
+        <div class="grupo-formulario">
+            <label asp-for="IdEtiquetas"></label>
+
+            <select asp-for="IdEtiquetas" multiple size="5">
+                @foreach (Etiqueta etiqueta in etiquetas)
+                {
+                    <option value="@etiqueta.IdEtiqueta"
+                            selected="@Model.IdEtiquetas.Contains(etiqueta.IdEtiqueta)">
+                        @etiqueta.Nombre
+                    </option>
+                }
+            </select>
+
+            <small>
+                Opcional. Mantén presionada la tecla Ctrl para seleccionar varias etiquetas.
+            </small>
         </div>
 
         <div class="fila-formulario">

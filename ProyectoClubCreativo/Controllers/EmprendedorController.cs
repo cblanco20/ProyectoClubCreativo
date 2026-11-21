@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using ProyectoClubCreativo.Models.ViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
+using ProyectoClubCreativo.Models.ViewModels;
 using ProyectoClubCreativo.Services;
 
 namespace ProyectoClubCreativo.Controllers
@@ -283,6 +284,17 @@ namespace ProyectoClubCreativo.Controllers
                     })
                 .ToListAsync();
 
+            modelo.EtiquetasDisponibles = await _context.Etiquetas
+    .AsNoTracking()
+    .Where(e => e.Activa)
+    .OrderBy(e => e.Nombre)
+    .Select(e => new SelectListItem
+    {
+        Value = e.IdEtiqueta.ToString(),
+        Text = e.Nombre
+    })
+    .ToListAsync();
+
             return View(modelo);
         }
 
@@ -337,6 +349,27 @@ namespace ProyectoClubCreativo.Controllers
                 }
             }
 
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+    .Distinct()
+    .ToList();
+
+            if (idsEtiquetas.Count > 0)
+            {
+                int cantidadEtiquetasValidas = await _context.Etiquetas
+                    .CountAsync(e =>
+                        idsEtiquetas.Contains(e.IdEtiqueta) &&
+                        e.Activa
+                    );
+
+                if (cantidadEtiquetasValidas != idsEtiquetas.Count)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.IdEtiquetas),
+                        "Una o más etiquetas seleccionadas no son válidas."
+                    );
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 modelo.Categorias = await _context.Categorias
@@ -352,6 +385,17 @@ namespace ProyectoClubCreativo.Controllers
                             Text = c.Nombre
                         })
                     .ToListAsync();
+
+                modelo.EtiquetasDisponibles = await _context.Etiquetas
+    .AsNoTracking()
+    .Where(e => e.Activa)
+    .OrderBy(e => e.Nombre)
+    .Select(e => new SelectListItem
+    {
+        Value = e.IdEtiqueta.ToString(),
+        Text = e.Nombre
+    })
+    .ToListAsync();
 
                 return View(modelo);
             }
@@ -445,6 +489,20 @@ namespace ProyectoClubCreativo.Controllers
 
                 await _context.SaveChangesAsync();
 
+                List<Etiqueta> etiquetasSeleccionadas = await _context.Etiquetas
+    .Where(e =>
+        idsEtiquetas.Contains(e.IdEtiqueta) &&
+        e.Activa
+    )
+    .ToListAsync();
+
+                foreach (Etiqueta etiqueta in etiquetasSeleccionadas)
+                {
+                    emprendimiento.IdEtiqueta.Add(etiqueta);
+                }
+
+                await _context.SaveChangesAsync();
+
                 EmprendimientoRevisione revision = new()
                 {
                     IdEmprendimiento =
@@ -491,6 +549,17 @@ namespace ProyectoClubCreativo.Controllers
                             Text = c.Nombre
                         })
                     .ToListAsync();
+
+                modelo.EtiquetasDisponibles = await _context.Etiquetas
+    .AsNoTracking()
+    .Where(e => e.Activa)
+    .OrderBy(e => e.Nombre)
+    .Select(e => new SelectListItem
+    {
+        Value = e.IdEtiqueta.ToString(),
+        Text = e.Nombre
+    })
+    .ToListAsync();
 
                 return View(modelo);
             }
@@ -764,9 +833,10 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             Emprendimiento? emprendimiento = await _context.Emprendimientos
-                .AsNoTracking()
-                .FirstOrDefaultAsync(e =>
-                    e.IdUsuarioPropietario == idUsuario.Value);
+    .AsNoTracking()
+    .Include(e => e.IdEtiqueta)
+    .FirstOrDefaultAsync(e =>
+        e.IdUsuarioPropietario == idUsuario.Value);
 
             if (emprendimiento is null)
             {
@@ -781,6 +851,9 @@ namespace ProyectoClubCreativo.Controllers
                 NombreComercial = emprendimiento.NombreComercial,
                 Descripcion = emprendimiento.Descripcion,
                 IdCategoria = emprendimiento.IdCategoria,
+                IdEtiquetas = emprendimiento.IdEtiqueta
+    .Select(e => e.IdEtiqueta)
+    .ToList(),
                 Cedula = emprendimiento.CedulaJuridica ?? string.Empty,
                 Telefono = emprendimiento.Telefono ?? string.Empty,
                 Correo = emprendimiento.Correo,
@@ -806,6 +879,17 @@ namespace ProyectoClubCreativo.Controllers
                         Text = c.Nombre
                     })
                 .ToListAsync();
+
+            modelo.EtiquetasDisponibles = await _context.Etiquetas
+    .AsNoTracking()
+    .Where(e => e.Activa)
+    .OrderBy(e => e.Nombre)
+    .Select(e => new SelectListItem
+    {
+        Value = e.IdEtiqueta.ToString(),
+        Text = e.Nombre
+    })
+    .ToListAsync();
 
             ViewBag.LogoActual =
                 string.IsNullOrWhiteSpace(emprendimiento.LogoUrl)
@@ -842,9 +926,10 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             Emprendimiento? emprendimiento = await _context.Emprendimientos
-                .Include(e => e.EmprendimientoRevisione)
-                .FirstOrDefaultAsync(e =>
-                    e.IdUsuarioPropietario == idUsuario.Value);
+     .Include(e => e.EmprendimientoRevisione)
+     .Include(e => e.IdEtiqueta)
+     .FirstOrDefaultAsync(e =>
+         e.IdUsuarioPropietario == idUsuario.Value);
 
             if (emprendimiento is null)
             {
@@ -891,6 +976,23 @@ namespace ProyectoClubCreativo.Controllers
                 }
             }
 
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+    .Distinct()
+    .ToList();
+
+            int cantidadEtiquetasValidas = await _context.Etiquetas
+                .CountAsync(e =>
+                    idsEtiquetas.Contains(e.IdEtiqueta) &&
+                    e.Activa);
+
+            if (cantidadEtiquetasValidas != idsEtiquetas.Count)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.IdEtiquetas),
+                    "Una o varias etiquetas seleccionadas no son válidas."
+                );
+            }
+
             if (!ModelState.IsValid)
             {
                 modelo.Categorias = await _context.Categorias
@@ -906,6 +1008,17 @@ namespace ProyectoClubCreativo.Controllers
                             Text = c.Nombre
                         })
                     .ToListAsync();
+
+                modelo.EtiquetasDisponibles = await _context.Etiquetas
+    .AsNoTracking()
+    .Where(e => e.Activa)
+    .OrderBy(e => e.Nombre)
+    .Select(e => new SelectListItem
+    {
+        Value = e.IdEtiqueta.ToString(),
+        Text = e.Nombre
+    })
+    .ToListAsync();
 
                 ViewBag.LogoActual =
                     string.IsNullOrWhiteSpace(emprendimiento.LogoUrl)
@@ -933,6 +1046,16 @@ namespace ProyectoClubCreativo.Controllers
                 emprendimiento.NombreComercial = modelo.NombreComercial.Trim();
                 emprendimiento.Descripcion = modelo.Descripcion.Trim();
                 emprendimiento.IdCategoria = modelo.IdCategoria;
+                List<Etiqueta> etiquetasSeleccionadas = await _context.Etiquetas
+    .Where(e => idsEtiquetas.Contains(e.IdEtiqueta) && e.Activa)
+    .ToListAsync();
+
+                emprendimiento.IdEtiqueta.Clear();
+
+                foreach (Etiqueta etiqueta in etiquetasSeleccionadas)
+                {
+                    emprendimiento.IdEtiqueta.Add(etiqueta);
+                }
                 emprendimiento.CedulaJuridica = modelo.Cedula.Trim();
                 emprendimiento.Telefono = modelo.Telefono.Trim();
                 emprendimiento.Correo = modelo.Correo.Trim().ToLowerInvariant();
@@ -1075,6 +1198,17 @@ namespace ProyectoClubCreativo.Controllers
                             Text = c.Nombre
                         })
                     .ToListAsync();
+
+                modelo.EtiquetasDisponibles = await _context.Etiquetas
+    .AsNoTracking()
+    .Where(e => e.Activa)
+    .OrderBy(e => e.Nombre)
+    .Select(e => new SelectListItem
+    {
+        Value = e.IdEtiqueta.ToString(),
+        Text = e.Nombre
+    })
+    .ToListAsync();
 
                 ViewBag.LogoActual =
                     string.IsNullOrWhiteSpace(emprendimiento.LogoUrl)
@@ -2431,12 +2565,38 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(MisProductos));
             }
 
+
+            var categoriasDisponibles = await _context.Categorias
+                .AsNoTracking()
+                .Where(c => c.Modulo == "Productos" && c.Activa)
+                .OrderBy(c => c.Nombre)
+                .Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = c.IdCategoria.ToString(),
+                    Text = c.Nombre
+                })
+                .ToListAsync();
+
+            var etiquetasDisponibles = await _context.Etiquetas
+                .AsNoTracking()
+                .Where(e => e.Activa)
+                .OrderBy(e => e.Nombre)
+                .Select(e => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = e.IdEtiqueta.ToString(),
+                    Text = e.Nombre
+                })
+                .ToListAsync();
+
             return View(new ProductoEmprendedorViewModel
             {
                 TipoPublicacion = "Producto",
                 Estado = "Publicado",
-                Inventario = 1
+                Inventario = 1,
+                CategoriasDisponibles = categoriasDisponibles,
+                EtiquetasDisponibles = etiquetasDisponibles
             });
+
         }
 
 
@@ -2511,6 +2671,11 @@ namespace ProyectoClubCreativo.Controllers
                 return RedirectToAction(nameof(MisProductos));
             }
 
+
+            ModelState.Remove(nameof(modelo.IdEtiquetas));
+            ModelState.Remove(nameof(modelo.Etiquetas));
+
+
             ValidarImagenesProducto(modelo);
 
             if (modelo.TipoPublicacion == "Producto" &&
@@ -2530,25 +2695,73 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
-            Categoria? categoria =
-                await _context.Categorias
+
+            Categoria? categoria = null;
+
+            if (modelo.IdCategoria.HasValue)
+            {
+                categoria = await _context.Categorias
                     .FirstOrDefaultAsync(c =>
-                        c.Nombre == modelo.Categoria &&
-                        c.Modulo == "Emprendimientos" &&
+                        c.IdCategoria == modelo.IdCategoria.Value &&
+                        c.Modulo == "Productos" &&
                         c.Activa);
 
-            if (categoria is null)
+                if (categoria is null)
+                {
+                    ModelState.AddModelError(
+                        nameof(modelo.IdCategoria),
+                        "La categoría seleccionada no es válida."
+                    );
+                }
+            }
+
+
+            List<int> idsEtiquetas = (modelo.IdEtiquetas ?? new List<int>())
+    .Distinct()
+    .ToList();
+
+            List<Etiqueta> etiquetasSeleccionadas =
+                await _context.Etiquetas
+                    .Where(e =>
+                        idsEtiquetas.Contains(e.IdEtiqueta) &&
+                        e.Activa)
+                    .ToListAsync();
+
+            if (etiquetasSeleccionadas.Count != idsEtiquetas.Count)
             {
                 ModelState.AddModelError(
-                    nameof(modelo.Categoria),
-                    "La categoría seleccionada no es válida."
+                    nameof(modelo.IdEtiquetas),
+                    "Una o más etiquetas seleccionadas no son válidas."
                 );
             }
 
             if (!ModelState.IsValid)
             {
+                modelo.CategoriasDisponibles = await _context.Categorias
+                    .AsNoTracking()
+                    .Where(c => c.Modulo == "Productos" && c.Activa)
+                    .OrderBy(c => c.Nombre)
+                    .Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = c.IdCategoria.ToString(),
+                        Text = c.Nombre
+                    })
+                    .ToListAsync();
+
+                modelo.EtiquetasDisponibles = await _context.Etiquetas
+                    .AsNoTracking()
+                    .Where(e => e.Activa)
+                    .OrderBy(e => e.Nombre)
+                    .Select(e => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = e.IdEtiqueta.ToString(),
+                        Text = e.Nombre
+                    })
+                    .ToListAsync();
+
                 return View(modelo);
             }
+
 
             Producto producto = new()
             {
@@ -2587,6 +2800,10 @@ namespace ProyectoClubCreativo.Controllers
                 FechaRegistro =
                     DateTime.Now
             };
+
+
+            producto.IdEtiqueta = etiquetasSeleccionadas;
+
 
             _context.Productos.Add(producto);
 
@@ -2739,7 +2956,8 @@ namespace ProyectoClubCreativo.Controllers
                 await _context.Productos
                     .AsNoTracking()
                     .Include(p => p.IdCategoriaNavigation)
-                    .Include(p => p.ProductoImagene)
+.Include(p => p.IdEtiqueta)
+.Include(p => p.ProductoImagene)
                     .FirstOrDefaultAsync(p =>
                         p.IdProducto == id.Value &&
                         p.IdEmprendimiento ==
@@ -2760,9 +2978,12 @@ namespace ProyectoClubCreativo.Controllers
                 TipoPublicacion =
                     producto.TipoPublicacion,
 
-                Categoria =
-                    producto.IdCategoriaNavigation?.Nombre
-                    ?? string.Empty,
+
+                IdCategoria = producto.IdCategoria,
+
+                IdEtiquetas = producto.IdEtiqueta
+    .Select(e => e.IdEtiqueta)
+    .ToList(),
 
                 Descripcion =
                     producto.Descripcion,
@@ -2781,6 +3002,30 @@ namespace ProyectoClubCreativo.Controllers
                 EsDestacado =
                     producto.EsDestacado
             };
+
+
+            modelo.CategoriasDisponibles = await _context.Categorias
+                .AsNoTracking()
+                .Where(c => c.Modulo == "Productos" && c.Activa)
+                .OrderBy(c => c.Nombre)
+                .Select(c => new SelectListItem
+                {
+                    Value = c.IdCategoria.ToString(),
+                    Text = c.Nombre
+                })
+                .ToListAsync();
+
+            modelo.EtiquetasDisponibles = await _context.Etiquetas
+                .AsNoTracking()
+                .Where(e => e.Activa)
+                .OrderBy(e => e.Nombre)
+                .Select(e => new SelectListItem
+                {
+                    Value = e.IdEtiqueta.ToString(),
+                    Text = e.Nombre
+                })
+                .ToListAsync();
+
 
             ViewBag.IdProducto =
                 producto.IdProducto;
@@ -2822,10 +3067,12 @@ namespace ProyectoClubCreativo.Controllers
             Producto? producto =
                 await _context.Productos
                     .Include(p => p.ProductoImagene)
+                    .Include(p => p.IdEtiqueta)
                     .FirstOrDefaultAsync(p =>
                         p.IdProducto == id &&
                         p.IdEmprendimiento ==
                             emprendimiento.IdEmprendimiento);
+
 
             if (producto is null)
             {
@@ -2836,6 +3083,11 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             ValidarImagenesOpcionalesProducto(modelo);
+
+
+            ModelState.Remove(nameof(modelo.Etiquetas));
+
+
             if (modelo.Estado == "Publicado")
             {
                 DateOnly fechaActual =
@@ -2876,23 +3128,48 @@ namespace ProyectoClubCreativo.Controllers
                 );
             }
 
+
             Categoria? categoria =
                 await _context.Categorias
                     .FirstOrDefaultAsync(c =>
-                        c.Nombre == modelo.Categoria &&
-                        c.Modulo == "Emprendimientos" &&
+                        c.IdCategoria == modelo.IdCategoria &&
+                        c.Modulo == "Productos" &&
                         c.Activa);
 
-            if (categoria is null)
+            if (modelo.IdCategoria.HasValue && categoria is null)
             {
                 ModelState.AddModelError(
-                    nameof(modelo.Categoria),
+                    nameof(modelo.IdCategoria),
                     "La categoría seleccionada no es válida."
                 );
             }
 
+
+
             if (!ModelState.IsValid)
             {
+                modelo.CategoriasDisponibles = await _context.Categorias
+                    .AsNoTracking()
+                    .Where(c => c.Modulo == "Productos" && c.Activa)
+                    .OrderBy(c => c.Nombre)
+                    .Select(c => new SelectListItem
+                    {
+                        Value = c.IdCategoria.ToString(),
+                        Text = c.Nombre
+                    })
+                    .ToListAsync();
+
+                modelo.EtiquetasDisponibles = await _context.Etiquetas
+                    .AsNoTracking()
+                    .Where(e => e.Activa)
+                    .OrderBy(e => e.Nombre)
+                    .Select(e => new SelectListItem
+                    {
+                        Value = e.IdEtiqueta.ToString(),
+                        Text = e.Nombre
+                    })
+                    .ToListAsync();
+
                 ViewBag.IdProducto = producto.IdProducto;
 
                 ViewBag.ImagenActual =
@@ -2900,6 +3177,7 @@ namespace ProyectoClubCreativo.Controllers
 
                 return View(modelo);
             }
+
 
             // HU-70: Detectar cambios en productos favoritos.
             bool cambioInformacionProducto =
@@ -2932,7 +3210,26 @@ namespace ProyectoClubCreativo.Controllers
                 modelo.TipoPublicacion;
 
             producto.IdCategoria =
-                categoria!.IdCategoria;
+    categoria!.IdCategoria;
+
+
+
+            List<Etiqueta> etiquetasSeleccionadas =
+                await _context.Etiquetas
+                    .Where(e =>
+                        (modelo.IdEtiquetas ?? new List<int>())
+                            .Contains(e.IdEtiqueta) &&
+                        e.Activa)
+                    .ToListAsync();
+
+
+            producto.IdEtiqueta.Clear();
+
+            foreach (Etiqueta etiqueta in etiquetasSeleccionadas)
+            {
+                producto.IdEtiqueta.Add(etiqueta);
+            }
+
 
             producto.Precio =
                 modelo.Precio!.Value;
