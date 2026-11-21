@@ -798,6 +798,38 @@ namespace ProyectoClubCreativo.Controllers
                 aprobada: true,
                 motivo: null);
 
+            // HU-70: Notificar la aprobación de novedades de emprendimientos favoritos.
+            List<int> idsUsuariosFavoritos = await _context.Favoritos
+                .AsNoTracking()
+                .Where(f => f.IdEmprendimiento == emprendimiento.IdEmprendimiento)
+                .Select(f => f.IdUsuario)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (int idUsuarioFavorito in idsUsuariosFavoritos)
+            {
+                await _notificaciones.AgregarAsync(new Notificacione
+                {
+                    IdUsuario = idUsuarioFavorito,
+                    Titulo = "Novedades de un emprendimiento favorito",
+                    Mensaje =
+        $"El emprendimiento «{emprendimiento.NombreComercial}» " +
+        "que guardaste como favorito tiene información aprobada y actualizada. " +
+        "Consulta sus detalles.",
+                    Tipo = "Promoción",
+
+                    // HU-70: Referencia para abrir el detalle del emprendimiento favorito.
+                    TipoReferencia = "Emprendimiento",
+                    IdReferencia = emprendimiento.IdEmprendimiento,
+
+                    FechaEnvio = DateTime.Now,
+                    Leida = false,
+                    FechaLectura = null
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajeAdmin"] = "La solicitud fue aprobada correctamente.";
 
             return RedirectToAction(nameof(Emprendimientos), new { estado = "Pendiente" });
@@ -2172,9 +2204,21 @@ namespace ProyectoClubCreativo.Controllers
                 return View("FormularioEvento", modelo);
             }
 
+            // HU-70: Detectar novedades en eventos favoritos.
             bool cambioFecha =
                 evento.FechaInicio != modelo.FechaInicio!.Value ||
                 evento.FechaFin != modelo.FechaFin;
+
+            bool cambioInformacion =
+                evento.Nombre != modelo.Nombre.Trim() ||
+                evento.Descripcion != modelo.Descripcion.Trim() ||
+                evento.Ubicacion != modelo.Ubicacion.Trim() ||
+                evento.Estado != modelo.Estado ||
+                evento.IdCategoria != modelo.IdCategoria ||
+                evento.CupoMaximo != modelo.CupoTotal ||
+                modelo.Imagen is { Length: > 0 };
+
+            bool hayNovedades = cambioFecha || cambioInformacion;
 
             evento.IdCategoria = modelo.IdCategoria;
             evento.Nombre = modelo.Nombre.Trim();
@@ -2219,6 +2263,19 @@ namespace ProyectoClubCreativo.Controllers
                 participacion.Estado = "Cancelada";
             }
 
+            // HU-70: Buscar usuarios que tienen este evento como favorito.
+            List<int> idsUsuariosFavoritos = new();
+
+            if (hayNovedades)
+            {
+                idsUsuariosFavoritos = await _context.Favoritos
+                    .AsNoTracking()
+                    .Where(f => f.IdEvento == evento.IdEvento)
+                    .Select(f => f.IdUsuario)
+                    .Distinct()
+                    .ToListAsync();
+            }
+
             int notificados = 0;
 
             if (cambioFecha)
@@ -2246,12 +2303,58 @@ namespace ProyectoClubCreativo.Controllers
                         Titulo = "Cambio en un evento",
                         Mensaje = mensaje,
                         Tipo = "Evento",
+
+                        // HU-70: Referencia para abrir el detalle del evento.
+                        TipoReferencia = "Evento",
+                        IdReferencia = evento.IdEvento,
+
                         FechaEnvio = DateTime.Now,
                         Leida = false,
                         FechaLectura = null
                     });
                 }
                     notificados = idsUsuarios.Count;
+            }
+
+            // HU-70: Notificar novedades a usuarios que tienen el evento como favorito.
+            if (hayNovedades)
+            {
+                // Evitar duplicar avisos a usuarios inscritos que ya fueron notificados.
+                List<int> idsYaNotificados = new();
+
+                if (cambioFecha)
+                {
+                    idsYaNotificados = await _context.InscripcionesEventos
+                        .AsNoTracking()
+                        .Where(i =>
+                            i.IdEvento == evento.IdEvento &&
+                            (i.Estado == "Pendiente" || i.Estado == "Confirmada"))
+                        .Select(i => i.IdUsuario)
+                        .Distinct()
+                        .ToListAsync();
+                }
+
+                foreach (int idUsuario in idsUsuariosFavoritos
+                    .Except(idsYaNotificados))
+                {
+                    await _notificaciones.AgregarAsync(new Notificacione
+                    {
+                        IdUsuario = idUsuario,
+                        Titulo = "Novedades de un evento favorito",
+                        Mensaje =
+    $"El evento «{evento.Nombre}» que guardaste como favorito " +
+    "tiene información actualizada. Consulta sus detalles.",
+                        Tipo = "Evento",
+
+                        // HU-70: Referencia para abrir el detalle del evento favorito.
+                        TipoReferencia = "Evento",
+                        IdReferencia = evento.IdEvento,
+
+                        FechaEnvio = DateTime.Now,
+                        Leida = false,
+                        FechaLectura = null
+                    });
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -2742,6 +2845,21 @@ namespace ProyectoClubCreativo.Controllers
 
             int cupoAnterior = taller.CupoMaximo;
 
+            // HU-70: Detectar cambios en la información del taller.
+            bool cambioInformacionTaller =
+                taller.Nombre != modelo.Nombre.Trim() ||
+                (taller.Descripcion ?? "") != (modelo.Descripcion?.Trim() ?? "") ||
+                taller.FechaInicio != modelo.FechaInicio ||
+                taller.FechaFin != modelo.FechaFin ||
+                (taller.Ubicacion ?? "") != (modelo.Ubicacion?.Trim() ?? "") ||
+                taller.IdCategoria != modelo.IdCategoria ||
+                taller.CupoMaximo != modelo.CupoTotal ||
+                modelo.Imagen is { Length: > 0 };
+
+            // Notificar únicamente cambios de talleres ya publicados.
+            bool hayNovedadesTaller =
+                !eraBorrador && cambioInformacionTaller;
+
             AplicarDatosTaller(taller, modelo);
 
             if (eraBorrador && publicar)
@@ -2758,6 +2876,38 @@ namespace ProyectoClubCreativo.Controllers
             if (modelo.Imagen is { Length: > 0 })
             {
                 taller.ImagenUrl = await GuardarImagenTallerAsync(modelo.Imagen);
+            }
+
+            // HU-70: Notificar novedades a usuarios con este taller favorito.
+            if (hayNovedadesTaller)
+            {
+                List<int> idsUsuariosFavoritos = await _context.Favoritos
+                    .AsNoTracking()
+                    .Where(f => f.IdTaller == taller.IdTaller)
+                    .Select(f => f.IdUsuario)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (int idUsuario in idsUsuariosFavoritos)
+                {
+                    await _notificaciones.AgregarAsync(new Notificacione
+                    {
+                        IdUsuario = idUsuario,
+                        Titulo = "Novedades de un taller favorito",
+                        Mensaje =
+        $"El taller «{taller.Nombre}» que guardaste como favorito " +
+        "tiene información actualizada. Consulta sus detalles.",
+                        Tipo = "Taller",
+
+                        // HU-70: Referencia para abrir el detalle del taller favorito.
+                        TipoReferencia = "Taller",
+                        IdReferencia = taller.IdTaller,
+
+                        FechaEnvio = DateTime.Now,
+                        Leida = false,
+                        FechaLectura = null
+                    });
+                }
             }
 
             await _context.SaveChangesAsync();

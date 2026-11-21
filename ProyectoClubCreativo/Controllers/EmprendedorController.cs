@@ -2901,6 +2901,27 @@ namespace ProyectoClubCreativo.Controllers
                 return View(modelo);
             }
 
+            // HU-70: Detectar cambios en productos favoritos.
+            bool cambioInformacionProducto =
+                producto.Nombre != modelo.Nombre.Trim() ||
+                producto.Descripcion != modelo.Descripcion.Trim() ||
+                producto.TipoPublicacion != modelo.TipoPublicacion ||
+                producto.IdCategoria != categoria!.IdCategoria ||
+                producto.Precio != modelo.Precio!.Value ||
+                producto.StockActual !=
+                    (modelo.TipoPublicacion == "Producto"
+                        ? modelo.Inventario ?? 0
+                        : 0) ||
+                producto.Estado != modelo.Estado ||
+                producto.EsDestacado != modelo.EsDestacado ||
+                (modelo.Imagenes is { Count: > 0 });
+
+            // Notificar únicamente novedades de productos publicados.
+            bool hayNovedadesProducto =
+                cambioInformacionProducto &&
+                producto.Estado == "Publicado" &&
+                modelo.Estado == "Publicado";
+
             producto.Nombre =
                 modelo.Nombre.Trim();
 
@@ -2988,6 +3009,38 @@ namespace ProyectoClubCreativo.Controllers
                     };
 
                     _context.ProductoImagenes.Add(imagenProducto);
+                }
+            }
+
+            // HU-70: Notificar novedades a usuarios con este producto favorito.
+            if (hayNovedadesProducto)
+            {
+                List<int> idsUsuariosFavoritos = await _context.Favoritos
+                    .AsNoTracking()
+                    .Where(f => f.IdProducto == producto.IdProducto)
+                    .Select(f => f.IdUsuario)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (int idUsuarioFavorito in idsUsuariosFavoritos)
+                {
+                    await _notificaciones.AgregarAsync(new Notificacione
+                    {
+                        IdUsuario = idUsuarioFavorito,
+                        Titulo = "Novedades de un producto favorito",
+                        Mensaje =
+        $"El producto «{producto.Nombre}» que guardaste como favorito " +
+        "tiene información actualizada. Consulta sus detalles.",
+                        Tipo = "Promoción",
+
+                        // HU-70: Referencia para abrir el detalle del producto favorito.
+                        TipoReferencia = "Producto",
+                        IdReferencia = producto.IdProducto,
+
+                        FechaEnvio = DateTime.Now,
+                        Leida = false,
+                        FechaLectura = null
+                    });
                 }
             }
 

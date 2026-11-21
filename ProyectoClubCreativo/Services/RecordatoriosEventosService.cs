@@ -76,8 +76,7 @@ namespace ProyectoClubCreativo.Services
 
                 string titulo = mismoDia ? TituloMismoDia : TituloUnDia;
                 string marcaEvento = $"«{evento.Nombre}»";
-
-                List<int> idsUsuarios = await context.InscripcionesEventos
+                List<int> idsUsuariosInscritos = await context.InscripcionesEventos
                     .Where(i =>
                         i.IdEvento == evento.IdEvento &&
                         (i.Estado == "Pendiente" ||
@@ -85,6 +84,18 @@ namespace ProyectoClubCreativo.Services
                     .Select(i => i.IdUsuario)
                     .Distinct()
                     .ToListAsync(cancelacion);
+
+                // HU-70: Usuarios que guardaron el evento como favorito.
+                List<int> idsUsuariosFavoritos = await context.Favoritos
+                    .Where(f => f.IdEvento == evento.IdEvento)
+                    .Select(f => f.IdUsuario)
+                    .Distinct()
+                    .ToListAsync(cancelacion);
+
+                // Unir ambos grupos sin repetir usuarios.
+                List<int> idsUsuarios = idsUsuariosInscritos
+                    .Union(idsUsuariosFavoritos)
+                    .ToList();
 
                 if (idsUsuarios.Count == 0)
                 {
@@ -135,6 +146,98 @@ namespace ProyectoClubCreativo.Services
                             Titulo = titulo,
                             Mensaje = mensaje,
                             Tipo = "Evento",
+
+                            // HU-70: Referencia para abrir el detalle del evento.
+                            TipoReferencia = "Evento",
+                            IdReferencia = evento.IdEvento,
+
+                            FechaEnvio = ahora,
+                            Leida = false,
+                            FechaLectura = null
+                        },
+                        esRecordatorio: true);
+                }
+            }
+
+            // HU-70: Recordatorios de talleres guardados como favoritos.
+            List<Tallere> talleres = await context.Talleres
+                .Where(t =>
+                    t.Estado == ReglasTalleres.Programado &&
+                    t.FechaInicio.HasValue &&
+                    t.FechaInicio.Value > ahora &&
+                    t.FechaInicio.Value <= limite)
+                .ToListAsync(cancelacion);
+
+            foreach (Tallere taller in talleres)
+            {
+                DateTime fechaInicio = taller.FechaInicio!.Value;
+
+                bool mismoDiaTaller = fechaInicio.Date == ahora.Date;
+
+                if (mismoDiaTaller && ahora.Hour < HoraRecordatorioDia)
+                {
+                    continue;
+                }
+
+                string tituloTaller = mismoDiaTaller
+                    ? "Recordatorio: taller hoy"
+                    : "Recordatorio: taller mañana";
+
+                string marcaTaller = $"«{taller.Nombre}»";
+
+                List<int> idsUsuariosFavoritosTaller = await context.Favoritos
+                    .Where(f => f.IdTaller == taller.IdTaller)
+                    .Select(f => f.IdUsuario)
+                    .Distinct()
+                    .ToListAsync(cancelacion);
+
+                if (idsUsuariosFavoritosTaller.Count == 0)
+                {
+                    continue;
+                }
+
+                DateTime desdeTaller = ahora.AddDays(-2);
+
+                List<int> yaNotificadosTaller = await context.Notificaciones
+                    .Where(n =>
+                        idsUsuariosFavoritosTaller.Contains(n.IdUsuario) &&
+                        n.Titulo == tituloTaller &&
+                        n.FechaEnvio >= desdeTaller &&
+                        n.Mensaje.Contains(marcaTaller))
+                    .Select(n => n.IdUsuario)
+                    .Distinct()
+                    .ToListAsync(cancelacion);
+
+                string mensajeTaller = mismoDiaTaller
+                    ? $"Hoy es el taller {marcaTaller}. " +
+                      $"Inicia a las {fechaInicio:hh:mm tt}. " +
+                      $"Ubicación: {taller.Ubicacion ?? "Por confirmar"}."
+                    : $"Mañana es el taller {marcaTaller}. " +
+                      $"Fecha: {fechaInicio:dd/MM/yyyy} a las " +
+                      $"{fechaInicio:hh:mm tt}. " +
+                      $"Ubicación: {taller.Ubicacion ?? "Por confirmar"}.";
+
+                foreach (int idUsuario in idsUsuariosFavoritosTaller.Except(yaNotificadosTaller))
+                {
+                    string clave = $"Taller|{idUsuario}|{taller.IdTaller}|{tituloTaller}";
+
+                    if (!_enviados.Add(clave))
+                    {
+                        continue;
+                    }
+
+                    await notificaciones.AgregarAsync(
+                        new Notificacione
+                        {
+                            IdUsuario = idUsuario,
+                            Titulo = tituloTaller,
+                            Mensaje = mensajeTaller,
+                            Tipo = "Taller",
+
+                            // HU-70: Referencia para abrir el detalle del taller.
+                            TipoReferencia = "Taller",
+                            IdReferencia = taller.IdTaller,
+
                             FechaEnvio = ahora,
                             Leida = false,
                             FechaLectura = null

@@ -807,6 +807,9 @@ public partial class ClubCreativoDbContext : DbContext
             entity.Property(e => e.FechaLectura).HasPrecision(0);
             entity.Property(e => e.Mensaje).HasMaxLength(1000);
             entity.Property(e => e.NumeroOrden).HasMaxLength(50);
+            // HU-70: Referencia al producto, emprendimiento, evento o taller.
+            entity.Property(e => e.TipoReferencia).HasMaxLength(30);
+            entity.Property(e => e.IdReferencia);
             entity.Property(e => e.Tipo).HasMaxLength(50);
             entity.Property(e => e.Titulo).HasMaxLength(150);
 

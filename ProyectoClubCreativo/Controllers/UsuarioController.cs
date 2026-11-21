@@ -4274,6 +4274,11 @@ namespace ProyectoClubCreativo.Controllers
                     Id = (int)n.IdNotificacion,
                     Tipo = n.Tipo,
                     NumeroOrden = n.NumeroOrden,
+
+                    // HU-70: Referencia al detalle del favorito.
+                    TipoReferencia = n.TipoReferencia,
+                    IdReferencia = n.IdReferencia,
+
                     Titulo = n.Titulo,
                     Mensaje = n.Mensaje,
                     Fecha = n.FechaEnvio.ToString("dd/MM/yyyy HH:mm"),

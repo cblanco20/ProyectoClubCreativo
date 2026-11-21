@@ -22,5 +22,10 @@ public partial class Notificacione
     public DateTime? FechaLectura { get; set; }
     public string? NumeroOrden { get; set; }
 
+    // HU-70: Identificar el elemento relacionado con la notificación.
+    public string? TipoReferencia { get; set; }
+
+    public int? IdReferencia { get; set; }
+
     public virtual Usuario IdUsuarioNavigation { get; set; } = null!;
 }

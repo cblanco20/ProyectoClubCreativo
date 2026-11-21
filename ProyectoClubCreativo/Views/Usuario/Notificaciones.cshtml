@@ -50,6 +50,33 @@
                 <p>@notificacion.Mensaje</p>
                 <small>@notificacion.Fecha</small>
 
+                @* HU-70: Acceso al detalle desde las notificaciones de favoritos. *@
+                @if (notificacion.IdReferencia.HasValue &&
+                     (notificacion.TipoReferencia == "Producto" ||
+                      notificacion.TipoReferencia == "Emprendimiento" ||
+                      notificacion.TipoReferencia == "Evento" ||
+                      notificacion.TipoReferencia == "Taller"))
+                {
+                    string accionDetalle = notificacion.TipoReferencia switch
+                    {
+                        "Producto" => "DetalleProducto",
+                        "Emprendimiento" => "DetalleEmprendimiento",
+                        "Evento" => "DetalleEvento",
+                        "Taller" => "DetalleTaller",
+                        _ => ""
+                    };
+
+                    <div class="mt-2">
+                        <a asp-controller="Home"
+                           asp-action="@accionDetalle"
+                           asp-route-id="@notificacion.IdReferencia"
+                           class="boton-secundario-usuario">
+                            <i class="bi bi-eye"></i>
+                            Ver detalle
+                        </a>
+                    </div>
+                }
+
                 @if (notificacion.Tipo == "Compra" &&
                      !string.IsNullOrWhiteSpace(notificacion.NumeroOrden))
                 {

@@ -208,6 +208,11 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public string Icono { get; set; } = string.Empty;
         public bool Leida { get; set; }
         public string? NumeroOrden { get; set; }
+
+        // HU-70: Referencia para navegar al detalle del favorito.
+        public string? TipoReferencia { get; set; }
+
+        public int? IdReferencia { get; set; }
     }
 
     public class PreferenciasNotificacionViewModel
