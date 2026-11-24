@@ -3243,6 +3243,36 @@ body.menu-emprendedor-abierto {
     margin-bottom: 12px;
 }
 
+.grid-planes-suscripcion.planes-cantidad-1 {
+    grid-template-columns: minmax(280px, 430px);
+    justify-content: center;
+}
+
+.grid-planes-suscripcion.planes-cantidad-2,
+.grid-planes-suscripcion.planes-cantidad-4 {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    max-width: 900px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.grid-planes-suscripcion.planes-cantidad-3 {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    max-width: 900px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.grid-planes-suscripcion.planes-cantidad-3 .tarjeta-plan-emprendedor:last-child {
+    width: calc(50% - 11.5px);
+    grid-column: 1 / -1;
+    justify-self: center;
+}
+
+.grid-planes-suscripcion.planes-cantidad-5 {
+    grid-template-columns: repeat(3, minmax(280px, 1fr));
+}
+
 .tarjeta-plan-emprendedor {
     position: relative;
     display: flex;
@@ -3648,8 +3678,19 @@ body.menu-emprendedor-abierto {
 
 @media (max-width: 1100px) {
 
-    .grid-planes-suscripcion {
+    .grid-planes-suscripcion,
+    .grid-planes-suscripcion.planes-cantidad-1,
+    .grid-planes-suscripcion.planes-cantidad-2,
+    .grid-planes-suscripcion.planes-cantidad-3,
+    .grid-planes-suscripcion.planes-cantidad-4,
+    .grid-planes-suscripcion.planes-cantidad-5 {
         grid-template-columns: 1fr;
+        max-width: none;
+    }
+
+    .grid-planes-suscripcion.planes-cantidad-3 .tarjeta-plan-emprendedor:last-child {
+        width: auto;
+        grid-column: auto;
     }
 
     .tarjeta-plan-emprendedor {

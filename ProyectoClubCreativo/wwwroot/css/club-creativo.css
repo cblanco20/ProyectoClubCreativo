@@ -88,17 +88,25 @@ textarea {
 }
 
 .barra-navegacion {
-    min-height: 104px;
+    min-height: 0;
     display: grid;
-    grid-template-columns: auto auto 1fr auto;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+        "menu marca acciones"
+        "navegacion navegacion navegacion";
     align-items: center;
-    gap: 24px;
+    column-gap: 24px;
+    row-gap: 4px;
+    padding: 10px 0 8px;
+    container-type: inline-size;
+    container-name: encabezado-publico;
 }
 
 
 
 /* Botón de tres líneas */
 .boton-menu-lateral {
+    grid-area: menu;
     width: 54px;
     height: 54px;
     display: inline-flex;
@@ -129,6 +137,7 @@ textarea {
 
 /* Logo */
 .marca-principal {
+    grid-area: marca;
     display: inline-flex;
     align-items: center;
     gap: 13px;
@@ -177,14 +186,19 @@ textarea {
 
 /* Navegación central */
 .menu-superior {
+    grid-area: navegacion;
     justify-self: center;
     align-self: center;
-    padding-top: 9px;
+    min-width: 0;
+    width: 100%;
+    padding-top: 0;
 }
 
 .lista-menu-superior {
     display: flex;
     align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 30px;
     list-style: none;
 }
@@ -226,11 +240,45 @@ textarea {
 /* Acciones del encabezado */
 /* Acciones de la derecha */
 .acciones-encabezado {
+    grid-area: acciones;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 13px;
     padding-top: 9px;
+}
+
+@container encabezado-publico (max-width: 1240px) {
+    .barra-navegacion {
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas:
+            "menu marca acciones"
+            "navegacion navegacion navegacion";
+        row-gap: 4px;
+        padding-bottom: 8px;
+    }
+
+    .boton-menu-lateral {
+        grid-area: menu;
+    }
+
+    .marca-principal {
+        grid-area: marca;
+    }
+
+    .menu-superior {
+        grid-area: navegacion;
+        display: block;
+        padding-top: 0;
+    }
+
+    .lista-menu-superior {
+        gap: 8px 20px;
+    }
+
+    .acciones-encabezado {
+        grid-area: acciones;
+    }
 }
 
 .boton-busqueda {
@@ -906,12 +954,35 @@ textarea {
    ========================================================= */
 
 @media (max-width: 1100px) {
-    .menu-superior {
-        display: none;
-    }
-
     .barra-navegacion {
         grid-template-columns: auto 1fr auto;
+        grid-template-areas:
+            "menu marca acciones"
+            "navegacion navegacion navegacion";
+        row-gap: 4px;
+        padding-bottom: 8px;
+    }
+
+    .boton-menu-lateral {
+        grid-area: menu;
+    }
+
+    .marca-principal {
+        grid-area: marca;
+    }
+
+    .menu-superior {
+        grid-area: navegacion;
+        display: block;
+        padding-top: 0;
+    }
+
+    .lista-menu-superior {
+        gap: 8px 16px;
+    }
+
+    .acciones-encabezado {
+        grid-area: acciones;
     }
 
     .enlace-logo {
