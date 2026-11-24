@@ -173,29 +173,31 @@ namespace ProyectoClubCreativo.Models.ViewModels
         public string FechaLimite { get; set; } = string.Empty;
     }
 
+    public class OpcionRespuestaViewModel
+    {
+        public int IdOpcion { get; set; }
+        public string Texto { get; set; } = string.Empty;
+    }
+
+    public class PreguntaRespuestaViewModel
+    {
+        public int IdPregunta { get; set; }
+        public string Texto { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+        public bool Obligatoria { get; set; }
+        public List<OpcionRespuestaViewModel> Opciones { get; set; } = [];
+        public int? IdOpcion { get; set; }
+        public int? Valor { get; set; }
+        public string? RespuestaTexto { get; set; }
+    }
+
     public class ResponderEncuestaViewModel
     {
         public int IdEncuesta { get; set; }
-
         public string NombreEncuesta { get; set; } = string.Empty;
-
+        public string? Descripcion { get; set; }
         public string ElementoRelacionado { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Seleccione un nivel de satisfacción.")]
-        [Range(1, 5, ErrorMessage = "Seleccione una valoración entre 1 y 5.")]
-        public int? Satisfaccion { get; set; }
-
-        [Required(ErrorMessage = "Indique si recomendaría la actividad.")]
-        public string Recomendaria { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Seleccione el aspecto que más le gustó.")]
-        public string AspectoFavorito { get; set; } = string.Empty;
-
-        [StringLength(
-            600,
-            ErrorMessage = "El comentario no puede superar los 600 caracteres."
-        )]
-        public string? Comentario { get; set; }
+        public List<PreguntaRespuestaViewModel> Preguntas { get; set; } = [];
     }
 
     public class NotificacionListadoViewModel

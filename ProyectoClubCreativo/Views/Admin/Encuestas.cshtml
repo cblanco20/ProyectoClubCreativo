@@ -29,6 +29,7 @@
             <thead>
                 <tr>
                     <th>Título</th>
+                    <th>Dirigida a</th>
                     <th>Preguntas</th>
                     <th>Creación</th>
                     <th>Respuestas</th>
@@ -37,6 +38,10 @@
                 </tr>
             </thead>
             <tbody>
+                @if (Model.Encuestas.Count == 0)
+                {
+                    <tr><td colspan="7">No hay encuestas en este estado.</td></tr>
+                }
                 @foreach (var encuesta in Model.Encuestas)
                 {
                     string clase = encuesta.Estado switch
@@ -48,7 +53,8 @@
 
                     <tr>
                         <td><strong>@encuesta.Titulo</strong></td>
-                        <td>@encuesta.Preguntas.Count</td>
+                        <td>@(string.IsNullOrWhiteSpace(encuesta.Asociada) ? "Sin asociar" : encuesta.Asociada)</td>
+                        <td>@encuesta.TotalPreguntas</td>
                         <td>@encuesta.FechaCreacion</td>
                         <td>@encuesta.TotalRespuestas</td>
                         <td><span class="etiqueta-estado-admin @clase">@encuesta.Estado</span></td>
@@ -57,9 +63,12 @@
                                 <a asp-action="ResultadosEncuesta" asp-route-id="@encuesta.Id" class="boton-admin boton-admin-secundario">
                                     <i class="bi bi-bar-chart-fill"></i>
                                 </a>
-                                <a asp-action="EditarEncuesta" asp-route-id="@encuesta.Id" class="boton-admin boton-admin-secundario">
-                                    <i class="bi bi-pencil-fill"></i>
-                                </a>
+                                @if (encuesta.TotalRespuestas == 0)
+                                {
+                                    <a asp-action="EditarEncuesta" asp-route-id="@encuesta.Id" class="boton-admin boton-admin-secundario">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                }
                                 @if (encuesta.Estado == "Borrador")
                                 {
                                     <form asp-action="PublicarEncuesta" method="post">

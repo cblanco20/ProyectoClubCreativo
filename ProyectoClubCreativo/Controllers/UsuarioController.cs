@@ -17,12 +17,15 @@ namespace ProyectoClubCreativo.Controllers
         private readonly ClubCreativoDbContext _context;
         private readonly PagoService _pagoService;
         private readonly NotificacionService _notificaciones;
+        private readonly PromocionesService _promociones;
 
         public UsuarioController(
     ClubCreativoDbContext context,
     PagoService pagoService,
-    NotificacionService notificaciones)
+    NotificacionService notificaciones,
+    PromocionesService promociones)
         {
+            _promociones = promociones;
             _context = context;
             _pagoService = pagoService;
             _notificaciones = notificaciones;
@@ -1499,6 +1502,24 @@ namespace ProyectoClubCreativo.Controllers
         }
 
 
+        private async Task<decimal> CalcularDescuentoCarritoAsync(IEnumerable<ProductoCompraViewModel> carrito)
+        {
+            List<ProductoCompraViewModel> items = carrito.ToList();
+            List<int> ids = items.Select(p => p.IdProducto).ToList();
+
+            Dictionary<int, decimal> precios = await _context.Productos
+                .AsNoTracking()
+                .Where(p => ids.Contains(p.IdProducto))
+                .ToDictionaryAsync(p => p.IdProducto, p => p.Precio);
+
+            ResultadoDescuento resultado = await _promociones.CalcularAsync(
+                items
+                    .Where(p => precios.ContainsKey(p.IdProducto))
+                    .Select(p => (p.IdProducto, precios[p.IdProducto], p.Cantidad)));
+
+            return resultado.Descuento;
+        }
+
         private List<ProductoCompraViewModel> ObtenerCarrito()
         {
             string? carritoJson =
@@ -1631,7 +1652,7 @@ namespace ProyectoClubCreativo.Controllers
 
 
         [HttpGet]
-        public IActionResult Carrito()
+        public async Task<IActionResult> Carrito()
         {
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
 
@@ -1645,7 +1666,7 @@ namespace ProyectoClubCreativo.Controllers
             CarritoUsuarioViewModel modelo = new()
             {
                 Productos = productos,
-                Descuento = 0
+                Descuento = await CalcularDescuentoCarritoAsync(productos)
             };
 
             return View(modelo);
@@ -1707,14 +1728,16 @@ namespace ProyectoClubCreativo.Controllers
                 .AsNoTracking()
                 .FirstAsync(u => u.IdUsuario == idUsuario.Value);
 
+            decimal descuentoCarrito = await CalcularDescuentoCarritoAsync(carrito);
+
             ProcesoCompraViewModel modelo = new()
             {
                 Nombre = usuario.Nombre,
                 Correo = usuario.Correo,
                 Telefono = usuario.Telefono ?? string.Empty,
                 Subtotal = carrito.Sum(p => p.Subtotal),
-                Descuento = 0,
-                Total = carrito.Sum(p => p.Subtotal)
+                Descuento = descuentoCarrito,
+                Total = carrito.Sum(p => p.Subtotal) - descuentoCarrito
             };
 
             return View(modelo);
@@ -1765,8 +1788,8 @@ namespace ProyectoClubCreativo.Controllers
             if (!ModelState.IsValid)
             {
                 modelo.Subtotal = carrito.Sum(p => p.Subtotal);
-                modelo.Descuento = 0;
-                modelo.Total = modelo.Subtotal;
+                modelo.Descuento = await CalcularDescuentoCarritoAsync(carrito);
+                modelo.Total = modelo.Subtotal - modelo.Descuento;
 
                 return View(modelo);
             }
@@ -1791,8 +1814,8 @@ namespace ProyectoClubCreativo.Controllers
             if (!ModelState.IsValid)
             {
                 modelo.Subtotal = carrito.Sum(p => p.Subtotal);
-                modelo.Descuento = 0;
-                modelo.Total = modelo.Subtotal;
+                modelo.Descuento = await CalcularDescuentoCarritoAsync(carrito);
+                modelo.Total = modelo.Subtotal - modelo.Descuento;
 
                 return View(modelo);
             }
@@ -1940,6 +1963,10 @@ namespace ProyectoClubCreativo.Controllers
                     });
                 }
 
+                ResultadoDescuento descuentoVenta = await _promociones.CalcularAsync(
+                    detalles.Select(d => (d.IdProducto, d.PrecioUnitario, d.Cantidad)));
+
+
                 var venta = new Venta
                 {
                     NumeroOrden = "CC-" +
@@ -1948,8 +1975,8 @@ namespace ProyectoClubCreativo.Controllers
                     IdUsuario = idUsuario.Value,
                     FechaVenta = DateTime.Now,
                     Subtotal = subtotal,
-                    Descuento = 0,
-                    Total = subtotal,
+                    Descuento = descuentoVenta.Descuento,
+                    Total = subtotal - descuentoVenta.Descuento,
                     MetodoPago = entrega.MetodoPago,
                     NumeroReferenciaSinpe = NumeroReferenciaSinpe,
                     TipoEntrega = entrega.TipoEntrega,
@@ -1962,6 +1989,18 @@ namespace ProyectoClubCreativo.Controllers
 
 
                 _context.Ventas.Add(venta);
+                if (descuentoVenta.IdPromocion.HasValue && descuentoVenta.Descuento > 0)
+                {
+                    _context.UsosPromocions.Add(new UsosPromocion
+                    {
+                        IdPromocion = descuentoVenta.IdPromocion.Value,
+                        IdUsuario = idUsuario.Value,
+                        IdVentaNavigation = venta,
+                        MontoDescuento = descuentoVenta.Descuento,
+                        FechaUso = DateTime.Now
+                    });
+                }
+
 
                 var notificacionComprador = new Notificacione
                 {
@@ -2118,7 +2157,7 @@ namespace ProyectoClubCreativo.Controllers
 
             ViewBag.MetodoPago = entrega.MetodoPago;
             ViewBag.TipoEntrega = entrega.TipoEntrega;
-            ViewBag.Total = subtotal;
+            ViewBag.Total = subtotal - await CalcularDescuentoCarritoAsync(carrito);
 
             return View();
         }
@@ -2179,11 +2218,13 @@ namespace ProyectoClubCreativo.Controllers
                 subtotal += producto.Precio * item.Cantidad;
             }
 
+            decimal descuentoPago = await CalcularDescuentoCarritoAsync(carrito);
+
             PagoCompraViewModel modelo = new()
             {
                 Subtotal = subtotal,
-                Descuento = 0,
-                TotalPagar = subtotal
+                Descuento = descuentoPago,
+                TotalPagar = subtotal - descuentoPago
             };
 
             return View(modelo);
@@ -2254,8 +2295,8 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             modelo.Subtotal = subtotal;
-            modelo.Descuento = 0;
-            modelo.TotalPagar = subtotal;
+            modelo.Descuento = await CalcularDescuentoCarritoAsync(carrito);
+            modelo.TotalPagar = subtotal - modelo.Descuento;
 
             if (modelo.MesVencimiento.HasValue &&
                 modelo.AnioVencimiento.HasValue)
@@ -2401,7 +2442,13 @@ namespace ProyectoClubCreativo.Controllers
                     });
                 }
 
-                if (subtotalVenta != modelo.TotalPagar)
+                ResultadoDescuento descuentoVenta = await _promociones.CalcularAsync(
+                    detalles.Select(d => (d.IdProducto, d.PrecioUnitario, d.Cantidad)));
+
+                decimal totalVenta = subtotalVenta - descuentoVenta.Descuento;
+
+
+                if (totalVenta != modelo.TotalPagar)
                 {
                     await transaccion.RollbackAsync();
 
@@ -2424,7 +2471,7 @@ namespace ProyectoClubCreativo.Controllers
                 }
 
                 int puntosGanados = (int)Math.Floor(
-                    subtotalVenta / configuracionPuntos.ColonesPorPunto);
+                    totalVenta / configuracionPuntos.ColonesPorPunto);
 
                 var venta = new Venta
                 {
@@ -2434,8 +2481,8 @@ namespace ProyectoClubCreativo.Controllers
                     IdUsuario = idUsuario.Value,
                     FechaVenta = DateTime.Now,
                     Subtotal = subtotalVenta,
-                    Descuento = 0,
-                    Total = subtotalVenta,
+                    Descuento = descuentoVenta.Descuento,
+                    Total = totalVenta,
                     MetodoPago = entrega.MetodoPago,
                     TipoEntrega = entrega.TipoEntrega,
                     DireccionEntrega = entrega.TipoEntrega == "Domicilio"
@@ -2447,6 +2494,18 @@ namespace ProyectoClubCreativo.Controllers
                 };
 
                 _context.Ventas.Add(venta);
+                if (descuentoVenta.IdPromocion.HasValue && descuentoVenta.Descuento > 0)
+                {
+                    _context.UsosPromocions.Add(new UsosPromocion
+                    {
+                        IdPromocion = descuentoVenta.IdPromocion.Value,
+                        IdUsuario = idUsuario.Value,
+                        IdVentaNavigation = venta,
+                        MontoDescuento = descuentoVenta.Descuento,
+                        FechaUso = DateTime.Now
+                    });
+                }
+
 
                 if (puntosGanados > 0)
                 {
@@ -4190,71 +4249,361 @@ namespace ProyectoClubCreativo.Controllers
             return View(modelo);
         }
 
-        [HttpGet]
-        public IActionResult Encuestas()
+        private async Task<(string Elemento, string Tipo)?> ObtenerRelacionEncuestaAsync(int idEncuesta, int idUsuario)
         {
-            List<EncuestaUsuarioViewModel> modelo =
-            [
-                new()
-        {
-            Id = 1,
-            Nombre = "Experiencia en Feria Creativa",
-            ElementoRelacionado = "Feria Creativa San Pedro",
-            TipoElemento = "Evento",
-            Estado = "Pendiente",
-            FechaLimite = "30 de agosto"
-        },
-        new()
-        {
-            Id = 2,
-            Nombre = "Evaluación del taller",
-            ElementoRelacionado = "Cerámica para principiantes",
-            TipoElemento = "Taller",
-            Estado = "Pendiente",
-            FechaLimite = "5 de septiembre"
-        },
-        new()
-        {
-            Id = 3,
-            Nombre = "Satisfacción general",
-            ElementoRelacionado = "Feria Creativa Heredia",
-            TipoElemento = "Evento",
-            Estado = "Respondida",
-            FechaLimite = "Respondida el 22 de julio"
-        }
-            ];
+            var encuesta = await _context.Encuestas
+                .AsNoTracking()
+                .Where(e => e.IdEncuesta == idEncuesta)
+                .Select(e => new
+                {
+                    Eventos = e.IdEventos
+                        .Select(x => new { x.IdEvento, x.Nombre, Fin = (DateTime?)(x.FechaFin ?? x.FechaInicio) })
+                        .ToList(),
+                    Talleres = e.IdTallers
+                        .Select(x => new { x.IdTaller, x.Nombre, Fin = x.FechaFin ?? x.FechaInicio })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
 
-            return View(modelo);
-        }
-
-        [HttpGet]
-        public IActionResult ResponderEncuesta(int id = 1)
-        {
-            ResponderEncuestaViewModel modelo = new()
+            if (encuesta is null)
             {
-                IdEncuesta = id,
-                NombreEncuesta = "Experiencia en Feria Creativa",
-                ElementoRelacionado = "Feria Creativa San Pedro"
-            };
+                return null;
+            }
+
+            DateTime ahora = DateTime.Now;
+
+            HashSet<int> eventosAsistidos = (await _context.RegistrosAsistencia
+                .AsNoTracking()
+                .Where(a => a.IdUsuario == idUsuario && a.IdEvento != null)
+                .Select(a => a.IdEvento!.Value)
+                .ToListAsync()).ToHashSet();
+
+            HashSet<int> talleresAsistidos = (await _context.RegistrosAsistencia
+                .AsNoTracking()
+                .Where(a => a.IdUsuario == idUsuario && a.IdTaller != null)
+                .Select(a => a.IdTaller!.Value)
+                .ToListAsync()).ToHashSet();
+
+            HashSet<int> eventosInscritos = (await _context.InscripcionesEventos
+                .AsNoTracking()
+                .Where(i => i.IdUsuario == idUsuario && i.Estado == "Confirmada")
+                .Select(i => i.IdEvento)
+                .ToListAsync()).ToHashSet();
+
+            HashSet<int> talleresInscritos = (await _context.InscripcionesTallers
+                .AsNoTracking()
+                .Where(i => i.IdUsuario == idUsuario && i.Estado != "Cancelada")
+                .Select(i => i.IdTaller)
+                .ToListAsync()).ToHashSet();
+
+            foreach (var evento in encuesta.Eventos)
+            {
+                if (eventosAsistidos.Contains(evento.IdEvento) ||
+                    (eventosInscritos.Contains(evento.IdEvento) && evento.Fin.HasValue && evento.Fin.Value < ahora))
+                {
+                    return (evento.Nombre, "Evento");
+                }
+            }
+
+            foreach (var taller in encuesta.Talleres)
+            {
+                if (talleresAsistidos.Contains(taller.IdTaller) ||
+                    (talleresInscritos.Contains(taller.IdTaller) && taller.Fin.HasValue && taller.Fin.Value < ahora))
+                {
+                    return (taller.Nombre, "Taller");
+                }
+            }
+
+            return null;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Encuestas()
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            var encuestas = await _context.Encuestas
+                .AsNoTracking()
+                .Where(e => e.Estado == ReglasEncuestas.Publicada ||
+                            e.RespuestasEncuesta.Any(r => r.IdUsuario == idUsuario.Value))
+                .OrderByDescending(e => e.FechaPublicacion ?? e.FechaCreacion)
+                .Select(e => new
+                {
+                    e.IdEncuesta,
+                    e.Titulo,
+                    e.Estado,
+                    Respondida = e.RespuestasEncuesta.Where(r => r.IdUsuario == idUsuario.Value)
+                        .Select(r => (DateTime?)r.FechaRespuesta)
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            List<EncuestaUsuarioViewModel> modelo = [];
+
+            foreach (var encuesta in encuestas)
+            {
+                var relacion = await ObtenerRelacionEncuestaAsync(encuesta.IdEncuesta, idUsuario.Value);
+
+                if (relacion is null)
+                {
+                    continue;
+                }
+
+                bool respondida = encuesta.Respondida.HasValue;
+
+                if (!respondida && encuesta.Estado != ReglasEncuestas.Publicada)
+                {
+                    continue;
+                }
+
+                modelo.Add(new EncuestaUsuarioViewModel
+                {
+                    Id = encuesta.IdEncuesta,
+                    Nombre = encuesta.Titulo,
+                    ElementoRelacionado = relacion.Value.Elemento,
+                    TipoElemento = relacion.Value.Tipo,
+                    Estado = respondida ? "Respondida" : "Pendiente",
+                    FechaLimite = respondida
+                        ? "Respondida el " + encuesta.Respondida!.Value.ToString("dd/MM/yyyy")
+                        : "Disponible para responder"
+                });
+            }
 
             return View(modelo);
+        }
+
+        private async Task<ResponderEncuestaViewModel?> CargarEncuestaParaResponderAsync(int idEncuesta, string elemento)
+        {
+            Encuesta? encuesta = await _context.Encuestas
+                .AsNoTracking()
+                .Include(e => e.PreguntasEncuesta).ThenInclude(p => p.OpcionesPregunta)
+                .FirstOrDefaultAsync(e => e.IdEncuesta == idEncuesta);
+
+            if (encuesta is null)
+            {
+                return null;
+            }
+
+            return new ResponderEncuestaViewModel
+            {
+                IdEncuesta = encuesta.IdEncuesta,
+                NombreEncuesta = encuesta.Titulo,
+                Descripcion = encuesta.Descripcion,
+                ElementoRelacionado = elemento,
+                Preguntas = encuesta.PreguntasEncuesta
+                    .OrderBy(p => p.OrdenVisual)
+                    .Select(p => new PreguntaRespuestaViewModel
+                    {
+                        IdPregunta = p.IdPregunta,
+                        Texto = p.Texto,
+                        Tipo = p.TipoPregunta,
+                        Obligatoria = p.Obligatoria,
+                        Opciones = p.OpcionesPregunta
+                            .OrderBy(o => o.OrdenVisual)
+                            .Select(o => new OpcionRespuestaViewModel { IdOpcion = o.IdOpcion, Texto = o.Texto })
+                            .ToList()
+                    })
+                    .ToList()
+            };
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ResponderEncuesta(int id)
+        {
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            if (await _context.RespuestasEncuesta.AnyAsync(r => r.IdEncuesta == id && r.IdUsuario == idUsuario.Value))
+            {
+                TempData["ErrorEncuesta"] = "Esta encuesta ya fue respondida. No es posible enviarla de nuevo.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            Encuesta? encuesta = await _context.Encuestas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.IdEncuesta == id);
+
+            var relacion = await ObtenerRelacionEncuestaAsync(id, idUsuario.Value);
+
+            if (encuesta is null || encuesta.Estado != ReglasEncuestas.Publicada || relacion is null)
+            {
+                TempData["ErrorEncuesta"] = "La encuesta no está disponible para tu cuenta.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            ResponderEncuestaViewModel? modelo = await CargarEncuestaParaResponderAsync(id, relacion.Value.Elemento);
+
+            return modelo is null ? RedirectToAction(nameof(Encuestas)) : View(modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ResponderEncuesta(ResponderEncuestaViewModel modelo)
+        public async Task<IActionResult> ResponderEncuesta(ResponderEncuestaViewModel modelo)
         {
-            if (!ModelState.IsValid)
+            int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (!idUsuario.HasValue)
             {
-                return View(modelo);
+                return RedirectToAction("IniciarSesion", "Cuenta");
             }
 
-            TempData["MensajeEncuesta"] =
-                "La encuesta fue validada y enviada correctamente.";
+            if (await _context.RespuestasEncuesta.AnyAsync(r => r.IdEncuesta == modelo.IdEncuesta && r.IdUsuario == idUsuario.Value))
+            {
+                TempData["ErrorEncuesta"] = "Esta encuesta ya fue respondida. No es posible enviarla de nuevo.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            Encuesta? encuesta = await _context.Encuestas
+                .AsNoTracking()
+                .Include(e => e.PreguntasEncuesta).ThenInclude(p => p.OpcionesPregunta)
+                .FirstOrDefaultAsync(e => e.IdEncuesta == modelo.IdEncuesta);
+
+            var relacion = await ObtenerRelacionEncuestaAsync(modelo.IdEncuesta, idUsuario.Value);
+
+            if (encuesta is null || encuesta.Estado != ReglasEncuestas.Publicada || relacion is null)
+            {
+                TempData["ErrorEncuesta"] = "La encuesta no está disponible para tu cuenta.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            ModelState.Clear();
+
+            Dictionary<int, PreguntaRespuestaViewModel> enviadas = (modelo.Preguntas ?? [])
+                .GroupBy(p => p.IdPregunta)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            List<RespuestaDetalle> detalles = [];
+            int pendientes = 0;
+
+            foreach (PreguntasEncuestum pregunta in encuesta.PreguntasEncuesta.OrderBy(p => p.OrdenVisual))
+            {
+                enviadas.TryGetValue(pregunta.IdPregunta, out PreguntaRespuestaViewModel? respuesta);
+
+                if (pregunta.TipoPregunta == ReglasEncuestas.TipoOpcion)
+                {
+                    bool valida = respuesta?.IdOpcion is int idOpcion &&
+                                  pregunta.OpcionesPregunta.Any(o => o.IdOpcion == idOpcion);
+
+                    if (valida)
+                    {
+                        detalles.Add(new RespuestaDetalle
+                        {
+                            IdPregunta = pregunta.IdPregunta,
+                            IdOpcion = respuesta!.IdOpcion
+                        });
+                    }
+                    else if (pregunta.Obligatoria)
+                    {
+                        pendientes++;
+                    }
+                }
+                else if (pregunta.TipoPregunta == ReglasEncuestas.TipoEscala)
+                {
+                    bool valida = respuesta?.Valor is int valor &&
+                                  valor >= ReglasEncuestas.EscalaMinima &&
+                                  valor <= ReglasEncuestas.EscalaMaxima;
+
+                    if (valida)
+                    {
+                        detalles.Add(new RespuestaDetalle
+                        {
+                            IdPregunta = pregunta.IdPregunta,
+                            ValorNumerico = respuesta!.Valor
+                        });
+                    }
+                    else if (pregunta.Obligatoria)
+                    {
+                        pendientes++;
+                    }
+                }
+                else
+                {
+                    string texto = (respuesta?.RespuestaTexto ?? string.Empty).Trim();
+
+                    if (texto.Length > 0)
+                    {
+                        detalles.Add(new RespuestaDetalle
+                        {
+                            IdPregunta = pregunta.IdPregunta,
+                            RespuestaTexto = texto.Length > 1000 ? texto[..1000] : texto
+                        });
+                    }
+                    else if (pregunta.Obligatoria)
+                    {
+                        pendientes++;
+                    }
+                }
+            }
+
+            if (pendientes > 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Responde las preguntas obligatorias pendientes antes de enviar ({pendientes}).");
+
+                ResponderEncuestaViewModel? recarga =
+                    await CargarEncuestaParaResponderAsync(modelo.IdEncuesta, relacion.Value.Elemento);
+
+                if (recarga is null)
+                {
+                    return RedirectToAction(nameof(Encuestas));
+                }
+
+                foreach (PreguntaRespuestaViewModel pregunta in recarga.Preguntas)
+                {
+                    if (enviadas.TryGetValue(pregunta.IdPregunta, out PreguntaRespuestaViewModel? previa))
+                    {
+                        pregunta.IdOpcion = previa.IdOpcion;
+                        pregunta.Valor = previa.Valor;
+                        pregunta.RespuestaTexto = previa.RespuestaTexto;
+                    }
+                }
+
+                return View(recarga);
+            }
+
+            RespuestasEncuestum registro = new()
+            {
+                IdEncuesta = encuesta.IdEncuesta,
+                IdUsuario = idUsuario.Value,
+                FechaRespuesta = DateTime.Now
+            };
+
+            foreach (RespuestaDetalle detalle in detalles)
+            {
+                registro.RespuestaDetalles.Add(detalle);
+            }
+
+            _context.RespuestasEncuesta.Add(registro);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                TempData["ErrorEncuesta"] = "Esta encuesta ya fue respondida. No es posible enviarla de nuevo.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            TempData["MensajeEncuesta"] = "Gracias por tu opinión. Tus respuestas se registraron correctamente.";
 
             return RedirectToAction(nameof(Encuestas));
         }
-
 
         [HttpGet]
         public async Task<IActionResult> Notificaciones()

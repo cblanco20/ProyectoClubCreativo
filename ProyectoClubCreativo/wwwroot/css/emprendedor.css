@@ -1876,7 +1876,8 @@ body.menu-emprendedor-abierto {
     width: 100%;
 }
 
-.resumen-validacion-emprendedor:empty {
+.resumen-validacion-emprendedor:empty,
+.resumen-validacion-emprendedor.validation-summary-valid {
     display: none;
 }
 

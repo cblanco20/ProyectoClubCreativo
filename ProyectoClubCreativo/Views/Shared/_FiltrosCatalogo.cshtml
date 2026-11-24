@@ -1,0 +1,62 @@
+@model ProyectoClubCreativo.Models.ViewModels.FiltroCatalogoViewModel
+
+@{
+    Dictionary<string, string> Ruta(int? categoria, int? etiqueta)
+    {
+        var datos = new Dictionary<string, string>(Model.RutaExtra);
+
+        if (categoria.HasValue)
+        {
+            datos["categoria"] = categoria.Value.ToString();
+        }
+
+        if (etiqueta.HasValue)
+        {
+            datos["etiqueta"] = etiqueta.Value.ToString();
+        }
+
+        return datos;
+    }
+}
+
+<section class="categorias-emprendimientos">
+    <div class="container">
+
+        @if (Model.MostrarCategorias)
+        {
+            <div class="lista-categorias-emprendimientos">
+                <a asp-controller="Home"
+                   asp-action="@Model.Accion"
+                   asp-all-route-data="@Ruta(null, Model.Etiqueta)"
+                   class="categoria-chip @(Model.Categoria is null ? "categoria-chip-activa" : "")">Todas las categorías</a>
+
+                @foreach (var categoria in Model.Categorias)
+                {
+                    <a asp-controller="Home"
+                       asp-action="@Model.Accion"
+                       asp-all-route-data="@Ruta(categoria.IdCategoria, Model.Etiqueta)"
+                       class="categoria-chip @(Model.Categoria == categoria.IdCategoria ? "categoria-chip-activa" : "")">@categoria.Nombre</a>
+                }
+            </div>
+        }
+
+        @if (Model.Etiquetas.Count > 0)
+        {
+            <div class="lista-categorias-emprendimientos" style="margin-top:10px;">
+                <a asp-controller="Home"
+                   asp-action="@Model.Accion"
+                   asp-all-route-data="@Ruta(Model.Categoria, null)"
+                   class="categoria-chip @(Model.Etiqueta is null ? "categoria-chip-activa" : "")">Todas las etiquetas</a>
+
+                @foreach (var etiqueta in Model.Etiquetas)
+                {
+                    <a asp-controller="Home"
+                       asp-action="@Model.Accion"
+                       asp-all-route-data="@Ruta(Model.Categoria, etiqueta.IdEtiqueta)"
+                       class="categoria-chip @(Model.Etiqueta == etiqueta.IdEtiqueta ? "categoria-chip-activa" : "")">#@etiqueta.Nombre</a>
+                }
+            </div>
+        }
+
+    </div>
+</section>

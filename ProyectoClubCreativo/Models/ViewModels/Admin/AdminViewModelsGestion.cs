@@ -251,33 +251,46 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public int Id { get; set; }
 
         [Required(ErrorMessage = "El nombre es obligatorio.")]
+        [StringLength(150, ErrorMessage = "El nombre no puede superar los 150 caracteres.")]
         public string Nombre { get; set; } = "";
 
-        public string Descripcion { get; set; } = "";
+        [StringLength(1000, ErrorMessage = "La descripción no puede superar los 1000 caracteres.")]
+        public string? Descripcion { get; set; }
 
         [Required(ErrorMessage = "Seleccione el tipo de descuento.")]
         [Display(Name = "Tipo de descuento")]
         public string TipoDescuento { get; set; } = "Porcentaje";
 
-        [Range(0, 1000000, ErrorMessage = "Ingrese un valor válido.")]
+        [Required(ErrorMessage = "El valor del descuento es obligatorio.")]
+        [Range(0.01, 1000000, ErrorMessage = "Ingrese un valor de descuento válido.")]
         [Display(Name = "Valor del descuento")]
-        public decimal ValorDescuento { get; set; }
+        public decimal? ValorDescuento { get; set; }
 
         [Required(ErrorMessage = "La fecha de inicio es obligatoria.")]
         [DataType(DataType.Date)]
         [Display(Name = "Fecha de inicio")]
-        public DateTime FechaInicio { get; set; } = DateTime.Today;
+        public DateTime? FechaInicio { get; set; } = DateTime.Today;
 
         [Required(ErrorMessage = "La fecha de fin es obligatoria.")]
         [DataType(DataType.Date)]
         [Display(Name = "Fecha de fin")]
-        public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(7);
+        public DateTime? FechaFin { get; set; } = DateTime.Today.AddDays(7);
 
-        public string Estado { get; set; } = "Programada";
+        [Range(1, 1000000, ErrorMessage = "El límite de usos debe ser mayor que cero.")]
+        [Display(Name = "Límite de usos")]
+        public int? LimiteUsos { get; set; }
 
         [Display(Name = "Emprendimiento")]
-        public string Emprendimiento { get; set; } = "Todos";
+        public int? IdEmprendimiento { get; set; }
 
+        [Display(Name = "Producto")]
+        public int? IdProducto { get; set; }
+
+        [Display(Name = "Evento")]
+        public int? IdEvento { get; set; }
+
+        public string Estado { get; set; } = "Programada";
+        public string Emprendimiento { get; set; } = "Todos";
         public int Usos { get; set; }
     }
 
@@ -297,7 +310,19 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
     public class PreguntaEncuestaViewModel
     {
         public string Texto { get; set; } = "";
+        public string Tipo { get; set; } = "";
+        public int Respuestas { get; set; }
+        public decimal? Promedio { get; set; }
         public List<OpcionPreguntaViewModel> Opciones { get; set; } = [];
+        public List<string> RespuestasTexto { get; set; } = [];
+    }
+
+    public class PreguntaFormViewModel
+    {
+        public string? Texto { get; set; }
+        public string Tipo { get; set; } = "OpcionUnica";
+        public bool Obligatoria { get; set; } = true;
+        public string? OpcionesTexto { get; set; }
     }
 
     public class EncuestaAdminViewModel
@@ -305,18 +330,21 @@ namespace ProyectoClubCreativo.Models.ViewModels.Admin
         public int Id { get; set; }
 
         [Required(ErrorMessage = "El título es obligatorio.")]
+        [StringLength(200, ErrorMessage = "El título no puede superar los 200 caracteres.")]
         public string Titulo { get; set; } = "";
 
-        public string Descripcion { get; set; } = "";
-
-        [Required(ErrorMessage = "Agregue al menos una pregunta.")]
-        [Display(Name = "Preguntas (una por línea)")]
-        public string PreguntasTexto { get; set; } = "";
+        [StringLength(1000, ErrorMessage = "La descripción no puede superar los 1000 caracteres.")]
+        public string? Descripcion { get; set; }
 
         public string Estado { get; set; } = "Borrador";
         public string FechaCreacion { get; set; } = "";
         public int TotalRespuestas { get; set; }
-        public List<PreguntaEncuestaViewModel> Preguntas { get; set; } = [];
+        public int TotalPreguntas { get; set; }
+        public string Asociada { get; set; } = "";
+        public List<int> IdEventos { get; set; } = [];
+        public List<int> IdTalleres { get; set; } = [];
+        public List<PreguntaFormViewModel> Preguntas { get; set; } = [];
+        public List<PreguntaEncuestaViewModel> Resultados { get; set; } = [];
     }
 
     public class ListadoEncuestasAdminViewModel

@@ -12,6 +12,7 @@
         ViewBag.CategoriasEvento as List<Categoria> ?? new();
 
     int? categoriaSeleccionada = ViewBag.CategoriaSeleccionada as int?;
+    int? etiquetaSeleccionada = ViewBag.EtiquetaSeleccionada as int?;
 
     string imagenPorDefecto = Url.Content("~/images/hero-feria.jpg");
     string estadoEventos =
@@ -94,6 +95,7 @@
                    asp-action="Eventos"
                    asp-route-estado="proximos"
                    asp-route-categoria="@categoriaSeleccionada"
+                   asp-route-etiqueta="@etiquetaSeleccionada"
                    class="chip-filtro-evento @(estadoEventos == "proximos" ? "activo" : "")">
                     <i class="bi bi-calendar-event"></i>
                     Próximos eventos
@@ -103,6 +105,7 @@
                    asp-action="Eventos"
                    asp-route-estado="finalizados"
                    asp-route-categoria="@categoriaSeleccionada"
+                   asp-route-etiqueta="@etiquetaSeleccionada"
                    class="chip-filtro-evento @(estadoEventos == "finalizados" ? "activo" : "")">
                     <i class="bi bi-check-circle"></i>
                     Eventos finalizados
@@ -117,6 +120,7 @@
                     <a asp-controller="Home"
                        asp-action="Eventos"
                        asp-route-estado="@estadoEventos"
+                       asp-route-etiqueta="@etiquetaSeleccionada"
                        class="chip-filtro-evento @(categoriaSeleccionada is null ? "activo" : "")">
                         Todos
                     </a>
@@ -127,6 +131,7 @@
                            asp-action="Eventos"
                            asp-route-estado="@estadoEventos"
                            asp-route-categoria="@categoria.IdCategoria"
+                           asp-route-etiqueta="@etiquetaSeleccionada"
                            class="chip-filtro-evento @(categoriaSeleccionada == categoria.IdCategoria ? "activo" : "")">
                             @categoria.Nombre
                         </a>
@@ -135,13 +140,23 @@
                 </div>
             }
 
+            @await Html.PartialAsync("_FiltrosCatalogo", new FiltroCatalogoViewModel
+            {
+                Accion = "Eventos",
+                Categoria = categoriaSeleccionada,
+                Etiqueta = etiquetaSeleccionada,
+                MostrarCategorias = false,
+                Etiquetas = ViewBag.EtiquetasFiltro as List<Etiqueta> ?? new(),
+                RutaExtra = new Dictionary<string, string> { ["estado"] = estadoEventos }
+            })
+
             @if (!eventos.Any())
             {
                 <div class="sin-eventos-pagina">
 
                     <i class="bi bi-calendar-x"></i>
 
-                    @if (categoriaSeleccionada is null)
+                    @if (categoriaSeleccionada is null && etiquetaSeleccionada is null)
                     {
                         <h3>No hay eventos disponibles por el momento</h3>
 

@@ -1,28 +1,29 @@
-@model ProyectoClubCreativo.Models.ViewModels.Admin.EncuestaAdminViewModel
+﻿@model ProyectoClubCreativo.Models.ViewModels.Admin.EncuestaAdminViewModel
 @{
     ViewData["Title"] = ViewData["Titulo"]?.ToString() ?? "Encuesta";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
     bool esNueva = Model.Id == 0;
+    var eventos = (IEnumerable<dynamic>)(ViewBag.EventosEncuesta ?? new List<dynamic>());
+    var talleres = (IEnumerable<dynamic>)(ViewBag.TalleresEncuesta ?? new List<dynamic>());
 }
 
 <a asp-action="Encuestas" class="boton-admin boton-admin-secundario" style="margin-bottom:18px;">
     <i class="bi bi-arrow-left"></i> Volver a encuestas
 </a>
 
-<article class="bloque-admin" style="max-width:640px;">
+<article class="bloque-admin" style="max-width:760px;">
     <div class="encabezado-bloque-admin">
         <h2><i class="bi bi-clipboard2-check-fill"></i> @ViewData["Title"]</h2>
     </div>
 
-    <form asp-action="@(esNueva ? "CrearEncuesta" : "EditarEncuesta")" method="post" class="formulario-admin">
+    <form asp-action="@(esNueva ? "CrearEncuesta" : "EditarEncuesta")" method="post" class="formulario-admin" id="formularioEncuesta" novalidate>
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
-        <div asp-validation-summary="ModelOnly"></div>
+        <div asp-validation-summary="ModelOnly" class="alerta-error-admin"></div>
 
         <div class="grupo-formulario">
             <label asp-for="Titulo"></label>
-            <input asp-for="Titulo" placeholder="Ej. Satisfacción con la feria de agosto" />
-            <span class="mensaje-validacion" asp-validation-for="Titulo"></span>
+            <input asp-for="Titulo" maxlength="200" placeholder="Ej. Satisfacción con la feria de agosto" />
         </div>
 
         <div class="grupo-formulario">
@@ -30,23 +31,160 @@
             <textarea asp-for="Descripcion" rows="2"></textarea>
         </div>
 
-        <div class="grupo-formulario">
-            <label asp-for="PreguntasTexto"></label>
-            <textarea asp-for="PreguntasTexto" rows="5" placeholder="¿Cómo calificarías la organización del evento?&#10;¿Qué tan probable es que asistas a la próxima edición?"></textarea>
-            <span class="mensaje-validacion" asp-validation-for="PreguntasTexto"></span>
+        <div class="fila-formulario">
+            <div class="grupo-formulario">
+                <label>Eventos (asistentes que podrán responder)</label>
+                <select name="IdEventos" multiple size="5">
+                    @foreach (var evento in eventos)
+                    {
+                        <option value="@evento.IdEvento" selected="@Model.IdEventos.Contains((int)evento.IdEvento)">@evento.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="grupo-formulario">
+                <label>Talleres (asistentes que podrán responder)</label>
+                <select name="IdTalleres" multiple size="5">
+                    @foreach (var taller in talleres)
+                    {
+                        <option value="@taller.IdTaller" selected="@Model.IdTalleres.Contains((int)taller.IdTaller)">@taller.Nombre</option>
+                    }
+                </select>
+            </div>
         </div>
 
-        <div class="grupo-formulario">
-            <label asp-for="Estado"></label>
-            <select asp-for="Estado">
-                <option>Borrador</option>
-                <option>Publicada</option>
-                <option>Cerrada</option>
-            </select>
+        <h3 style="margin:18px 0 8px;font-size:15px;">Preguntas</h3>
+
+        <div id="listaPreguntas">
+            @for (int i = 0; i < Model.Preguntas.Count; i++)
+            {
+                var pregunta = Model.Preguntas[i];
+                <div class="grupo-formulario pregunta-formulario" style="border:1px solid #eee;border-radius:12px;padding:12px;margin-bottom:10px;">
+                    <label>Pregunta</label>
+                    <input type="text" name="Preguntas[@i].Texto" value="@pregunta.Texto" maxlength="800" />
+
+                    <div class="fila-formulario">
+                        <div class="grupo-formulario">
+                            <label>Tipo de respuesta</label>
+                            <select name="Preguntas[@i].Tipo" class="tipo-pregunta">
+                                <option value="OpcionUnica" selected="@(pregunta.Tipo == "OpcionUnica")">Opción única</option>
+                                <option value="Escala" selected="@(pregunta.Tipo == "Escala")">Escala de 1 a 5</option>
+                                <option value="Texto" selected="@(pregunta.Tipo == "Texto")">Texto libre</option>
+                            </select>
+                        </div>
+                        <div class="grupo-formulario">
+                            <label>
+                                <input type="checkbox" name="Preguntas[@i].Obligatoria" value="true" checked="@pregunta.Obligatoria" />
+                                Obligatoria
+                            </label>
+                            <input type="hidden" name="Preguntas[@i].Obligatoria" value="false" />
+                        </div>
+                    </div>
+
+                    <div class="grupo-formulario bloque-opciones" style="@(pregunta.Tipo == "OpcionUnica" ? "" : "display:none;")">
+                        <label>Opciones (una por línea)</label>
+                        <textarea name="Preguntas[@i].OpcionesTexto" rows="3">@pregunta.OpcionesTexto</textarea>
+                    </div>
+
+                    <button type="button" class="boton-admin boton-admin-peligro quitar-pregunta">
+                        <i class="bi bi-trash3-fill"></i> Quitar pregunta
+                    </button>
+                </div>
+            }
         </div>
 
-        <button type="submit" class="boton-admin boton-admin-primario">
-            <i class="bi bi-check-circle-fill"></i> @(esNueva ? "Crear encuesta" : "Guardar cambios")
+        <button type="button" class="boton-admin boton-admin-secundario" id="agregarPregunta">
+            <i class="bi bi-plus-circle-fill"></i> Agregar pregunta
         </button>
+
+        <div class="grupo-acciones-admin" style="margin-top:20px;">
+            <button type="submit" name="accion" value="guardar" class="boton-admin boton-admin-primario">
+                <i class="bi bi-save-fill"></i> @(esNueva ? "Guardar borrador" : "Guardar cambios")
+            </button>
+            @if (esNueva || Model.Estado == "Borrador")
+            {
+                <button type="submit" name="accion" value="publicar" class="boton-admin boton-admin-exito">
+                    <i class="bi bi-broadcast"></i> Publicar
+                </button>
+            }
+            <a asp-action="Encuestas" class="boton-admin boton-admin-secundario">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
     </form>
 </article>
+
+<template id="plantillaPregunta">
+    <div class="grupo-formulario pregunta-formulario" style="border:1px solid #eee;border-radius:12px;padding:12px;margin-bottom:10px;">
+        <label>Pregunta</label>
+        <input type="text" name="Preguntas[__].Texto" maxlength="800" />
+        <div class="fila-formulario">
+            <div class="grupo-formulario">
+                <label>Tipo de respuesta</label>
+                <select name="Preguntas[__].Tipo" class="tipo-pregunta">
+                    <option value="OpcionUnica">Opción única</option>
+                    <option value="Escala">Escala de 1 a 5</option>
+                    <option value="Texto">Texto libre</option>
+                </select>
+            </div>
+            <div class="grupo-formulario">
+                <label>
+                    <input type="checkbox" name="Preguntas[__].Obligatoria" value="true" checked />
+                    Obligatoria
+                </label>
+                <input type="hidden" name="Preguntas[__].Obligatoria" value="false" />
+            </div>
+        </div>
+        <div class="grupo-formulario bloque-opciones">
+            <label>Opciones (una por línea)</label>
+            <textarea name="Preguntas[__].OpcionesTexto" rows="3"></textarea>
+        </div>
+        <button type="button" class="boton-admin boton-admin-peligro quitar-pregunta">
+            <i class="bi bi-trash3-fill"></i> Quitar pregunta
+        </button>
+    </div>
+</template>
+
+@section Scripts {
+    <script>
+        (function () {
+            const lista = document.getElementById("listaPreguntas");
+            const plantilla = document.getElementById("plantillaPregunta");
+            const formulario = document.getElementById("formularioEncuesta");
+
+            function actualizarOpciones(bloque) {
+                const tipo = bloque.querySelector(".tipo-pregunta").value;
+                bloque.querySelector(".bloque-opciones").style.display = tipo === "OpcionUnica" ? "" : "none";
+            }
+
+            function renumerar() {
+                lista.querySelectorAll(".pregunta-formulario").forEach(function (bloque, indice) {
+                    bloque.querySelectorAll("[name]").forEach(function (campo) {
+                        campo.name = campo.name.replace(/Preguntas\[[^\]]*\]/, "Preguntas[" + indice + "]");
+                    });
+                });
+            }
+
+            document.getElementById("agregarPregunta").addEventListener("click", function () {
+                lista.appendChild(plantilla.content.cloneNode(true));
+                renumerar();
+            });
+
+            lista.addEventListener("click", function (evento) {
+                const boton = evento.target.closest(".quitar-pregunta");
+                if (boton) {
+                    boton.closest(".pregunta-formulario").remove();
+                    renumerar();
+                }
+            });
+
+            lista.addEventListener("change", function (evento) {
+                if (evento.target.classList.contains("tipo-pregunta")) {
+                    actualizarOpciones(evento.target.closest(".pregunta-formulario"));
+                }
+            });
+
+            formulario.addEventListener("submit", renumerar);
+            renumerar();
+        })();
+    </script>
+}

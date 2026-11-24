@@ -20,14 +20,17 @@ namespace ProyectoClubCreativo.Controllers
         private readonly CorreoService _correoService;
         private readonly NotificacionService _notificaciones;
         private readonly ActualizacionSuscripcionesService _actualizacionSuscripciones;
+        private readonly PromocionesService _promociones;
 
         public AdminController(
             IWebHostEnvironment entornoWeb,
             ClubCreativoDbContext context,
             CorreoService correoService,
             NotificacionService notificaciones,
-            ActualizacionSuscripcionesService actualizacionSuscripciones)
+            ActualizacionSuscripcionesService actualizacionSuscripciones,
+            PromocionesService promociones)
         {
+            _promociones = promociones;
             _entornoWeb = entornoWeb;
             _context = context;
             _correoService = correoService;
@@ -1841,9 +1844,34 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Productos(string? busqueda, string? categoria, string? estado)
+        public async Task<IActionResult> Productos(string? busqueda, string? categoria, string? estado)
         {
-            List<ProductoAdminViewModel> productos = ObtenerProductosDemo();
+            List<ProductoAdminViewModel> productos = await _context.Productos
+                .AsNoTracking()
+                .Include(p => p.IdCategoriaNavigation)
+                .Include(p => p.IdEmprendimientoNavigation)
+                .Include(p => p.ProductoImagene)
+                .OrderByDescending(p => p.FechaRegistro)
+                .Select(p => new ProductoAdminViewModel
+                {
+                    Id = p.IdProducto,
+                    Nombre = p.Nombre,
+                    Emprendimiento = p.IdEmprendimientoNavigation.NombreComercial,
+                    Categoria = p.IdCategoriaNavigation != null
+                        ? p.IdCategoriaNavigation.Nombre
+                        : "Sin categoría",
+                    Precio = p.Precio,
+                    Estado = p.Estado,
+                    Imagen = p.ProductoImagene != null
+                        ? p.ProductoImagene.UrlImagen
+                        : "/images/logo.jpg",
+                    FechaPublicacion = p.FechaPublicacion.HasValue
+                        ? p.FechaPublicacion.Value.ToString("dd/MM/yyyy")
+                        : p.FechaRegistro.ToString("dd/MM/yyyy"),
+                    Reportes = 0,
+                    Descripcion = p.Descripcion
+                })
+                .ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(busqueda))
             {
@@ -6833,165 +6861,1033 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Promociones(string estado = "Todas")
+        public async Task<IActionResult> Promociones(string estado = "Todas")
         {
-            var promociones = ObtenerPromocionesDemo();
+            await _promociones.SincronizarEstadosAsync();
+
+            IQueryable<Promocione> consulta = _context.Promociones.AsNoTracking();
+
+            if (estado != "Todas")
+            {
+                consulta = consulta.Where(p => p.Estado == estado);
+            }
+
+            var datos = await consulta
+                .OrderByDescending(p => p.FechaInicio)
+                .Select(p => new
+                {
+                    p.IdPromocion,
+                    p.Nombre,
+                    p.Descripcion,
+                    p.TipoDescuento,
+                    p.ValorDescuento,
+                    p.FechaInicio,
+                    p.FechaFin,
+                    p.Estado,
+                    p.LimiteUsos,
+                    Usos = p.UsosPromocions.Count(),
+                    Emprendimientos = p.IdEmprendimientos.Select(e => e.NombreComercial).ToList(),
+                    Productos = p.IdProductos.Select(x => x.Nombre).ToList(),
+                    Eventos = p.IdEventos.Select(x => x.Nombre).ToList()
+                })
+                .ToListAsync();
+
             return View(new ListadoPromocionesAdminViewModel
             {
                 FiltroEstado = estado,
-                Promociones = estado == "Todas" ? promociones : promociones.Where(p => p.Estado == estado).ToList()
+                Promociones = datos
+                    .Select(p => new PromocionAdminViewModel
+                    {
+                        Id = p.IdPromocion,
+                        Nombre = p.Nombre,
+                        Descripcion = p.Descripcion,
+                        TipoDescuento = p.TipoDescuento,
+                        ValorDescuento = p.ValorDescuento,
+                        FechaInicio = p.FechaInicio,
+                        FechaFin = p.FechaFin,
+                        Estado = p.Estado,
+                        LimiteUsos = p.LimiteUsos,
+                        Usos = p.Usos,
+                        Emprendimiento = DescribirAplicacionPromocion(p.Emprendimientos, p.Productos, p.Eventos)
+                    })
+                    .ToList()
             });
         }
 
+        private static string DescribirAplicacionPromocion(
+            List<string> emprendimientos,
+            List<string> productos,
+            List<string> eventos)
+        {
+            List<string> partes = [];
+
+            if (emprendimientos.Count > 0)
+            {
+                partes.Add(string.Join(", ", emprendimientos));
+            }
+
+            if (productos.Count > 0)
+            {
+                partes.Add("Producto: " + string.Join(", ", productos));
+            }
+
+            if (eventos.Count > 0)
+            {
+                partes.Add("Evento: " + string.Join(", ", eventos));
+            }
+
+            return partes.Count == 0 ? "Todos" : string.Join(" · ", partes);
+        }
+
+        private async Task CargarOpcionesPromocionAsync()
+        {
+            ViewBag.EmprendimientosPromocion = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.EstadoAprobacion == "Aprobado" && e.Activo)
+                .OrderBy(e => e.NombreComercial)
+                .Select(e => new { e.IdEmprendimiento, e.NombreComercial })
+                .ToListAsync();
+
+            ViewBag.ProductosPromocion = await _context.Productos
+                .AsNoTracking()
+                .Where(p => p.Estado == "Publicado")
+                .OrderBy(p => p.Nombre)
+                .Select(p => new { p.IdProducto, p.Nombre })
+                .ToListAsync();
+
+            ViewBag.EventosPromocion = await _context.Eventos
+                .AsNoTracking()
+                .Where(e => e.Estado != "Eliminado")
+                .OrderByDescending(e => e.FechaInicio)
+                .Select(e => new { e.IdEvento, e.Nombre })
+                .ToListAsync();
+        }
+
+        private void ValidarPromocion(PromocionAdminViewModel modelo)
+        {
+            modelo.Nombre = (modelo.Nombre ?? string.Empty).Trim();
+
+            List<string> faltantes = [];
+
+            if (modelo.Nombre.Length == 0)
+            {
+                faltantes.Add("nombre");
+            }
+
+            if (!modelo.ValorDescuento.HasValue)
+            {
+                faltantes.Add("valor del descuento");
+            }
+
+            if (!modelo.FechaInicio.HasValue)
+            {
+                faltantes.Add("fecha de inicio");
+            }
+
+            if (!modelo.FechaFin.HasValue)
+            {
+                faltantes.Add("fecha de fin");
+            }
+
+            if (faltantes.Count > 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Complete los campos pendientes antes de guardar: {string.Join(", ", faltantes)}.");
+            }
+
+            if (modelo.TipoDescuento != "Porcentaje" && modelo.TipoDescuento != "Monto fijo")
+            {
+                ModelState.AddModelError(nameof(modelo.TipoDescuento), "Seleccione un tipo de descuento válido.");
+            }
+
+            if (modelo.TipoDescuento == "Porcentaje" &&
+                modelo.ValorDescuento.HasValue &&
+                modelo.ValorDescuento.Value > 100)
+            {
+                ModelState.AddModelError(nameof(modelo.ValorDescuento), "El porcentaje no puede superar el 100%.");
+            }
+
+            if (modelo.FechaInicio.HasValue &&
+                modelo.FechaFin.HasValue &&
+                modelo.FechaFin.Value.Date < modelo.FechaInicio.Value.Date)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.FechaFin),
+                    "El rango de fechas no es válido: la fecha de finalización es anterior a la de inicio.");
+            }
+        }
+
+        private async Task AsignarAsociacionesPromocionAsync(Promocione promocion, PromocionAdminViewModel modelo)
+        {
+            promocion.IdEmprendimientos.Clear();
+            promocion.IdProductos.Clear();
+            promocion.IdEventos.Clear();
+
+            if (modelo.IdEmprendimiento.HasValue)
+            {
+                Emprendimiento? emprendimiento = await _context.Emprendimientos
+                    .FirstOrDefaultAsync(e => e.IdEmprendimiento == modelo.IdEmprendimiento.Value);
+
+                if (emprendimiento is not null)
+                {
+                    promocion.IdEmprendimientos.Add(emprendimiento);
+                }
+            }
+
+            if (modelo.IdProducto.HasValue)
+            {
+                Producto? producto = await _context.Productos
+                    .FirstOrDefaultAsync(p => p.IdProducto == modelo.IdProducto.Value);
+
+                if (producto is not null)
+                {
+                    promocion.IdProductos.Add(producto);
+                }
+            }
+
+            if (modelo.IdEvento.HasValue)
+            {
+                Evento? evento = await _context.Eventos
+                    .FirstOrDefaultAsync(e => e.IdEvento == modelo.IdEvento.Value);
+
+                if (evento is not null)
+                {
+                    promocion.IdEventos.Add(evento);
+                }
+            }
+        }
+
         [HttpGet]
-        public IActionResult CrearPromocion()
+        public async Task<IActionResult> CrearPromocion()
         {
             ViewData["Titulo"] = "Crear promoción";
+
+            await CargarOpcionesPromocionAsync();
+
             return View("FormularioPromocion", new PromocionAdminViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearPromocion(PromocionAdminViewModel modelo)
+        public async Task<IActionResult> CrearPromocion(PromocionAdminViewModel modelo)
         {
             ViewData["Titulo"] = "Crear promoción";
-            if (!ModelState.IsValid) return View("FormularioPromocion", modelo);
-            TempData["MensajeAdmin"] = $"La promoción \"{modelo.Nombre}\" fue programada del {modelo.FechaInicio:dd/MM/yyyy} al {modelo.FechaFin:dd/MM/yyyy}.";
-            return RedirectToAction(nameof(Promociones));
-        }
 
-        [HttpGet]
-        public IActionResult EditarPromocion(int id = 1)
-        {
-            ViewData["Titulo"] = "Editar promoción";
-            var promocion = ObtenerPromocionesDemo().FirstOrDefault(p => p.Id == id) ?? new PromocionAdminViewModel { Id = id };
-            return View("FormularioPromocion", promocion);
-        }
+            ModelState.Remove(nameof(PromocionAdminViewModel.Estado));
+            ModelState.Remove(nameof(PromocionAdminViewModel.Emprendimiento));
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult EditarPromocion(PromocionAdminViewModel modelo)
-        {
-            ViewData["Titulo"] = "Editar promoción";
-            if (!ModelState.IsValid) return View("FormularioPromocion", modelo);
-            TempData["MensajeAdmin"] = $"La promoción \"{modelo.Nombre}\" fue actualizada correctamente.";
-            return RedirectToAction(nameof(Promociones));
-        }
+            ValidarPromocion(modelo);
 
-        [HttpGet]
-        public IActionResult DetallePromocion(int id = 1)
-        {
-            var promocion = ObtenerPromocionesDemo().FirstOrDefault(p => p.Id == id) ?? ObtenerPromocionesDemo().First();
-            return View(promocion);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult DesactivarPromocion(int id)
-        {
-            TempData["MensajeAdmin"] = "La promoción fue desactivada.";
-            return RedirectToAction(nameof(Promociones));
-        }
-
-        private static List<PromocionAdminViewModel> ObtenerPromocionesDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Descuento Feria San Pedro", Descripcion = "15% de descuento en productos participantes de la feria.", TipoDescuento = "Porcentaje", ValorDescuento = 15, FechaInicio = new DateTime(2026, 8, 10), FechaFin = new DateTime(2026, 8, 16), Estado = "Activa", Emprendimiento = "Todos", Usos = 48 },
-                new() { Id = 2, Nombre = "Envío gratis primera compra", Descripcion = "Envío sin costo para nuevos usuarios del club.", TipoDescuento = "Monto fijo", ValorDescuento = 2500, FechaInicio = new DateTime(2026, 9, 1), FechaFin = new DateTime(2026, 9, 30), Estado = "Programada", Emprendimiento = "Todos", Usos = 0 },
-                new() { Id = 3, Nombre = "Aniversario Orquídea", Descripcion = "20% de descuento en toda la tienda Orquídea.", TipoDescuento = "Porcentaje", ValorDescuento = 20, FechaInicio = new DateTime(2026, 6, 1), FechaFin = new DateTime(2026, 6, 15), Estado = "Finalizada", Emprendimiento = "Orquídea", Usos = 76 },
-                new() { Id = 4, Nombre = "Descuento talleres agosto", Descripcion = "10% de descuento en inscripciones a talleres.", TipoDescuento = "Porcentaje", ValorDescuento = 10, FechaInicio = new DateTime(2026, 8, 1), FechaFin = new DateTime(2026, 8, 31), Estado = "Desactivada", Emprendimiento = "Todos", Usos = 5 }
-            ];
-        }
-
-        [HttpGet]
-        public IActionResult Encuestas(string estado = "Todas")
-        {
-            var encuestas = ObtenerEncuestasDemo();
-            return View(new ListadoEncuestasAdminViewModel
+            if (!ModelState.IsValid)
             {
-                FiltroEstado = estado,
-                Encuestas = estado == "Todas" ? encuestas : encuestas.Where(e => e.Estado == estado).ToList()
+                await CargarOpcionesPromocionAsync();
+
+                return View("FormularioPromocion", modelo);
+            }
+
+            DateTime inicio = modelo.FechaInicio!.Value.Date;
+            DateTime fin = modelo.FechaFin!.Value.Date.AddDays(1).AddSeconds(-1);
+
+            Promocione promocion = new()
+            {
+                Nombre = modelo.Nombre,
+                Descripcion = string.IsNullOrWhiteSpace(modelo.Descripcion) ? null : modelo.Descripcion.Trim(),
+                TipoDescuento = modelo.TipoDescuento,
+                ValorDescuento = modelo.ValorDescuento!.Value,
+                FechaInicio = inicio,
+                FechaFin = fin,
+                LimiteUsos = modelo.LimiteUsos,
+                Estado = PromocionesService.CalcularEstado(inicio, fin, DateTime.Now),
+                FechaCreacion = DateTime.Now
+            };
+
+            await AsignarAsociacionesPromocionAsync(promocion, modelo);
+
+            _context.Promociones.Add(promocion);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"La promoción \"{promocion.Nombre}\" se registró correctamente del {inicio:dd/MM/yyyy} al {fin:dd/MM/yyyy}.";
+
+            return RedirectToAction(nameof(Promociones));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditarPromocion(int id)
+        {
+            ViewData["Titulo"] = "Editar promoción";
+
+            Promocione? promocion = await _context.Promociones
+                .AsNoTracking()
+                .Include(p => p.IdEmprendimientos)
+                .Include(p => p.IdProductos)
+                .Include(p => p.IdEventos)
+                .Include(p => p.UsosPromocions)
+                .FirstOrDefaultAsync(p => p.IdPromocion == id);
+
+            if (promocion is null)
+            {
+                TempData["ErrorAdmin"] = "La promoción no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Promociones));
+            }
+
+            await CargarOpcionesPromocionAsync();
+
+            return View("FormularioPromocion", new PromocionAdminViewModel
+            {
+                Id = promocion.IdPromocion,
+                Nombre = promocion.Nombre,
+                Descripcion = promocion.Descripcion,
+                TipoDescuento = promocion.TipoDescuento,
+                ValorDescuento = promocion.ValorDescuento,
+                FechaInicio = promocion.FechaInicio.Date,
+                FechaFin = promocion.FechaFin.Date,
+                LimiteUsos = promocion.LimiteUsos,
+                Estado = promocion.Estado,
+                Usos = promocion.UsosPromocions.Count,
+                IdEmprendimiento = promocion.IdEmprendimientos.Select(e => (int?)e.IdEmprendimiento).FirstOrDefault(),
+                IdProducto = promocion.IdProductos.Select(p => (int?)p.IdProducto).FirstOrDefault(),
+                IdEvento = promocion.IdEventos.Select(e => (int?)e.IdEvento).FirstOrDefault()
             });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarPromocion(PromocionAdminViewModel modelo)
+        {
+            ViewData["Titulo"] = "Editar promoción";
+
+            ModelState.Remove(nameof(PromocionAdminViewModel.Estado));
+            ModelState.Remove(nameof(PromocionAdminViewModel.Emprendimiento));
+
+            Promocione? promocion = await _context.Promociones
+                .Include(p => p.IdEmprendimientos)
+                .Include(p => p.IdProductos)
+                .Include(p => p.IdEventos)
+                .FirstOrDefaultAsync(p => p.IdPromocion == modelo.Id);
+
+            if (promocion is null)
+            {
+                TempData["ErrorAdmin"] = "La promoción no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Promociones));
+            }
+
+            ValidarPromocion(modelo);
+
+            if (!ModelState.IsValid)
+            {
+                modelo.Estado = promocion.Estado;
+
+                await CargarOpcionesPromocionAsync();
+
+                return View("FormularioPromocion", modelo);
+            }
+
+            DateTime inicio = modelo.FechaInicio!.Value.Date;
+            DateTime fin = modelo.FechaFin!.Value.Date.AddDays(1).AddSeconds(-1);
+
+            promocion.Nombre = modelo.Nombre;
+            promocion.Descripcion = string.IsNullOrWhiteSpace(modelo.Descripcion) ? null : modelo.Descripcion.Trim();
+            promocion.TipoDescuento = modelo.TipoDescuento;
+            promocion.ValorDescuento = modelo.ValorDescuento!.Value;
+            promocion.FechaInicio = inicio;
+            promocion.FechaFin = fin;
+            promocion.LimiteUsos = modelo.LimiteUsos;
+
+            if (promocion.Estado != PromocionesService.Desactivada)
+            {
+                promocion.Estado = PromocionesService.CalcularEstado(inicio, fin, DateTime.Now);
+            }
+
+            await AsignarAsociacionesPromocionAsync(promocion, modelo);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"La promoción \"{promocion.Nombre}\" fue actualizada correctamente.";
+
+            return RedirectToAction(nameof(Promociones));
+        }
+
         [HttpGet]
-        public IActionResult CrearEncuesta()
+        public async Task<IActionResult> DetallePromocion(int id)
+        {
+            await _promociones.SincronizarEstadosAsync();
+
+            var promocion = await _context.Promociones
+                .AsNoTracking()
+                .Where(p => p.IdPromocion == id)
+                .Select(p => new
+                {
+                    p.IdPromocion,
+                    p.Nombre,
+                    p.Descripcion,
+                    p.TipoDescuento,
+                    p.ValorDescuento,
+                    p.FechaInicio,
+                    p.FechaFin,
+                    p.Estado,
+                    p.LimiteUsos,
+                    Usos = p.UsosPromocions.Count(),
+                    Emprendimientos = p.IdEmprendimientos.Select(e => e.NombreComercial).ToList(),
+                    Productos = p.IdProductos.Select(x => x.Nombre).ToList(),
+                    Eventos = p.IdEventos.Select(x => x.Nombre).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (promocion is null)
+            {
+                TempData["ErrorAdmin"] = "La promoción no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Promociones));
+            }
+
+            return View(new PromocionAdminViewModel
+            {
+                Id = promocion.IdPromocion,
+                Nombre = promocion.Nombre,
+                Descripcion = promocion.Descripcion,
+                TipoDescuento = promocion.TipoDescuento,
+                ValorDescuento = promocion.ValorDescuento,
+                FechaInicio = promocion.FechaInicio,
+                FechaFin = promocion.FechaFin,
+                Estado = promocion.Estado,
+                LimiteUsos = promocion.LimiteUsos,
+                Usos = promocion.Usos,
+                Emprendimiento = DescribirAplicacionPromocion(
+                    promocion.Emprendimientos,
+                    promocion.Productos,
+                    promocion.Eventos)
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DesactivarPromocion(int id)
+        {
+            Promocione? promocion = await _context.Promociones
+                .FirstOrDefaultAsync(p => p.IdPromocion == id);
+
+            if (promocion is null)
+            {
+                TempData["ErrorAdmin"] = "La promoción no está disponible.";
+
+                return RedirectToAction(nameof(Promociones));
+            }
+
+            promocion.Estado = PromocionesService.Desactivada;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"La promoción \"{promocion.Nombre}\" fue desactivada.";
+
+            return RedirectToAction(nameof(Promociones));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarPromocion(int id)
+        {
+            Promocione? promocion = await _context.Promociones
+                .Include(p => p.IdEmprendimientos)
+                .Include(p => p.IdProductos)
+                .Include(p => p.IdEventos)
+                .Include(p => p.UsosPromocions)
+                .FirstOrDefaultAsync(p => p.IdPromocion == id);
+
+            if (promocion is null)
+            {
+                TempData["ErrorAdmin"] = "La promoción no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Promociones));
+            }
+
+            if (promocion.UsosPromocions.Count > 0)
+            {
+                TempData["ErrorAdmin"] =
+                    $"La promoción \"{promocion.Nombre}\" ya tiene usos registrados y no se puede eliminar. Puede desactivarla.";
+
+                return RedirectToAction(nameof(Promociones));
+            }
+
+            string nombre = promocion.Nombre;
+
+            promocion.IdEmprendimientos.Clear();
+            promocion.IdProductos.Clear();
+            promocion.IdEventos.Clear();
+
+            _context.Promociones.Remove(promocion);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"La promoción \"{nombre}\" fue eliminada correctamente.";
+
+            return RedirectToAction(nameof(Promociones));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Encuestas(string estado = "Todas")
+        {
+            IQueryable<Encuesta> consulta = _context.Encuestas.AsNoTracking();
+
+            if (estado != "Todas")
+            {
+                consulta = consulta.Where(e => e.Estado == estado);
+            }
+
+            var datos = await consulta
+                .OrderByDescending(e => e.FechaCreacion)
+                .Select(e => new
+                {
+                    e.IdEncuesta,
+                    e.Titulo,
+                    e.Descripcion,
+                    e.Estado,
+                    e.FechaCreacion,
+                    Preguntas = e.PreguntasEncuesta.Count(),
+                    Respuestas = e.RespuestasEncuesta.Count(),
+                    Eventos = e.IdEventos.Select(x => x.Nombre).ToList(),
+                    Talleres = e.IdTallers.Select(x => x.Nombre).ToList()
+                })
+                .ToListAsync();
+
+            return View(new ListadoEncuestasAdminViewModel
+            {
+                FiltroEstado = estado,
+                Encuestas = datos
+                    .Select(e => new EncuestaAdminViewModel
+                    {
+                        Id = e.IdEncuesta,
+                        Titulo = e.Titulo,
+                        Descripcion = e.Descripcion,
+                        Estado = e.Estado,
+                        FechaCreacion = e.FechaCreacion.ToString("dd/MM/yyyy"),
+                        TotalPreguntas = e.Preguntas,
+                        TotalRespuestas = e.Respuestas,
+                        Asociada = string.Join(", ", e.Eventos.Concat(e.Talleres))
+                    })
+                    .ToList()
+            });
+        }
+
+        private async Task CargarOpcionesEncuestaAsync()
+        {
+            ViewBag.EventosEncuesta = await _context.Eventos
+                .AsNoTracking()
+                .Where(e => e.Estado != "Eliminado")
+                .OrderByDescending(e => e.FechaInicio)
+                .Select(e => new { e.IdEvento, e.Nombre })
+                .ToListAsync();
+
+            ViewBag.TalleresEncuesta = await _context.Talleres
+                .AsNoTracking()
+                .Where(t => t.Estado != "Eliminado")
+                .OrderByDescending(t => t.FechaInicio)
+                .Select(t => new { t.IdTaller, t.Nombre })
+                .ToListAsync();
+        }
+
+        private static List<string> SepararOpciones(string? texto)
+        {
+            return (texto ?? string.Empty)
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(o => o.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private void ValidarEncuesta(EncuestaAdminViewModel modelo, bool publicar)
+        {
+            modelo.Titulo = (modelo.Titulo ?? string.Empty).Trim();
+            modelo.IdEventos ??= [];
+            modelo.IdTalleres ??= [];
+
+            modelo.Preguntas = (modelo.Preguntas ?? [])
+                .Where(p => !string.IsNullOrWhiteSpace(p.Texto) || !string.IsNullOrWhiteSpace(p.OpcionesTexto))
+                .ToList();
+
+            List<string> faltantes = [];
+
+            if (modelo.Titulo.Length == 0)
+            {
+                faltantes.Add("título");
+            }
+
+            if (modelo.Preguntas.Count == 0)
+            {
+                faltantes.Add("al menos una pregunta");
+            }
+
+            for (int i = 0; i < modelo.Preguntas.Count; i++)
+            {
+                PreguntaFormViewModel pregunta = modelo.Preguntas[i];
+                int numero = i + 1;
+
+                if (string.IsNullOrWhiteSpace(pregunta.Texto))
+                {
+                    faltantes.Add($"texto de la pregunta {numero}");
+                    continue;
+                }
+
+                if (pregunta.Texto.Trim().Length > 800)
+                {
+                    ModelState.AddModelError(string.Empty, $"La pregunta {numero} supera los 800 caracteres.");
+                }
+
+                if (pregunta.Tipo != ReglasEncuestas.TipoOpcion &&
+                    pregunta.Tipo != ReglasEncuestas.TipoEscala &&
+                    pregunta.Tipo != ReglasEncuestas.TipoTexto)
+                {
+                    ModelState.AddModelError(string.Empty, $"La pregunta {numero} tiene un tipo no válido.");
+                }
+
+                if (pregunta.Tipo == ReglasEncuestas.TipoOpcion &&
+                    SepararOpciones(pregunta.OpcionesTexto).Count < 2)
+                {
+                    ModelState.AddModelError(string.Empty, $"La pregunta {numero} necesita al menos dos opciones de respuesta.");
+                }
+            }
+
+            if (faltantes.Count > 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"Complete lo pendiente antes de guardar: {string.Join(", ", faltantes)}.");
+            }
+
+            if (publicar && modelo.IdEventos.Count == 0 && modelo.IdTalleres.Count == 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Asocie la encuesta al menos a un evento o taller para poder publicarla.");
+            }
+        }
+
+        private async Task AsignarAsociacionesEncuestaAsync(Encuesta encuesta, EncuestaAdminViewModel modelo)
+        {
+            encuesta.IdEventos.Clear();
+            encuesta.IdTallers.Clear();
+
+            List<Evento> eventos = await _context.Eventos
+                .Where(e => modelo.IdEventos.Contains(e.IdEvento))
+                .ToListAsync();
+
+            foreach (Evento evento in eventos)
+            {
+                encuesta.IdEventos.Add(evento);
+            }
+
+            List<Tallere> talleres = await _context.Talleres
+                .Where(t => modelo.IdTalleres.Contains(t.IdTaller))
+                .ToListAsync();
+
+            foreach (Tallere taller in talleres)
+            {
+                encuesta.IdTallers.Add(taller);
+            }
+        }
+
+        private static List<PreguntasEncuestum> ConstruirPreguntas(EncuestaAdminViewModel modelo)
+        {
+            List<PreguntasEncuestum> preguntas = [];
+
+            for (int i = 0; i < modelo.Preguntas.Count; i++)
+            {
+                PreguntaFormViewModel origen = modelo.Preguntas[i];
+
+                PreguntasEncuestum pregunta = new()
+                {
+                    Texto = origen.Texto!.Trim(),
+                    TipoPregunta = origen.Tipo,
+                    Obligatoria = origen.Obligatoria,
+                    OrdenVisual = (short)(i + 1)
+                };
+
+                if (origen.Tipo == ReglasEncuestas.TipoOpcion)
+                {
+                    List<string> opciones = SepararOpciones(origen.OpcionesTexto);
+
+                    for (int j = 0; j < opciones.Count; j++)
+                    {
+                        pregunta.OpcionesPregunta.Add(new OpcionesPreguntum
+                        {
+                            Texto = opciones[j],
+                            OrdenVisual = (short)(j + 1)
+                        });
+                    }
+                }
+
+                preguntas.Add(pregunta);
+            }
+
+            return preguntas;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CrearEncuesta()
         {
             ViewData["Titulo"] = "Crear encuesta";
-            return View("FormularioEncuesta", new EncuestaAdminViewModel());
+
+            await CargarOpcionesEncuestaAsync();
+
+            return View("FormularioEncuesta", new EncuestaAdminViewModel
+            {
+                Preguntas = [new PreguntaFormViewModel()]
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearEncuesta(EncuestaAdminViewModel modelo)
+        public async Task<IActionResult> CrearEncuesta(EncuestaAdminViewModel modelo, string accion = "guardar")
         {
             ViewData["Titulo"] = "Crear encuesta";
-            if (!ModelState.IsValid) return View("FormularioEncuesta", modelo);
-            int totalPreguntas = modelo.PreguntasTexto.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
-            TempData["MensajeAdmin"] = $"La encuesta \"{modelo.Titulo}\" fue creada con {totalPreguntas} pregunta(s).";
+
+            bool publicar = accion == "publicar";
+
+            ModelState.Clear();
+            ValidarEncuesta(modelo, publicar);
+
+            if (!ModelState.IsValid)
+            {
+                await CargarOpcionesEncuestaAsync();
+
+                if (modelo.Preguntas.Count == 0)
+                {
+                    modelo.Preguntas = [new PreguntaFormViewModel()];
+                }
+
+                return View("FormularioEncuesta", modelo);
+            }
+
+            int? idCreador = HttpContext.Session.GetInt32("IdUsuario");
+
+            if (idCreador is null)
+            {
+                return RedirectToAction("IniciarSesion", "Cuenta");
+            }
+
+            Encuesta encuesta = new()
+            {
+                IdCreador = idCreador.Value,
+                Titulo = modelo.Titulo,
+                Descripcion = string.IsNullOrWhiteSpace(modelo.Descripcion) ? null : modelo.Descripcion.Trim(),
+                Estado = publicar ? ReglasEncuestas.Publicada : ReglasEncuestas.Borrador,
+                FechaCreacion = DateTime.Now,
+                FechaPublicacion = publicar ? DateTime.Now : null
+            };
+
+            foreach (PreguntasEncuestum pregunta in ConstruirPreguntas(modelo))
+            {
+                encuesta.PreguntasEncuesta.Add(pregunta);
+            }
+
+            await AsignarAsociacionesEncuestaAsync(encuesta, modelo);
+
+            _context.Encuestas.Add(encuesta);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = publicar
+                ? $"La encuesta \"{encuesta.Titulo}\" se creó con {encuesta.PreguntasEncuesta.Count} pregunta(s) y quedó publicada."
+                : $"La encuesta \"{encuesta.Titulo}\" se guardó con {encuesta.PreguntasEncuesta.Count} pregunta(s) como borrador.";
+
             return RedirectToAction(nameof(Encuestas));
         }
 
         [HttpGet]
-        public IActionResult EditarEncuesta(int id = 1)
+        public async Task<IActionResult> EditarEncuesta(int id)
         {
             ViewData["Titulo"] = "Editar encuesta";
-            var encuesta = ObtenerEncuestasDemo().FirstOrDefault(e => e.Id == id) ?? new EncuestaAdminViewModel { Id = id };
-            return View("FormularioEncuesta", encuesta);
+
+            Encuesta? encuesta = await _context.Encuestas
+                .AsNoTracking()
+                .Include(e => e.PreguntasEncuesta).ThenInclude(p => p.OpcionesPregunta)
+                .Include(e => e.IdEventos)
+                .Include(e => e.IdTallers)
+                .FirstOrDefaultAsync(e => e.IdEncuesta == id);
+
+            if (encuesta is null)
+            {
+                TempData["ErrorAdmin"] = "La encuesta no está disponible.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            int respuestas = await _context.RespuestasEncuesta.CountAsync(r => r.IdEncuesta == id);
+
+            if (respuestas > 0)
+            {
+                TempData["ErrorAdmin"] =
+                    "La encuesta ya tiene respuestas y no se puede modificar. Puede cerrarla o crear una nueva.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            await CargarOpcionesEncuestaAsync();
+
+            return View("FormularioEncuesta", new EncuestaAdminViewModel
+            {
+                Id = encuesta.IdEncuesta,
+                Titulo = encuesta.Titulo,
+                Descripcion = encuesta.Descripcion,
+                Estado = encuesta.Estado,
+                IdEventos = encuesta.IdEventos.Select(e => e.IdEvento).ToList(),
+                IdTalleres = encuesta.IdTallers.Select(t => t.IdTaller).ToList(),
+                Preguntas = encuesta.PreguntasEncuesta
+                    .OrderBy(p => p.OrdenVisual)
+                    .Select(p => new PreguntaFormViewModel
+                    {
+                        Texto = p.Texto,
+                        Tipo = p.TipoPregunta,
+                        Obligatoria = p.Obligatoria,
+                        OpcionesTexto = string.Join("\n", p.OpcionesPregunta.OrderBy(o => o.OrdenVisual).Select(o => o.Texto))
+                    })
+                    .ToList()
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarEncuesta(EncuestaAdminViewModel modelo)
+        public async Task<IActionResult> EditarEncuesta(EncuestaAdminViewModel modelo, string accion = "guardar")
         {
             ViewData["Titulo"] = "Editar encuesta";
-            if (!ModelState.IsValid) return View("FormularioEncuesta", modelo);
-            TempData["MensajeAdmin"] = $"La encuesta \"{modelo.Titulo}\" fue actualizada correctamente.";
+
+            Encuesta? encuesta = await _context.Encuestas
+                .Include(e => e.PreguntasEncuesta).ThenInclude(p => p.OpcionesPregunta)
+                .Include(e => e.IdEventos)
+                .Include(e => e.IdTallers)
+                .FirstOrDefaultAsync(e => e.IdEncuesta == modelo.Id);
+
+            if (encuesta is null)
+            {
+                TempData["ErrorAdmin"] = "La encuesta no está disponible.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            if (await _context.RespuestasEncuesta.AnyAsync(r => r.IdEncuesta == modelo.Id))
+            {
+                TempData["ErrorAdmin"] =
+                    "La encuesta ya tiene respuestas y no se puede modificar. Puede cerrarla o crear una nueva.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            bool publicar = accion == "publicar" && encuesta.Estado == ReglasEncuestas.Borrador;
+
+            ModelState.Clear();
+            ValidarEncuesta(modelo, publicar || encuesta.Estado == ReglasEncuestas.Publicada);
+
+            if (!ModelState.IsValid)
+            {
+                await CargarOpcionesEncuestaAsync();
+
+                modelo.Estado = encuesta.Estado;
+
+                if (modelo.Preguntas.Count == 0)
+                {
+                    modelo.Preguntas = [new PreguntaFormViewModel()];
+                }
+
+                return View("FormularioEncuesta", modelo);
+            }
+
+            encuesta.Titulo = modelo.Titulo;
+            encuesta.Descripcion = string.IsNullOrWhiteSpace(modelo.Descripcion) ? null : modelo.Descripcion.Trim();
+
+            List<OpcionesPreguntum> opcionesAnteriores = encuesta.PreguntasEncuesta
+                .SelectMany(p => p.OpcionesPregunta)
+                .ToList();
+
+            _context.OpcionesPregunta.RemoveRange(opcionesAnteriores);
+            _context.PreguntasEncuesta.RemoveRange(encuesta.PreguntasEncuesta.ToList());
+
+            foreach (PreguntasEncuestum pregunta in ConstruirPreguntas(modelo))
+            {
+                pregunta.IdEncuestaNavigation = encuesta;
+                _context.PreguntasEncuesta.Add(pregunta);
+            }
+
+            await AsignarAsociacionesEncuestaAsync(encuesta, modelo);
+
+            if (publicar)
+            {
+                encuesta.Estado = ReglasEncuestas.Publicada;
+                encuesta.FechaPublicacion = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = publicar
+                ? $"La encuesta \"{encuesta.Titulo}\" fue actualizada y publicada correctamente."
+                : $"La encuesta \"{encuesta.Titulo}\" fue actualizada correctamente.";
+
             return RedirectToAction(nameof(Encuestas));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult PublicarEncuesta(int id)
+        public async Task<IActionResult> PublicarEncuesta(int id)
         {
-            TempData["MensajeAdmin"] = "La encuesta fue publicada correctamente.";
+            Encuesta? encuesta = await _context.Encuestas
+                .Include(e => e.IdEventos)
+                .Include(e => e.IdTallers)
+                .FirstOrDefaultAsync(e => e.IdEncuesta == id);
+
+            if (encuesta is null)
+            {
+                TempData["ErrorAdmin"] = "La encuesta no está disponible.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            if (encuesta.Estado != ReglasEncuestas.Borrador)
+            {
+                TempData["ErrorAdmin"] = "Solo se pueden publicar encuestas en borrador.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            if (!await _context.PreguntasEncuesta.AnyAsync(p => p.IdEncuesta == id))
+            {
+                TempData["ErrorAdmin"] = "La encuesta no tiene preguntas. Agregue al menos una antes de publicarla.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            if (encuesta.IdEventos.Count == 0 && encuesta.IdTallers.Count == 0)
+            {
+                TempData["ErrorAdmin"] =
+                    "Asocie la encuesta al menos a un evento o taller para poder publicarla.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            encuesta.Estado = ReglasEncuestas.Publicada;
+            encuesta.FechaPublicacion = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"La encuesta \"{encuesta.Titulo}\" fue publicada y ya está disponible para los asistentes.";
+
             return RedirectToAction(nameof(Encuestas));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CerrarEncuesta(int id)
+        public async Task<IActionResult> CerrarEncuesta(int id)
         {
+            Encuesta? encuesta = await _context.Encuestas
+                .FirstOrDefaultAsync(e => e.IdEncuesta == id);
+
+            if (encuesta is null || encuesta.Estado != ReglasEncuestas.Publicada)
+            {
+                TempData["ErrorAdmin"] = "Solo se pueden cerrar encuestas publicadas.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            encuesta.Estado = ReglasEncuestas.Cerrada;
+            encuesta.FechaCierre = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
             TempData["MensajeAdmin"] = "La encuesta fue cerrada. Ya no se aceptan más respuestas.";
+
             return RedirectToAction(nameof(Encuestas));
         }
 
         [HttpGet]
-        public IActionResult ResultadosEncuesta(int id = 1)
+        public async Task<IActionResult> ResultadosEncuesta(int id)
         {
-            var encuesta = ObtenerEncuestasDemo().FirstOrDefault(e => e.Id == id) ?? ObtenerEncuestasDemo().First();
-            return View(encuesta);
-        }
+            Encuesta? encuesta = await _context.Encuestas
+                .AsNoTracking()
+                .Include(e => e.PreguntasEncuesta).ThenInclude(p => p.OpcionesPregunta)
+                .FirstOrDefaultAsync(e => e.IdEncuesta == id);
 
-        private static List<EncuestaAdminViewModel> ObtenerEncuestasDemo()
-        {
-            return
-            [
-                new() { Id = 1, Titulo = "Satisfacción con la feria de agosto", Descripcion = "Ayudanos a mejorar futuras ediciones del evento.", Estado = "Publicada", FechaCreacion = "16/08/2026", TotalRespuestas = 128,
-                    PreguntasTexto = "¿Cómo calificarías la organización del evento?\n¿Qué tan probable es que asistas a la próxima edición?",
-                    Preguntas =
-                    [
-                        new() { Texto = "¿Cómo calificarías la organización del evento?", Opciones = [ new() { Texto = "Excelente", Votos = 62 }, new() { Texto = "Buena", Votos = 48 }, new() { Texto = "Regular", Votos = 14 }, new() { Texto = "Mala", Votos = 4 } ] },
-                        new() { Texto = "¿Qué tan probable es que asistas a la próxima edición?", Opciones = [ new() { Texto = "Muy probable", Votos = 80 }, new() { Texto = "Probable", Votos = 35 }, new() { Texto = "Poco probable", Votos = 13 } ] }
-                    ] },
-                new() { Id = 2, Titulo = "Nuevas categorías de productos", Descripcion = "Consulta sobre categorías de interés para el catálogo.", Estado = "Borrador", FechaCreacion = "01/08/2026", TotalRespuestas = 0,
-                    PreguntasTexto = "¿Qué categoría te gustaría ver en el catálogo?",
-                    Preguntas = [ new() { Texto = "¿Qué categoría te gustaría ver en el catálogo?", Opciones = [ new() { Texto = "Ropa artesanal", Votos = 0 }, new() { Texto = "Juguetes de madera", Votos = 0 } ] } ] },
-                new() { Id = 3, Titulo = "Evaluación del taller de cerámica", Descripcion = "Retroalimentación de los participantes del taller.", Estado = "Cerrada", FechaCreacion = "10/06/2026", TotalRespuestas = 45,
-                    PreguntasTexto = "¿Recomendarías este taller a otras personas?",
-                    Preguntas = [ new() { Texto = "¿Recomendarías este taller a otras personas?", Opciones = [ new() { Texto = "Sí", Votos = 41 }, new() { Texto = "No", Votos = 4 } ] } ] }
-            ];
+            if (encuesta is null)
+            {
+                TempData["ErrorAdmin"] = "La encuesta no está disponible.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            var detalles = await _context.RespuestaDetalles
+                .AsNoTracking()
+                .Where(d => d.IdRespuestaEncuestaNavigation.IdEncuesta == id)
+                .Select(d => new { d.IdPregunta, d.IdOpcion, d.RespuestaTexto, d.ValorNumerico })
+                .ToListAsync();
+
+            int totalRespuestas = await _context.RespuestasEncuesta.CountAsync(r => r.IdEncuesta == id);
+
+            List<PreguntaEncuestaViewModel> resultados = [];
+
+            foreach (PreguntasEncuestum pregunta in encuesta.PreguntasEncuesta.OrderBy(p => p.OrdenVisual))
+            {
+                var respuestas = detalles.Where(d => d.IdPregunta == pregunta.IdPregunta).ToList();
+
+                PreguntaEncuestaViewModel resultado = new()
+                {
+                    Texto = pregunta.Texto,
+                    Tipo = pregunta.TipoPregunta,
+                    Respuestas = respuestas.Count
+                };
+
+                if (pregunta.TipoPregunta == ReglasEncuestas.TipoOpcion)
+                {
+                    resultado.Opciones = pregunta.OpcionesPregunta
+                        .OrderBy(o => o.OrdenVisual)
+                        .Select(o => new OpcionPreguntaViewModel
+                        {
+                            Texto = o.Texto,
+                            Votos = respuestas.Count(r => r.IdOpcion == o.IdOpcion)
+                        })
+                        .ToList();
+                }
+                else if (pregunta.TipoPregunta == ReglasEncuestas.TipoEscala)
+                {
+                    for (int valor = ReglasEncuestas.EscalaMinima; valor <= ReglasEncuestas.EscalaMaxima; valor++)
+                    {
+                        resultado.Opciones.Add(new OpcionPreguntaViewModel
+                        {
+                            Texto = valor.ToString(),
+                            Votos = respuestas.Count(r => r.ValorNumerico == valor)
+                        });
+                    }
+
+                    List<decimal> valores = respuestas
+                        .Where(r => r.ValorNumerico.HasValue)
+                        .Select(r => r.ValorNumerico!.Value)
+                        .ToList();
+
+                    resultado.Promedio = valores.Count > 0 ? Math.Round(valores.Average(), 1) : null;
+                }
+                else
+                {
+                    resultado.RespuestasTexto = respuestas
+                        .Where(r => !string.IsNullOrWhiteSpace(r.RespuestaTexto))
+                        .Select(r => r.RespuestaTexto!)
+                        .ToList();
+                }
+
+                resultados.Add(resultado);
+            }
+
+            return View(new EncuestaAdminViewModel
+            {
+                Id = encuesta.IdEncuesta,
+                Titulo = encuesta.Titulo,
+                Descripcion = encuesta.Descripcion,
+                Estado = encuesta.Estado,
+                FechaCreacion = encuesta.FechaCreacion.ToString("dd/MM/yyyy"),
+                TotalRespuestas = totalRespuestas,
+                TotalPreguntas = resultados.Count,
+                Resultados = resultados
+            });
         }
 
         [HttpGet]

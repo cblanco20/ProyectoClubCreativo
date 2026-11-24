@@ -11,6 +11,8 @@ builder.Services.AddScoped<PagoService>();
 builder.Services.AddHostedService<RecordatoriosEventosService>();
 builder.Services.AddScoped<NotificacionService>();
 builder.Services.AddScoped<ActualizacionSuscripcionesService>();
+builder.Services.AddScoped<PromocionesService>();
+builder.Services.AddHostedService<PromocionesEstadoService>();
 
 // Conexión a ClubCreativoDB
 builder.Services.AddDbContext<ClubCreativoDbContext>(options =>

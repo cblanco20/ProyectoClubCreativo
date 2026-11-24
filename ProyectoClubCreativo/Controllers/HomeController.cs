@@ -6,6 +6,7 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
+using ProyectoClubCreativo.Services;
 
 namespace ProyectoClubCreativo.Controllers
 {
@@ -13,13 +14,16 @@ namespace ProyectoClubCreativo.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ClubCreativoDbContext _context;
+        private readonly PromocionesService _promociones;
 
         public HomeController(
             ILogger<HomeController> logger,
-            ClubCreativoDbContext context)
+            ClubCreativoDbContext context,
+            PromocionesService promociones)
         {
             _logger = logger;
             _context = context;
+            _promociones = promociones;
         }
 
         public IActionResult Index()
@@ -66,9 +70,100 @@ namespace ProyectoClubCreativo.Controllers
         {
             return View();
         }
-        public IActionResult Promociones()
+        public async Task<IActionResult> Promociones()
         {
-            return View();
+            await _promociones.SincronizarEstadosAsync();
+
+            var datos = await _context.Promociones
+                .AsNoTracking()
+                .Where(p => p.Estado == PromocionesService.Activa)
+                .OrderBy(p => p.FechaFin)
+                .Select(p => new
+                {
+                    p.IdPromocion,
+                    p.Nombre,
+                    p.Descripcion,
+                    p.TipoDescuento,
+                    p.ValorDescuento,
+                    p.FechaInicio,
+                    p.FechaFin,
+                    p.LimiteUsos,
+                    Usos = p.UsosPromocions.Count(),
+                    Emprendimientos = p.IdEmprendimientos.Select(e => e.NombreComercial).ToList(),
+                    Productos = p.IdProductos.Select(x => x.Nombre).ToList(),
+                    Eventos = p.IdEventos.Select(x => x.Nombre).ToList()
+                })
+                .ToListAsync();
+
+            List<PromocionPublicaViewModel> modelo = datos
+                .Where(p => !p.LimiteUsos.HasValue || p.Usos < p.LimiteUsos.Value)
+                .Select(p =>
+                {
+                    List<string> partes = [];
+
+                    if (p.Emprendimientos.Count > 0)
+                    {
+                        partes.Add(string.Join(", ", p.Emprendimientos));
+                    }
+
+                    if (p.Productos.Count > 0)
+                    {
+                        partes.Add(string.Join(", ", p.Productos));
+                    }
+
+                    if (p.Eventos.Count > 0)
+                    {
+                        partes.Add("Evento: " + string.Join(", ", p.Eventos));
+                    }
+
+                    return new PromocionPublicaViewModel
+                    {
+                        Id = p.IdPromocion,
+                        Nombre = p.Nombre,
+                        Descripcion = p.Descripcion ?? string.Empty,
+                        Descuento = p.TipoDescuento == "Porcentaje"
+                            ? $"{p.ValorDescuento:0.##}%"
+                            : $"₡{p.ValorDescuento:N0}",
+                        AplicaA = partes.Count == 0 ? "Todos los productos" : string.Join(" · ", partes),
+                        FechaInicio = p.FechaInicio,
+                        FechaFin = p.FechaFin,
+                        UsosRestantes = p.LimiteUsos.HasValue ? p.LimiteUsos.Value - p.Usos : null
+                    };
+                })
+                .ToList();
+
+            return View(modelo);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AprovecharPromocion(int id)
+        {
+            await _promociones.SincronizarEstadosAsync();
+
+            var promocion = await _context.Promociones
+                .AsNoTracking()
+                .Where(p => p.IdPromocion == id)
+                .Select(p => new
+                {
+                    p.Estado,
+                    p.Nombre,
+                    p.LimiteUsos,
+                    Usos = p.UsosPromocions.Count()
+                })
+                .FirstOrDefaultAsync();
+
+            bool disponible = promocion is not null &&
+                              promocion.Estado == PromocionesService.Activa &&
+                              (!promocion.LimiteUsos.HasValue || promocion.Usos < promocion.LimiteUsos.Value);
+
+            if (!disponible)
+            {
+                TempData["ErrorPromocion"] = "Esta promoción ya no está disponible.";
+
+                return RedirectToAction(nameof(Promociones));
+            }
+
+            return RedirectToAction(nameof(CatalogoProductos), new { promocion = id });
         }
         public async Task<IActionResult> Noticias()
         {
@@ -138,7 +233,7 @@ namespace ProyectoClubCreativo.Controllers
                 })
                 .ToList();
         }
-        public async Task<IActionResult> Emprendimientos(int? categoria)
+        public async Task<IActionResult> Emprendimientos(int? categoria, int? etiqueta)
         {
             IQueryable<Emprendimiento> consulta = _context.Emprendimientos
                 .AsNoTracking()
@@ -149,6 +244,11 @@ namespace ProyectoClubCreativo.Controllers
             if (categoria.HasValue)
             {
                 consulta = consulta.Where(e => e.IdCategoria == categoria.Value);
+            }
+
+            if (etiqueta.HasValue)
+            {
+                consulta = consulta.Where(e => e.IdEtiqueta.Any(t => t.IdEtiqueta == etiqueta.Value));
             }
 
             var datos = await consulta
@@ -199,6 +299,12 @@ namespace ProyectoClubCreativo.Controllers
                 .ToListAsync();
 
             ViewBag.CategoriaSeleccionada = categoria;
+            ViewBag.EtiquetaSeleccionada = etiqueta;
+            ViewBag.EtiquetasFiltro = await _context.Etiquetas
+                .AsNoTracking()
+                .Where(t => t.Activa && t.IdEmprendimientos.Any())
+                .OrderBy(t => t.Nombre)
+                .ToListAsync();
 
             return View();
         }
@@ -378,6 +484,7 @@ namespace ProyectoClubCreativo.Controllers
         }
         public async Task<IActionResult> Eventos(
             int? categoria,
+            int? etiqueta,
             string estado = "proximos")
         {
             DateTime ahora = DateTime.Now;
@@ -406,6 +513,11 @@ namespace ProyectoClubCreativo.Controllers
             if (categoria.HasValue)
             {
                 consulta = consulta.Where(e => e.IdCategoria == categoria.Value);
+            }
+
+            if (etiqueta.HasValue)
+            {
+                consulta = consulta.Where(e => e.IdEtiqueta.Any(t => t.IdEtiqueta == etiqueta.Value));
             }
 
             var eventos = await (
@@ -449,23 +561,48 @@ namespace ProyectoClubCreativo.Controllers
                 .ToListAsync();
 
             ViewBag.CategoriaSeleccionada = categoria;
+            ViewBag.EtiquetaSeleccionada = etiqueta;
+            ViewBag.EtiquetasFiltro = await _context.Etiquetas
+                .AsNoTracking()
+                .Where(t => t.Activa && t.IdEventos.Any())
+                .OrderBy(t => t.Nombre)
+                .ToListAsync();
             ViewBag.EstadoEventos = mostrarFinalizados
                 ? "finalizados"
                 : "proximos";
 
             return View();
         }
-        public async Task<IActionResult> Talleres()
+        public async Task<IActionResult> Talleres(int? categoria, int? etiqueta)
         {
             List<TallerPublicoViewModel> talleres =
-                await ConsultarTalleresPublicosAsync(null, 0);
+                await ConsultarTalleresPublicosAsync(null, 0, categoria, etiqueta);
+
+            ViewBag.Filtro = new FiltroCatalogoViewModel
+            {
+                Accion = nameof(Talleres),
+                Categoria = categoria,
+                Etiqueta = etiqueta,
+                Categorias = await _context.Categorias
+                    .AsNoTracking()
+                    .Where(c => c.Modulo == "Talleres" && c.Activa)
+                    .OrderBy(c => c.Nombre)
+                    .ToListAsync(),
+                Etiquetas = await _context.Etiquetas
+                    .AsNoTracking()
+                    .Where(t => t.Activa && t.IdTallers.Any())
+                    .OrderBy(t => t.Nombre)
+                    .ToListAsync()
+            };
 
             return View(talleres);
         }
 
         private async Task<List<TallerPublicoViewModel>> ConsultarTalleresPublicosAsync(
             int? idTaller,
-            int idUsuario)
+            int idUsuario,
+            int? categoria = null,
+            int? etiqueta = null)
         {
             DateTime ahora = DateTime.Now;
 
@@ -483,6 +620,16 @@ namespace ProyectoClubCreativo.Controllers
             if (idTaller.HasValue)
             {
                 consulta = consulta.Where(t => t.IdTaller == idTaller.Value);
+            }
+
+            if (categoria.HasValue)
+            {
+                consulta = consulta.Where(t => t.IdCategoria == categoria.Value);
+            }
+
+            if (etiqueta.HasValue)
+            {
+                consulta = consulta.Where(t => t.IdEtiqueta.Any(x => x.IdEtiqueta == etiqueta.Value));
             }
 
             var filas = await consulta
@@ -540,7 +687,7 @@ namespace ProyectoClubCreativo.Controllers
             return View();
         }
         [HttpGet]
-        public async Task<IActionResult> CatalogoProductos()
+        public async Task<IActionResult> CatalogoProductos(int? categoria, int? etiqueta, int? promocion)
         {
             DateOnly fechaActual =
                 DateOnly.FromDateTime(DateTime.Today);
@@ -562,6 +709,73 @@ namespace ProyectoClubCreativo.Controllers
                         s.FechaFin >= fechaActual))
                 .OrderByDescending(p => p.FechaRegistro)
                 .ToListAsync();
+
+            if (categoria.HasValue)
+            {
+                productos = productos.Where(p => p.IdCategoria == categoria.Value).ToList();
+            }
+
+            if (etiqueta.HasValue)
+            {
+                HashSet<int> idsConEtiqueta = (await _context.Productos
+                    .AsNoTracking()
+                    .Where(p => p.IdEtiqueta.Any(t => t.IdEtiqueta == etiqueta.Value))
+                    .Select(p => p.IdProducto)
+                    .ToListAsync()).ToHashSet();
+
+                productos = productos.Where(p => idsConEtiqueta.Contains(p.IdProducto)).ToList();
+            }
+
+            if (promocion.HasValue)
+            {
+                var datosPromocion = await _context.Promociones
+                    .AsNoTracking()
+                    .Where(p => p.IdPromocion == promocion.Value && p.Estado == PromocionesService.Activa)
+                    .Select(p => new
+                    {
+                        p.Nombre,
+                        Productos = p.IdProductos.Select(x => x.IdProducto).ToList(),
+                        Emprendimientos = p.IdEmprendimientos.Select(x => x.IdEmprendimiento).ToList(),
+                        Eventos = p.IdEventos.Count()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (datosPromocion is not null)
+                {
+                    bool aplicaATodos = datosPromocion.Productos.Count == 0 &&
+                                        datosPromocion.Emprendimientos.Count == 0;
+
+                    if (!aplicaATodos)
+                    {
+                        productos = productos
+                            .Where(p => datosPromocion.Productos.Contains(p.IdProducto) ||
+                                        datosPromocion.Emprendimientos.Contains(p.IdEmprendimiento))
+                            .ToList();
+                    }
+
+                    ViewBag.PromocionActiva = datosPromocion.Nombre;
+                }
+            }
+
+            ViewBag.Filtro = new FiltroCatalogoViewModel
+            {
+                Accion = nameof(CatalogoProductos),
+                Categoria = categoria,
+                Etiqueta = etiqueta,
+                RutaExtra = promocion.HasValue
+                    ? new Dictionary<string, string> { ["promocion"] = promocion.Value.ToString() }
+                    : [],
+                Categorias = await _context.Categorias
+                    .AsNoTracking()
+                    .Where(c => c.Modulo == "Productos" && c.Activa)
+                    .OrderBy(c => c.Nombre)
+                    .ToListAsync(),
+                Etiquetas = await _context.Etiquetas
+                    .AsNoTracking()
+                    .Where(t => t.Activa && t.IdProductos.Any())
+                    .OrderBy(t => t.Nombre)
+                    .ToListAsync()
+            };
 
             return View(productos);
         }

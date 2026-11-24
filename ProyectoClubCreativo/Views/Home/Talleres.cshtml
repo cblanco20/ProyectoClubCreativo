@@ -59,6 +59,8 @@
 </section>
 
 
+@await Html.PartialAsync("_FiltrosCatalogo", (ProyectoClubCreativo.Models.ViewModels.FiltroCatalogoViewModel)ViewBag.Filtro)
+
 <section class="talleres-listado" id="talleres-listado">
     <div class="container">
 
@@ -69,7 +71,12 @@
 
         @if (!Model.Any())
         {
-            <p style="text-align:center;">Por ahora no hay talleres publicados. ¡Vuelve pronto!</p>
+            var filtroTalleres = (ProyectoClubCreativo.Models.ViewModels.FiltroCatalogoViewModel)ViewBag.Filtro;
+            <p style="text-align:center;">
+                @(filtroTalleres.Categoria is not null || filtroTalleres.Etiqueta is not null
+                    ? "No se encontraron resultados para el filtro seleccionado."
+                    : "Por ahora no hay talleres publicados. ¡Vuelve pronto!")
+            </p>
         }
         else
         {

@@ -16,118 +16,74 @@
         </h1>
 
         <p class="descripcion-pagina-usuario">
-            Tu opinión nos ayuda a mejorar las próximas experiencias.
+            @(string.IsNullOrWhiteSpace(Model.Descripcion) ? "Tu opinión nos ayuda a mejorar las próximas experiencias." : Model.Descripcion)
         </p>
     </div>
 </div>
 
 <section class="tarjeta-formulario-usuario">
 
-    <form asp-action="ResponderEncuesta"
-          method="post"
-          novalidate>
+    <form asp-action="ResponderEncuesta" method="post" novalidate>
 
         @Html.AntiForgeryToken()
 
         <input asp-for="IdEncuesta" type="hidden" />
-        <input asp-for="NombreEncuesta" type="hidden" />
-        <input asp-for="ElementoRelacionado" type="hidden" />
 
-        <div asp-validation-summary="ModelOnly"
-             class="resumen-validacion"></div>
+        <div asp-validation-summary="ModelOnly" class="resumen-validacion"></div>
 
-        <div class="pregunta-encuesta">
-            <h2>
-                ¿Qué tan satisfecho estás con la experiencia?
-            </h2>
+        @for (int i = 0; i < Model.Preguntas.Count; i++)
+        {
+            var pregunta = Model.Preguntas[i];
 
-            <div class="escala-satisfaccion">
-                @for (int i = 1; i <= 5; i++)
+            <div class="pregunta-encuesta">
+                <input type="hidden" name="Preguntas[@i].IdPregunta" value="@pregunta.IdPregunta" />
+
+                <h2>
+                    @pregunta.Texto
+                    @if (pregunta.Obligatoria)
+                    {
+                        <small>(obligatoria)</small>
+                    }
+                </h2>
+
+                @if (pregunta.Tipo == "Escala")
                 {
-                    <label>
-                        <input asp-for="Satisfaccion"
-                               type="radio"
-                               value="@i" />
-                        <span>@i</span>
-                    </label>
+                    <div class="escala-satisfaccion">
+                        @for (int valor = 1; valor <= 5; valor++)
+                        {
+                            <label>
+                                <input type="radio" name="Preguntas[@i].Valor" value="@valor" checked="@(pregunta.Valor == valor)" />
+                                <span>@valor</span>
+                            </label>
+                        }
+                    </div>
+                }
+                else if (pregunta.Tipo == "OpcionUnica")
+                {
+                    <div class="opciones-encuesta">
+                        @foreach (var opcion in pregunta.Opciones)
+                        {
+                            <label>
+                                <input type="radio" name="Preguntas[@i].IdOpcion" value="@opcion.IdOpcion" checked="@(pregunta.IdOpcion == opcion.IdOpcion)" />
+                                @opcion.Texto
+                            </label>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <textarea name="Preguntas[@i].RespuestaTexto"
+                              class="control-formulario"
+                              maxlength="1000"
+                              placeholder="Escribe tu respuesta...">@pregunta.RespuestaTexto</textarea>
                 }
             </div>
+        }
 
-            <span asp-validation-for="Satisfaccion"
-                  class="mensaje-validacion"></span>
-        </div>
-
-        <div class="pregunta-encuesta">
-            <h2>¿Recomendarías esta actividad?</h2>
-
-            <div class="opciones-encuesta">
-                <label>
-                    <input asp-for="Recomendaria"
-                           type="radio"
-                           value="Sí" />
-                    Sí
-                </label>
-
-                <label>
-                    <input asp-for="Recomendaria"
-                           type="radio"
-                           value="No" />
-                    No
-                </label>
-
-                <label>
-                    <input asp-for="Recomendaria"
-                           type="radio"
-                           value="Tal vez" />
-                    Tal vez
-                </label>
-            </div>
-
-            <span asp-validation-for="Recomendaria"
-                  class="mensaje-validacion"></span>
-        </div>
-
-        <div class="pregunta-encuesta">
-            <label asp-for="AspectoFavorito">
-                ¿Qué aspecto te gustó más?
-            </label>
-
-            <select asp-for="AspectoFavorito"
-                    class="control-formulario">
-                <option value="">Seleccione una opción</option>
-                <option>Organización</option>
-                <option>Variedad de emprendimientos</option>
-                <option>Ubicación</option>
-                <option>Actividades</option>
-                <option>Atención recibida</option>
-            </select>
-
-            <span asp-validation-for="AspectoFavorito"
-                  class="mensaje-validacion"></span>
-        </div>
-
-        <div class="pregunta-encuesta">
-            <label asp-for="Comentario">
-                Comentario adicional
-            </label>
-
-            <textarea asp-for="Comentario"
-                      class="control-formulario"
-                      placeholder="Cuéntanos más sobre tu experiencia..."></textarea>
-
-            <span asp-validation-for="Comentario"
-                  class="mensaje-validacion"></span>
-        </div>
-
-        <button type="submit"
-                class="boton-accion-usuario">
+        <button type="submit" class="boton-accion-usuario">
             <i class="bi bi-send-fill"></i>
             Enviar encuesta
         </button>
 
     </form>
 </section>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}

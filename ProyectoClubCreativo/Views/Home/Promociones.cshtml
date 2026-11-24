@@ -1,4 +1,6 @@
-﻿@{
+﻿@model List<ProyectoClubCreativo.Models.ViewModels.PromocionPublicaViewModel>
+
+@{
     ViewData["Title"] = "Promociones";
     Layout = "_LayoutExterno";
 }
@@ -82,152 +84,67 @@
 
         <div class="grid-promociones">
 
-            <!-- PROMOCIÓN 1 -->
-            <article class="tarjeta-promocion promocion-morada">
+            @if (TempData["ErrorPromocion"] is string errorPromocion)
+            {
+                <p style="grid-column:1 / -1;text-align:center;color:#b91c1c;font-weight:600;">@errorPromocion</p>
+            }
 
-                <div class="cabecera-tarjeta-promocion">
-                    <span class="insignia-promocion">Oferta</span>
-
-                    <div class="icono-promocion">
-                        <i class="bi bi-palette-fill"></i>
-                    </div>
-                </div>
-
-                <div class="descuento-promocion">
-                    <strong>20%</strong>
-                    <span>de descuento</span>
-                </div>
-
-                <h3>Talleres de pintura</h3>
-
-                <p>
-                    Obtén un 20% de descuento al inscribirte en uno de nuestros
-                    talleres de pintura seleccionados.
+            @if (Model.Count == 0)
+            {
+                <p style="grid-column:1 / -1;text-align:center;">
+                    Por ahora no hay promociones vigentes. Vuelve pronto para conocer nuevos descuentos.
                 </p>
+            }
 
-                <div class="vigencia-promocion">
-                    <i class="bi bi-calendar-event"></i>
-                    Válido hasta el 31 de diciembre
-                </div>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var promocion = Model[i];
+                string[] colores = { "promocion-morada", "promocion-rosada", "promocion-amarilla", "promocion-azul" };
+                string[] iconos = { "bi-palette-fill", "bi-people-fill", "bi-brush-fill", "bi-bag-heart-fill" };
 
-                <a asp-controller="Home"
-                   asp-action="Index"
-                   class="boton-tarjeta-promocion">
-                    Más información
-                </a>
+                <article class="tarjeta-promocion @colores[i % colores.Length]">
 
-            </article>
+                    <div class="cabecera-tarjeta-promocion">
+                        <span class="insignia-promocion">Vigente</span>
 
-
-            <!-- PROMOCIÓN 2 -->
-            <article class="tarjeta-promocion promocion-rosada">
-
-                <div class="cabecera-tarjeta-promocion">
-                    <span class="insignia-promocion">Especial</span>
-
-                    <div class="icono-promocion">
-                        <i class="bi bi-people-fill"></i>
+                        <div class="icono-promocion">
+                            <i class="bi @iconos[i % iconos.Length]"></i>
+                        </div>
                     </div>
-                </div>
 
-                <div class="descuento-promocion">
-                    <strong>2x1</strong>
-                    <span>en entradas</span>
-                </div>
-
-                <h3>Eventos familiares</h3>
-
-                <p>
-                    Compra una entrada y recibe otra sin costo para compartir
-                    una experiencia creativa en familia.
-                </p>
-
-                <div class="vigencia-promocion">
-                    <i class="bi bi-calendar-event"></i>
-                    Disponible en eventos seleccionados
-                </div>
-
-                <a asp-controller="Home"
-                   asp-action="Index"
-                   class="boton-tarjeta-promocion">
-                    Más información
-                </a>
-
-            </article>
-
-
-            <!-- PROMOCIÓN 3 -->
-            <article class="tarjeta-promocion promocion-amarilla">
-
-                <div class="cabecera-tarjeta-promocion">
-                    <span class="insignia-promocion">Nuevo</span>
-
-                    <div class="icono-promocion">
-                        <i class="bi bi-brush-fill"></i>
+                    <div class="descuento-promocion">
+                        <strong>@promocion.Descuento</strong>
+                        <span>de descuento</span>
                     </div>
-                </div>
 
-                <div class="descuento-promocion">
-                    <strong>Gratis</strong>
-                    <span>la inscripción</span>
-                </div>
+                    <h3>@promocion.Nombre</h3>
 
-                <h3>Tu primer taller</h3>
+                    <p>
+                        @(string.IsNullOrWhiteSpace(promocion.Descripcion) ? "Aplica en: " + promocion.AplicaA : promocion.Descripcion)
+                    </p>
 
-                <p>
-                    Regístrate por primera vez y recibe la inscripción gratuita
-                    en una actividad participante.
-                </p>
-
-                <div class="vigencia-promocion">
-                    <i class="bi bi-calendar-event"></i>
-                    Para nuevos participantes
-                </div>
-
-                <a asp-controller="Home"
-                   asp-action="Index"
-                   class="boton-tarjeta-promocion">
-                    Más información
-                </a>
-
-            </article>
-
-
-            <!-- PROMOCIÓN 4 -->
-            <article class="tarjeta-promocion promocion-azul">
-
-                <div class="cabecera-tarjeta-promocion">
-                    <span class="insignia-promocion">Cupón</span>
-
-                    <div class="icono-promocion">
-                        <i class="bi bi-bag-heart-fill"></i>
+                    <div class="vigencia-promocion">
+                        <i class="bi bi-calendar-event"></i>
+                        Del @promocion.FechaInicio.ToString("dd/MM/yyyy") al @promocion.FechaFin.ToString("dd/MM/yyyy")
                     </div>
-                </div>
 
-                <div class="descuento-promocion">
-                    <strong>10%</strong>
-                    <span>en productos</span>
-                </div>
+                    @if (promocion.UsosRestantes.HasValue)
+                    {
+                        <div class="vigencia-promocion">
+                            <i class="bi bi-ticket-perforated"></i>
+                            Quedan @promocion.UsosRestantes usos
+                        </div>
+                    }
 
-                <h3>Emprendimientos aliados</h3>
+                    <a asp-controller="Home"
+                       asp-action="AprovecharPromocion"
+                       asp-route-id="@promocion.Id"
+                       class="boton-tarjeta-promocion">
+                        Aprovechar promoción
+                    </a>
 
-                <p>
-                    Obtén un descuento especial en productos seleccionados
-                    de emprendimientos de nuestra comunidad.
-                </p>
-
-                <div class="vigencia-promocion">
-                    <i class="bi bi-calendar-event"></i>
-                    Aplican condiciones
-                </div>
-
-                <a asp-controller="Home"
-                   asp-action="Index"
-                   class="boton-tarjeta-promocion">
-                    Más información
-                </a>
-
-            </article>
+                </article>
+            }
 
         </div>
     </div>

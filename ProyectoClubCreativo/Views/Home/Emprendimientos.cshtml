@@ -76,25 +76,14 @@
 </section>
 
 
-<section class="categorias-emprendimientos">
-    <div class="container">
-
-        <div class="lista-categorias-emprendimientos">
-            <a asp-controller="Home"
-               asp-action="Emprendimientos"
-               class="categoria-chip @(categoriaSeleccionada is null ? "categoria-chip-activa" : "")">Todos</a>
-
-            @foreach (Categoria categoria in categorias)
-            {
-                <a asp-controller="Home"
-                   asp-action="Emprendimientos"
-                   asp-route-categoria="@categoria.IdCategoria"
-                   class="categoria-chip @(categoriaSeleccionada == categoria.IdCategoria ? "categoria-chip-activa" : "")">@categoria.Nombre</a>
-            }
-        </div>
-
-    </div>
-</section>
+@await Html.PartialAsync("_FiltrosCatalogo", new FiltroCatalogoViewModel
+{
+    Accion = "Emprendimientos",
+    Categoria = categoriaSeleccionada,
+    Etiqueta = ViewBag.EtiquetaSeleccionada as int?,
+    Categorias = categorias,
+    Etiquetas = ViewBag.EtiquetasFiltro as List<Etiqueta> ?? new()
+})
 
 
 <section class="emprendimientos-listado" id="emprendimientos-listado">
@@ -103,7 +92,9 @@
         @if (!emprendimientos.Any())
         {
             <p class="text-center">
-                No hay emprendimientos disponibles por el momento.
+                @(categoriaSeleccionada is not null || ViewBag.EtiquetaSeleccionada is not null
+                    ? "No se encontraron resultados para el filtro seleccionado."
+                    : "No hay emprendimientos disponibles por el momento.")
             </p>
         }
         else

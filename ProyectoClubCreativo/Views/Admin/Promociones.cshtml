@@ -31,12 +31,17 @@
                     <th>Promoción</th>
                     <th>Descuento</th>
                     <th>Vigencia</th>
-                    <th>Emprendimiento</th>
+                    <th>Aplica a</th>
+                    <th>Usos</th>
                     <th>Estado</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
+                @if (Model.Promociones.Count == 0)
+                {
+                    <tr><td colspan="7">No hay promociones en este estado.</td></tr>
+                }
                 @foreach (var promocion in Model.Promociones)
                 {
                     string clase = promocion.Estado switch
@@ -49,9 +54,10 @@
 
                     <tr>
                         <td><strong>@promocion.Nombre</strong></td>
-                        <td>@(promocion.TipoDescuento == "Porcentaje" ? $"{promocion.ValorDescuento}%" : $"₡{promocion.ValorDescuento:N0}")</td>
-                        <td>@promocion.FechaInicio.ToString("dd/MM/yyyy") - @promocion.FechaFin.ToString("dd/MM/yyyy")</td>
+                        <td>@(promocion.TipoDescuento == "Porcentaje" ? $"{promocion.ValorDescuento:0.##}%" : $"₡{promocion.ValorDescuento:N0}")</td>
+                        <td>@promocion.FechaInicio?.ToString("dd/MM/yyyy") - @promocion.FechaFin?.ToString("dd/MM/yyyy")</td>
                         <td>@promocion.Emprendimiento</td>
+                        <td>@promocion.Usos@(promocion.LimiteUsos.HasValue ? " / " + promocion.LimiteUsos : "")</td>
                         <td><span class="etiqueta-estado-admin @clase">@promocion.Estado</span></td>
                         <td>
                             <div class="grupo-acciones-admin">
@@ -69,6 +75,11 @@
                                         <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-slash-circle"></i></button>
                                     </form>
                                 }
+                                <form asp-action="EliminarPromocion" method="post" onsubmit="return confirm('¿Eliminar la promoción &quot;@promocion.Nombre&quot;? Esta acción no se puede deshacer.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@promocion.Id" />
+                                    <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-trash3-fill"></i></button>
+                                </form>
                             </div>
                         </td>
                     </tr>
