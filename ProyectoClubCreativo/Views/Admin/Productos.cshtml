@@ -5,7 +5,7 @@
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 
     string[] categorias = { "Todas", "Arte e ilustración", "Accesorios", "Hogar y decoración", "Velas y aromas" };
-    string[] estados = { "Todos", "Activo", "En revisión", "Pausado" };
+    string[] estados = { "Todos", "Publicado", "Pendiente", "Inactivo" };
 }
 
 <form asp-controller="Admin" asp-action="Productos" method="get" class="barra-filtros-admin">
@@ -56,7 +56,7 @@
                 {
                     string clase = producto.Estado switch
                     {
-                        "Activo" => "estado-activo",
+                        "Publicado" => "estado-activo",
                         "Pausado" => "estado-pausado",
                         _ => "estado-revision"
                     };

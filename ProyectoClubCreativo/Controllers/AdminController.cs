@@ -1904,27 +1904,89 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult RevisarProducto(int id = 1)
+        public async Task<IActionResult> RevisarProducto(int id)
         {
-            ProductoAdminViewModel modelo =
-                ObtenerProductosDemo().FirstOrDefault(p => p.Id == id)
-                ?? ObtenerProductosDemo().First();
+            ProductoAdminViewModel? modelo = await _context.Productos
+                .AsNoTracking()
+                .Include(p => p.IdCategoriaNavigation)
+                .Include(p => p.IdEmprendimientoNavigation)
+                .Include(p => p.ProductoImagene)
+                .Where(p => p.IdProducto == id)
+                .Select(p => new ProductoAdminViewModel
+                {
+                    Id = p.IdProducto,
+                    Nombre = p.Nombre,
+                    Emprendimiento = p.IdEmprendimientoNavigation.NombreComercial,
+                    Categoria = p.IdCategoriaNavigation != null
+                        ? p.IdCategoriaNavigation.Nombre
+                        : "Sin categoría",
+                    Precio = p.Precio,
+                    Estado = p.Estado,
+                    Imagen = p.ProductoImagene != null
+                        ? p.ProductoImagene.UrlImagen
+                        : "/images/logo.jpg",
+                    FechaPublicacion = p.FechaPublicacion.HasValue
+                        ? p.FechaPublicacion.Value.ToString("dd/MM/yyyy")
+                        : p.FechaRegistro.ToString("dd/MM/yyyy"),
+                    Reportes = 0,
+                    Descripcion = p.Descripcion
+                })
+                .FirstOrDefaultAsync();
+
+            if (modelo is null)
+            {
+                TempData["ErrorAdmin"] = "El producto no está disponible.";
+                return RedirectToAction(nameof(Productos));
+            }
 
             return View(modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CambiarEstadoProducto(int id, string estado)
+        public async Task<IActionResult> CambiarEstadoProducto(int id, string estado)
         {
+            string[] estadosPermitidos = ["Publicado", "Pendiente", "Inactivo"];
+
+            if (!estadosPermitidos.Contains(estado))
+            {
+                TempData["ErrorAdmin"] = "El estado seleccionado no es válido.";
+                return RedirectToAction(nameof(RevisarProducto), new { id });
+            }
+
+            Producto? producto = await _context.Productos
+                .FirstOrDefaultAsync(p => p.IdProducto == id);
+
+            if (producto is null)
+            {
+                TempData["ErrorAdmin"] = "El producto no está disponible.";
+                return RedirectToAction(nameof(Productos));
+            }
+
+            producto.Estado = estado;
+            await _context.SaveChangesAsync();
+
             TempData["MensajeAdmin"] = $"El estado del producto se actualizó a \"{estado}\".";
             return RedirectToAction(nameof(RevisarProducto), new { id });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EliminarProducto(int id)
+        public async Task<IActionResult> EliminarProducto(int id)
         {
+            Producto? producto = await _context.Productos
+                .FirstOrDefaultAsync(p => p.IdProducto == id);
+
+            if (producto is null)
+            {
+                TempData["ErrorAdmin"] = "El producto no está disponible.";
+                return RedirectToAction(nameof(Productos));
+            }
+
+            producto.Estado = "Inactivo";
+            producto.PublicadoHechoEnCr = false;
+            await _context.SaveChangesAsync();
+
             TempData["MensajeAdmin"] = "El producto fue eliminado por contenido inapropiado.";
             return RedirectToAction(nameof(Productos));
         }

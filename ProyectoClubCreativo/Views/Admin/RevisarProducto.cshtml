@@ -6,7 +6,7 @@
 
     string claseEstado = Model.Estado switch
     {
-        "Activo" => "estado-activo",
+        "Publicado" => "estado-activo",
         "Pausado" => "estado-pausado",
         _ => "estado-revision"
     };
@@ -64,9 +64,9 @@
             <div class="grupo-formulario">
                 <label>Cambiar estado</label>
                 <select name="estado">
-                    <option selected="@(Model.Estado == "Activo")">Activo</option>
-                    <option selected="@(Model.Estado == "Pausado")">Pausado</option>
-                    <option selected="@(Model.Estado == "En revisión")">En revisión</option>
+                    <option value="Publicado" selected="@(Model.Estado == "Publicado")">Activo</option>
+                    <option value="Pendiente" selected="@(Model.Estado == "Pendiente")">Pausado</option>
+                    <option selected="@(Model.Estado == "Inactivo")">Inactivo</option>
                 </select>
             </div>
 

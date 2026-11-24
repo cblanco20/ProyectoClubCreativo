@@ -1006,6 +1006,10 @@ transform:translateX(3px);
     font-weight: 500;
 }
 
+.alerta-error-admin.validation-summary-valid {
+    display: none;
+}
+
 .resumen-validacion-admin ul {
     margin: 0 0 16px;
     padding: 12px 18px 12px 34px;
