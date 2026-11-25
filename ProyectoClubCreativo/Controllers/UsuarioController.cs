@@ -2554,7 +2554,7 @@ namespace ProyectoClubCreativo.Controllers
                     FechaLectura = null
                 };
 
-                _context.Notificaciones.Add(notificacionComprador);
+                await _notificaciones.AgregarAsync(notificacionComprador);
 
 
                 var idsProductos = detalles
@@ -2583,7 +2583,7 @@ namespace ProyectoClubCreativo.Controllers
                         FechaLectura = null
                     };
 
-                    _context.Notificaciones.Add(notificacionEmprendedor);
+                    await _notificaciones.AgregarAsync(notificacionEmprendedor);
                 }
 
 

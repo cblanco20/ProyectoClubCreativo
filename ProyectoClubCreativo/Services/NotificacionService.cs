@@ -37,7 +37,7 @@ namespace ProyectoClubCreativo.Services
                 return;
             }
 
-            if (!CategoriaActiva(preferencias, notificacion.Tipo, esRecordatorio))
+            if (!CategoriaActiva(preferencias, notificacion, esRecordatorio))
             {
                 return;
             }
@@ -55,16 +55,23 @@ namespace ProyectoClubCreativo.Services
         }
 
         private static bool CategoriaActiva(
-            PreferenciasNotificacion preferencias,
-            string tipo,
-            bool esRecordatorio)
+    PreferenciasNotificacion preferencias,
+    Notificacione notificacion,
+    bool esRecordatorio)
         {
             if (esRecordatorio)
             {
                 return preferencias.Recordatorios;
             }
 
-            return tipo switch
+            // Novedades de productos favoritos: dependen de las
+            // preferencias de compras y de promociones.
+            if (notificacion.TipoReferencia == "Producto")
+            {
+                return preferencias.Compras && preferencias.Promociones;
+            }
+
+            return notificacion.Tipo switch
             {
                 "Compra" => preferencias.Compras,
                 "Evento" => preferencias.Eventos,

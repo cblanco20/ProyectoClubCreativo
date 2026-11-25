@@ -3694,7 +3694,7 @@ namespace ProyectoClubCreativo.Controllers
                 }
 
 
-                _context.Notificaciones.Add(new Notificacione
+                await _notificaciones.AgregarAsync(new Notificacione
                 {
                     IdUsuario = venta.IdUsuario,
                     NumeroOrden = venta.NumeroOrden,
