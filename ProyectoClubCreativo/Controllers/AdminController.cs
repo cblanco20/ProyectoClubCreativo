@@ -2098,16 +2098,6 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(Productos));
         }
 
-        private static List<ProductoAdminViewModel> ObtenerProductosDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Aretes Orquídea", Emprendimiento = "Orquídea", Categoria = "Accesorios", Precio = 12000, Estado = "Activo", Imagen = "/images/producto-1.jpg", FechaPublicacion = "10/06/2026", Reportes = 0, Descripcion = "Aretes tejidos a mano con hilo encerado." },
-                new() { Id = 2, Nombre = "Vela Aromática Lavanda", Emprendimiento = "Luz Natural", Categoria = "Velas y aromas", Precio = 6500, Estado = "Activo", Imagen = "/images/producto-3.jpg", FechaPublicacion = "02/07/2026", Reportes = 0, Descripcion = "Vela de cera de soya con esencia de lavanda." },
-                new() { Id = 3, Nombre = "Cuadro decorativo Boho", Emprendimiento = "Artesanías MiVo", Categoria = "Hogar y decoración", Precio = 18500, Estado = "En revisión", Imagen = "/images/producto-1.jpg", FechaPublicacion = "20/07/2026", Reportes = 2, Descripcion = "Cuadro tejido estilo boho para decoración de interiores." },
-                new() { Id = 4, Nombre = "Ilustración digital personalizada", Emprendimiento = "Trazo Libre", Categoria = "Arte e ilustración", Precio = 9000, Estado = "Pausado", Imagen = "/images/producto-3.jpg", FechaPublicacion = "15/05/2026", Reportes = 1, Descripcion = "Retrato ilustrado digital por encargo." }
-            ];
-        }
         [HttpGet]
         public async Task<IActionResult> Eventos(string estado = "Todos")
         {
@@ -2767,19 +2757,6 @@ namespace ProyectoClubCreativo.Controllers
         {
             TempData["MensajeAdmin"] = "El código QR del evento fue generado correctamente.";
             return RedirectToAction(nameof(ParticipantesEvento), new { id });
-        }
-
-        private static List<EventoAdminViewModel> ObtenerEventosDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Arte Inarrivo San Pedro", Fecha = "15 y 16 de agosto", Ubicacion = "San Pedro", CupoTotal = 150, Inscritos = 120, Estado = "Programado", QrGenerado = true,
-            EmprendimientosAsignados = ["Orquídea", "Luz Natural"],
-            Participantes = [ new() { Nombre = "Maria Montero Cruz", Emprendimiento = "Orquídea", Estado = "Confirmado" }, new() { Nombre = "Carla Ramírez Solís", Emprendimiento = "Luz Natural", Estado = "Pendiente" } ] },
-        new() { Id = 2, Nombre = "Feria Creativa Santa Ana", Fecha = "5 al 7 de septiembre", Ubicacion = "Santa Ana", CupoTotal = 100, Inscritos = 86, Estado = "Programado", QrGenerado = false,
-            EmprendimientosAsignados = ["Artesanías MiVo"], Participantes = [] },
-        new() { Id = 3, Nombre = "Feria Creativa Heredia", Fecha = "20 de septiembre", Ubicacion = "Heredia", CupoTotal = 60, Inscritos = 40, Estado = "Cancelado", QrGenerado = false, Participantes = [] }
-            ];
         }
 
         private async Task CargarOpcionesTallerAsync()
@@ -3982,32 +3959,63 @@ namespace ProyectoClubCreativo.Controllers
             }
         }
 
-        private static List<VentaAdminViewModel> ObtenerVentasDemo()
-        {
-            return
-            [
-                new() { Id = 1, NumeroOrden = "ORD-1042", Cliente = "Maria Montero Cruz", Emprendimiento = "Orquídea", Fecha = "02/08/2026", Total = 24000, Estado = "Pagada", MetodoPago = "Sinpe Móvil",
-            Items = [ new() { Producto = "Aretes Orquídea", Cantidad = 2, PrecioUnitario = 12000 } ] },
-        new() { Id = 2, NumeroOrden = "ORD-1043", Cliente = "Carla Ramírez Solís", Emprendimiento = "Luz Natural", Fecha = "03/08/2026", Total = 13000, Estado = "Pendiente", MetodoPago = "Tarjeta",
-            Items = [ new() { Producto = "Vela Aromática Lavanda", Cantidad = 2, PrecioUnitario = 6500 } ] },
-        new() { Id = 3, NumeroOrden = "ORD-1044", Cliente = "Luis Fernández Rojas", Emprendimiento = "Artesanías MiVo", Fecha = "01/08/2026", Total = 18500, Estado = "Cancelada", MetodoPago = "Tarjeta",
-            Items = [ new() { Producto = "Cuadro decorativo Boho", Cantidad = 1, PrecioUnitario = 18500 } ], MotivoCancelacion = "El cliente solicitó la cancelación por cambio de dirección." },
-        new() { Id = 4, NumeroOrden = "ORD-1045", Cliente = "Andrea Castro Vega", Emprendimiento = "Trazo Libre", Fecha = "04/08/2026", Total = 9000, Estado = "Pagada", MetodoPago = "Sinpe Móvil",
-            Items = [ new() { Producto = "Ilustración digital personalizada", Cantidad = 1, PrecioUnitario = 9000 } ] }
-            ];
-        }
         [HttpGet]
-        public IActionResult PuntosRecompensas(string pestana = "Recompensas")
+        public async Task<IActionResult> PuntosRecompensas(string pestana = "Recompensas")
         {
-            var configuracion = _context.ConfiguracionPuntos
+            ConfiguracionPunto? configuracion = await _context.ConfiguracionPuntos
+                .AsNoTracking()
                 .OrderByDescending(c => c.IdConfiguracion)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
+
+            List<RecompensaAdminViewModel> recompensas = await _context.Recompensas
+                .AsNoTracking()
+                .OrderBy(r => r.CostoPuntos)
+                .ThenBy(r => r.Nombre)
+                .Select(r => new RecompensaAdminViewModel
+                {
+                    Id = r.IdRecompensa,
+                    Nombre = r.Nombre,
+                    Descripcion = r.Descripcion ?? string.Empty,
+                    CostoPuntos = r.CostoPuntos,
+                    Activa = r.Activa,
+                    CantidadCanjes = r.CanjesRecompensas.Count()
+                })
+                .ToListAsync();
+
+            var movimientos = await _context.MovimientosPuntos
+                .AsNoTracking()
+                .OrderByDescending(m => m.FechaMovimiento)
+                .Take(200)
+                .Select(m => new
+                {
+                    Usuario = m.IdUsuarioNavigation.Nombre + " " + m.IdUsuarioNavigation.ApellidoPaterno,
+                    m.TipoMovimiento,
+                    m.Puntos,
+                    m.Motivo,
+                    m.FechaMovimiento
+                })
+                .ToListAsync();
 
             return View(new PuntosRecompensasAdminViewModel
             {
                 Pestana = pestana,
-                Recompensas = ObtenerRecompensasDemo(),
-                Movimientos = ObtenerMovimientosDemo(),
+                Recompensas = recompensas,
+                Movimientos = movimientos
+                    .Select(m => new MovimientoPuntosAdminViewModel
+                    {
+                        Usuario = m.Usuario,
+                        Tipo = m.TipoMovimiento switch
+                        {
+                            "Acumulacion" => "Ganados",
+                            "Canje" => "Canjeados",
+                            "Reversion" => "Reversión",
+                            _ => m.TipoMovimiento
+                        },
+                        Puntos = m.Puntos,
+                        Motivo = m.Motivo,
+                        Fecha = m.FechaMovimiento.ToString("dd/MM/yyyy HH:mm")
+                    })
+                    .ToList(),
                 ColonesPorPunto = configuracion?.ColonesPorPunto ?? 1000m
             });
         }
@@ -4064,70 +4072,235 @@ namespace ProyectoClubCreativo.Controllers
         public IActionResult CrearRecompensa()
         {
             ViewData["Titulo"] = "Crear recompensa";
+
             return View("FormularioRecompensa", new RecompensaAdminViewModel());
+        }
+
+        private async Task ValidarRecompensaAsync(RecompensaAdminViewModel modelo)
+        {
+            modelo.Nombre = (modelo.Nombre ?? string.Empty).Trim();
+            modelo.Descripcion = (modelo.Descripcion ?? string.Empty).Trim();
+
+            if (modelo.Nombre.Length == 0)
+            {
+                ModelState.AddModelError(nameof(modelo.Nombre), "El nombre es obligatorio.");
+            }
+            else
+            {
+                string nombre = modelo.Nombre;
+                int idActual = modelo.Id;
+
+                bool duplicada = await _context.Recompensas
+                    .AnyAsync(r => r.IdRecompensa != idActual && r.Nombre == nombre);
+
+                if (duplicada)
+                {
+                    ModelState.AddModelError(nameof(modelo.Nombre), "Ya existe una recompensa con este nombre.");
+                }
+            }
+
+            if (modelo.CostoPuntos <= 0)
+            {
+                ModelState.AddModelError(nameof(modelo.CostoPuntos), "El costo debe ser mayor que cero.");
+            }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CrearRecompensa(RecompensaAdminViewModel modelo)
+        public async Task<IActionResult> CrearRecompensa(RecompensaAdminViewModel modelo)
         {
             ViewData["Titulo"] = "Crear recompensa";
-            if (!ModelState.IsValid) return View("FormularioRecompensa", modelo);
-            TempData["MensajeAdmin"] = $"La recompensa \"{modelo.Nombre}\" fue creada correctamente.";
+
+            ModelState.Remove(nameof(RecompensaAdminViewModel.CantidadCanjes));
+            ModelState.Remove(nameof(RecompensaAdminViewModel.Descripcion));
+
+            await ValidarRecompensaAsync(modelo);
+
+            if (!ModelState.IsValid)
+            {
+                return View("FormularioRecompensa", modelo);
+            }
+
+            Recompensa recompensa = new()
+            {
+                Nombre = modelo.Nombre,
+                Descripcion = modelo.Descripcion.Length == 0 ? null : modelo.Descripcion,
+                CostoPuntos = modelo.CostoPuntos,
+                Icono = "bi-gift-fill",
+                Activa = modelo.Activa
+            };
+
+            _context.Recompensas.Add(recompensa);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"La recompensa \"{recompensa.Nombre}\" fue creada correctamente.";
+
             return RedirectToAction(nameof(PuntosRecompensas));
         }
 
         [HttpGet]
-        public IActionResult EditarRecompensa(int id = 1)
+        public async Task<IActionResult> EditarRecompensa(int id)
         {
             ViewData["Titulo"] = "Editar recompensa";
-            var r = ObtenerRecompensasDemo().FirstOrDefault(x => x.Id == id) ?? new RecompensaAdminViewModel { Id = id };
-            return View("FormularioRecompensa", r);
+
+            RecompensaAdminViewModel? modelo = await _context.Recompensas
+                .AsNoTracking()
+                .Where(r => r.IdRecompensa == id)
+                .Select(r => new RecompensaAdminViewModel
+                {
+                    Id = r.IdRecompensa,
+                    Nombre = r.Nombre,
+                    Descripcion = r.Descripcion ?? string.Empty,
+                    CostoPuntos = r.CostoPuntos,
+                    Activa = r.Activa,
+                    CantidadCanjes = r.CanjesRecompensas.Count()
+                })
+                .FirstOrDefaultAsync();
+
+            if (modelo is null)
+            {
+                TempData["ErrorAdmin"] = "La recompensa no está disponible.";
+
+                return RedirectToAction(nameof(PuntosRecompensas));
+            }
+
+            return View("FormularioRecompensa", modelo);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditarRecompensa(RecompensaAdminViewModel modelo)
+        public async Task<IActionResult> EditarRecompensa(RecompensaAdminViewModel modelo)
         {
             ViewData["Titulo"] = "Editar recompensa";
-            if (!ModelState.IsValid) return View("FormularioRecompensa", modelo);
-            TempData["MensajeAdmin"] = $"La recompensa \"{modelo.Nombre}\" fue actualizada correctamente.";
+
+            ModelState.Remove(nameof(RecompensaAdminViewModel.CantidadCanjes));
+            ModelState.Remove(nameof(RecompensaAdminViewModel.Descripcion));
+
+            Recompensa? recompensa = await _context.Recompensas
+                .FirstOrDefaultAsync(r => r.IdRecompensa == modelo.Id);
+
+            if (recompensa is null)
+            {
+                TempData["ErrorAdmin"] = "La recompensa no está disponible.";
+
+                return RedirectToAction(nameof(PuntosRecompensas));
+            }
+
+            await ValidarRecompensaAsync(modelo);
+
+            if (!ModelState.IsValid)
+            {
+                return View("FormularioRecompensa", modelo);
+            }
+
+            recompensa.Nombre = modelo.Nombre;
+            recompensa.Descripcion = modelo.Descripcion.Length == 0 ? null : modelo.Descripcion;
+            recompensa.CostoPuntos = modelo.CostoPuntos;
+            recompensa.Activa = modelo.Activa;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"La recompensa \"{recompensa.Nombre}\" fue actualizada correctamente.";
+
             return RedirectToAction(nameof(PuntosRecompensas));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AjustarPuntos(AjustarPuntosViewModel modelo)
+        public async Task<IActionResult> EliminarRecompensa(int id)
         {
-            if (!ModelState.IsValid)
+            Recompensa? recompensa = await _context.Recompensas
+                .Include(r => r.CanjesRecompensas)
+                .FirstOrDefaultAsync(r => r.IdRecompensa == id);
+
+            if (recompensa is null)
             {
-                TempData["MensajeAdmin"] = "Completá correo, puntos y motivo para ajustar puntos.";
+                TempData["ErrorAdmin"] = "La recompensa no está disponible.";
+
+                return RedirectToAction(nameof(PuntosRecompensas));
+            }
+
+            if (recompensa.CanjesRecompensas.Count > 0)
+            {
+                TempData["ErrorAdmin"] =
+                    $"La recompensa \"{recompensa.Nombre}\" ya tiene canjes registrados y no se puede eliminar. Puede desactivarla.";
+
+                return RedirectToAction(nameof(PuntosRecompensas));
+            }
+
+            string nombre = recompensa.Nombre;
+
+            _context.Recompensas.Remove(recompensa);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"La recompensa \"{nombre}\" fue eliminada correctamente.";
+
+            return RedirectToAction(nameof(PuntosRecompensas));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AjustarPuntos(AjustarPuntosViewModel modelo)
+        {
+            string correo = (modelo.Correo ?? string.Empty).Trim();
+            string motivo = (modelo.Motivo ?? string.Empty).Trim();
+
+            if (correo.Length == 0 || motivo.Length == 0 || modelo.Puntos == 0)
+            {
+                TempData["ErrorAdmin"] = "Complete el correo, una cantidad de puntos distinta de cero y el motivo.";
+
                 return RedirectToAction(nameof(PuntosRecompensas), new { pestana = "Movimientos" });
             }
 
-            TempData["MensajeAdmin"] = $"Se ajustaron {modelo.Puntos} puntos para {modelo.Correo}. Motivo: {modelo.Motivo}";
+            if (motivo.Length > 300)
+            {
+                TempData["ErrorAdmin"] = "El motivo no puede superar los 300 caracteres.";
+
+                return RedirectToAction(nameof(PuntosRecompensas), new { pestana = "Movimientos" });
+            }
+
+            Usuario? usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Correo == correo);
+
+            if (usuario is null)
+            {
+                TempData["ErrorAdmin"] = $"No existe un usuario con el correo {correo}.";
+
+                return RedirectToAction(nameof(PuntosRecompensas), new { pestana = "Movimientos" });
+            }
+
+            int saldo = await _context.MovimientosPuntos
+                .Where(m => m.IdUsuario == usuario.IdUsuario)
+                .SumAsync(m => (int?)m.Puntos) ?? 0;
+
+            if (saldo + modelo.Puntos < 0)
+            {
+                TempData["ErrorAdmin"] =
+                    $"El usuario solo tiene {saldo} punto(s). No se pueden restar {Math.Abs(modelo.Puntos)}.";
+
+                return RedirectToAction(nameof(PuntosRecompensas), new { pestana = "Movimientos" });
+            }
+
+            _context.MovimientosPuntos.Add(new MovimientosPunto
+            {
+                IdUsuario = usuario.IdUsuario,
+                TipoMovimiento = "Ajuste",
+                Puntos = modelo.Puntos,
+                Motivo = motivo,
+                FechaMovimiento = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] =
+                $"Se ajustaron {modelo.Puntos} punto(s) a {usuario.Nombre} {usuario.ApellidoPaterno}. Saldo actual: {saldo + modelo.Puntos}.";
+
             return RedirectToAction(nameof(PuntosRecompensas), new { pestana = "Movimientos" });
         }
 
-        private static List<RecompensaAdminViewModel> ObtenerRecompensasDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Descuento 10% en catálogo", Descripcion = "Aplica a cualquier producto activo.", CostoPuntos = 500, Activa = true, CantidadCanjes = 34 },
-        new() { Id = 2, Nombre = "Entrada gratis a un taller", Descripcion = "Un cupo en cualquier taller con disponibilidad.", CostoPuntos = 800, Activa = true, CantidadCanjes = 12 },
-        new() { Id = 3, Nombre = "Kit de bienvenida Club Creativo", Descripcion = "Merchandising físico del club.", CostoPuntos = 1200, Activa = false, CantidadCanjes = 5 }
-            ];
-        }
-
-        private static List<MovimientoPuntosAdminViewModel> ObtenerMovimientosDemo()
-        {
-            return
-            [
-                new() { Usuario = "Maria Montero Cruz", Tipo = "Ganados", Puntos = 50, Motivo = "Compra ORD-1042", Fecha = "02/08/2026" },
-        new() { Usuario = "Carla Ramírez Solís", Tipo = "Canjeados", Puntos = -500, Motivo = "Descuento 10% en catálogo", Fecha = "01/08/2026" },
-        new() { Usuario = "Luis Fernández Rojas", Tipo = "Ajuste", Puntos = 200, Motivo = "Compensación por soporte", Fecha = "30/07/2026" }
-            ];
-        }
         [HttpGet]
         public async Task<IActionResult> AsistenciaQr()
         {
@@ -6633,7 +6806,9 @@ namespace ProyectoClubCreativo.Controllers
                             c.Emprendimientos.Count() +
                             c.Productos.Count() +
                             c.Eventos.Count() +
-                            c.Talleres.Count()
+                            c.Talleres.Count() +
+                            c.Noticia.Count() +
+                            c.Galeria.Count()
                     })
                     .ToListAsync();
             }
@@ -6994,44 +7169,142 @@ namespace ProyectoClubCreativo.Controllers
 
 
         [HttpGet]
-        public IActionResult ElementosCategoria(int id = 1)
+        public async Task<IActionResult> ElementosCategoria(int id, string tipo = "Categoria")
         {
-            var categoria = ObtenerCategoriasDemo().FirstOrDefault(c => c.Id == id) ?? ObtenerCategoriasDemo().First();
+            CategoriaAdminViewModel? categoria;
+            List<ElementoAsociadoViewModel> elementos = [];
+
+            if (tipo == "Etiqueta")
+            {
+                Etiqueta? etiqueta = await _context.Etiquetas
+                    .AsNoTracking()
+                    .Include(e => e.IdEmprendimientos)
+                    .Include(e => e.IdProductos)
+                    .Include(e => e.IdEventos)
+                    .Include(e => e.IdTallers)
+                    .FirstOrDefaultAsync(e => e.IdEtiqueta == id);
+
+                if (etiqueta is null)
+                {
+                    TempData["ErrorAdmin"] = "La etiqueta no está disponible.";
+
+                    return RedirectToAction(nameof(Categorias), new { tipo });
+                }
+
+                categoria = new CategoriaAdminViewModel
+                {
+                    Id = etiqueta.IdEtiqueta,
+                    Nombre = etiqueta.Nombre,
+                    Tipo = "Etiqueta",
+                    Modulo = string.Empty
+                };
+
+                elementos.AddRange(etiqueta.IdEmprendimientos.Select(e => new ElementoAsociadoViewModel
+                {
+                    Nombre = e.NombreComercial,
+                    Tipo = "Emprendimiento",
+                    Estado = e.EstadoAprobacion
+                }));
+
+                elementos.AddRange(etiqueta.IdProductos.Select(p => new ElementoAsociadoViewModel
+                {
+                    Nombre = p.Nombre,
+                    Tipo = "Producto",
+                    Estado = p.Estado
+                }));
+
+                elementos.AddRange(etiqueta.IdEventos.Select(e => new ElementoAsociadoViewModel
+                {
+                    Nombre = e.Nombre,
+                    Tipo = "Evento",
+                    Estado = e.Estado
+                }));
+
+                elementos.AddRange(etiqueta.IdTallers.Select(t => new ElementoAsociadoViewModel
+                {
+                    Nombre = t.Nombre,
+                    Tipo = "Taller",
+                    Estado = t.Estado
+                }));
+            }
+            else
+            {
+                Categoria? entidad = await _context.Categorias
+                    .AsNoTracking()
+                    .Include(c => c.Emprendimientos)
+                    .Include(c => c.Productos)
+                    .Include(c => c.Eventos)
+                    .Include(c => c.Talleres)
+                    .Include(c => c.Noticia)
+                    .Include(c => c.Galeria)
+                    .FirstOrDefaultAsync(c => c.IdCategoria == id);
+
+                if (entidad is null)
+                {
+                    TempData["ErrorAdmin"] = "La categoría no está disponible.";
+
+                    return RedirectToAction(nameof(Categorias), new { tipo });
+                }
+
+                categoria = new CategoriaAdminViewModel
+                {
+                    Id = entidad.IdCategoria,
+                    Nombre = entidad.Nombre,
+                    Descripcion = entidad.Descripcion ?? string.Empty,
+                    Tipo = "Categoria",
+                    Modulo = entidad.Modulo
+                };
+
+                elementos.AddRange(entidad.Emprendimientos.Select(e => new ElementoAsociadoViewModel
+                {
+                    Nombre = e.NombreComercial,
+                    Tipo = "Emprendimiento",
+                    Estado = e.EstadoAprobacion
+                }));
+
+                elementos.AddRange(entidad.Productos.Select(p => new ElementoAsociadoViewModel
+                {
+                    Nombre = p.Nombre,
+                    Tipo = "Producto",
+                    Estado = p.Estado
+                }));
+
+                elementos.AddRange(entidad.Eventos.Select(e => new ElementoAsociadoViewModel
+                {
+                    Nombre = e.Nombre,
+                    Tipo = "Evento",
+                    Estado = e.Estado
+                }));
+
+                elementos.AddRange(entidad.Talleres.Select(t => new ElementoAsociadoViewModel
+                {
+                    Nombre = t.Nombre,
+                    Tipo = "Taller",
+                    Estado = t.Estado
+                }));
+
+                elementos.AddRange(entidad.Noticia.Select(n => new ElementoAsociadoViewModel
+                {
+                    Nombre = n.Titulo,
+                    Tipo = n.Tipo,
+                    Estado = n.Estado
+                }));
+
+                elementos.AddRange(entidad.Galeria.Select(g => new ElementoAsociadoViewModel
+                {
+                    Nombre = g.Nombre,
+                    Tipo = "Galería",
+                    Estado = g.Estado
+                }));
+            }
+
+            categoria.ElementosAsociados = elementos.Count;
+
             return View(new ElementosCategoriaViewModel
             {
                 Categoria = categoria,
-                Elementos = ObtenerElementosAsociadosDemo(categoria.Modulo)
+                Elementos = elementos.OrderBy(e => e.Tipo).ThenBy(e => e.Nombre).ToList()
             });
-        }
-
-        private static List<CategoriaAdminViewModel> ObtenerCategoriasDemo()
-        {
-            return
-            [
-                new() { Id = 1, Nombre = "Arte e ilustración", Descripcion = "Productos relacionados con arte e ilustraciones.", Tipo = "Categoria", Modulo = "Productos", ElementosAsociados = 34 },
-                new() { Id = 2, Nombre = "Accesorios", Descripcion = "Aretes, collares y accesorios artesanales.", Tipo = "Categoria", Modulo = "Productos", ElementosAsociados = 26 },
-                new() { Id = 3, Nombre = "Hogar y decoración", Descripcion = "Artículos decorativos hechos a mano.", Tipo = "Categoria", Modulo = "Productos", ElementosAsociados = 20 },
-                new() { Id = 4, Nombre = "Hecho a mano", Descripcion = "Etiqueta para productos artesanales.", Tipo = "Etiqueta", Modulo = "Productos", ElementosAsociados = 58 },
-                new() { Id = 5, Nombre = "Nuevo", Descripcion = "Etiqueta para publicaciones recientes.", Tipo = "Etiqueta", Modulo = "Noticias", ElementosAsociados = 12 }
-            ];
-        }
-
-        private static List<ElementoAsociadoViewModel> ObtenerElementosAsociadosDemo(string modulo)
-        {
-            return modulo switch
-            {
-                "Noticias" =>
-                [
-                    new() { Nombre = "Nueva alianza con artesanos locales", Tipo = "Noticia", Estado = "Publicada" },
-                    new() { Nombre = "Próxima feria en Heredia", Tipo = "Anuncio", Estado = "Borrador" }
-                ],
-                _ =>
-                [
-                    new() { Nombre = "Aretes Orquídea", Tipo = "Producto", Estado = "Activo" },
-                    new() { Nombre = "Vela Aromática Lavanda", Tipo = "Producto", Estado = "Activo" },
-                    new() { Nombre = "Cuadro decorativo Boho", Tipo = "Producto", Estado = "Pausado" }
-                ]
-            };
         }
 
         [HttpGet]

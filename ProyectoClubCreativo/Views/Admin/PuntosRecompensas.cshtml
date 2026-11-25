@@ -36,6 +36,10 @@
             <table class="tabla-admin">
                 <thead><tr><th>Recompensa</th><th>Costo</th><th>Canjes</th><th>Estado</th><th></th></tr></thead>
                 <tbody>
+                    @if (Model.Recompensas.Count == 0)
+                    {
+                        <tr><td colspan="5">Todavía no hay recompensas registradas.</td></tr>
+                    }
                     @foreach (var r in Model.Recompensas)
                     {
                         <tr>
@@ -43,7 +47,16 @@
                             <td>@r.CostoPuntos pts</td>
                             <td>@r.CantidadCanjes</td>
                             <td><span class="etiqueta-estado-admin @(r.Activa ? "estado-activo" : "estado-inactivo")">@(r.Activa ? "Activa" : "Inactiva")</span></td>
-                            <td><a asp-action="EditarRecompensa" asp-route-id="@r.Id" class="boton-admin boton-admin-secundario">Editar</a></td>
+                            <td>
+                                <div class="grupo-acciones-admin">
+                                    <a asp-action="EditarRecompensa" asp-route-id="@r.Id" class="boton-admin boton-admin-secundario">Editar</a>
+                                    <form asp-action="EliminarRecompensa" method="post" onsubmit="return confirm('¿Eliminar la recompensa &quot;@r.Nombre&quot;? Esta acción no se puede deshacer.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@r.Id" />
+                                        <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-trash3-fill"></i></button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -59,7 +72,7 @@ else if (Model.Pestana == "Movimientos")
             @Html.AntiForgeryToken()
             <div class="grupo-formulario"><label>Correo del usuario</label><input type="email" name="Correo" required /></div>
             <div class="fila-formulario">
-                <div class="grupo-formulario"><label>Puntos (usá negativo para restar)</label><input type="number" name="Puntos" required /></div>
+                <div class="grupo-formulario"><label>Puntos (use un valor negativo para restar)</label><input type="number" name="Puntos" required /></div>
                 <div class="grupo-formulario"><label>Motivo</label><input type="text" name="Motivo" required /></div>
             </div>
             <button type="submit" class="boton-admin boton-admin-primario">Aplicar</button>
@@ -67,11 +80,15 @@ else if (Model.Pestana == "Movimientos")
     </article>
 
     <article class="bloque-admin">
-        <div class="encabezado-bloque-admin"><h2><i class="bi bi-clock-history"></i> Movimientos</h2></div>
+        <div class="encabezado-bloque-admin"><h2><i class="bi bi-clock-history"></i> Movimientos (últimos 200)</h2></div>
         <div class="tabla-admin-contenedor">
             <table class="tabla-admin">
                 <thead><tr><th>Usuario</th><th>Tipo</th><th>Puntos</th><th>Motivo</th><th>Fecha</th></tr></thead>
                 <tbody>
+                    @if (Model.Movimientos.Count == 0)
+                    {
+                        <tr><td colspan="5">Todavía no hay movimientos de puntos.</td></tr>
+                    }
                     @foreach (var m in Model.Movimientos)
                     {
                         <tr>

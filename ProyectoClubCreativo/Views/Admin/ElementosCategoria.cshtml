@@ -23,6 +23,10 @@
                 </tr>
             </thead>
             <tbody>
+                @if (Model.Elementos.Count == 0)
+                {
+                    <tr><td colspan="3">No hay elementos asociados todavía.</td></tr>
+                }
                 @foreach (var elemento in Model.Elementos)
                 {
                     <tr>

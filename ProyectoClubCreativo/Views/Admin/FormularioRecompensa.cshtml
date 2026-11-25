@@ -13,9 +13,9 @@
         <input type="hidden" asp-for="Id" />
         <div asp-validation-summary="ModelOnly"></div>
 
-        <div class="grupo-formulario"><label asp-for="Nombre"></label><input asp-for="Nombre" /></div>
-        <div class="grupo-formulario"><label asp-for="Descripcion"></label><textarea asp-for="Descripcion" rows="3"></textarea></div>
-        <div class="grupo-formulario"><label asp-for="CostoPuntos">Costo en puntos</label><input asp-for="CostoPuntos" type="number" /></div>
+        <div class="grupo-formulario"><label asp-for="Nombre"></label><input asp-for="Nombre" maxlength="120" /><span class="mensaje-validacion" asp-validation-for="Nombre"></span></div>
+        <div class="grupo-formulario"><label asp-for="Descripcion"></label><textarea asp-for="Descripcion" rows="3" maxlength="600"></textarea></div>
+        <div class="grupo-formulario"><label asp-for="CostoPuntos">Costo en puntos</label><input asp-for="CostoPuntos" type="number" min="1" /><span class="mensaje-validacion" asp-validation-for="CostoPuntos"></span></div>
         <div class="grupo-formulario">
             <label><input asp-for="Activa" type="checkbox" style="width:auto;margin-right:8px;" /> Recompensa activa y disponible para canje</label>
         </div>
