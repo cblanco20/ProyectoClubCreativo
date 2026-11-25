@@ -21,6 +21,7 @@ namespace ProyectoClubCreativo.Controllers
         private readonly NotificacionService _notificaciones;
         private readonly ActualizacionSuscripcionesService _actualizacionSuscripciones;
         private readonly PromocionesService _promociones;
+        private readonly AuditoriaService _auditoria;
 
         public AdminController(
             IWebHostEnvironment entornoWeb,
@@ -28,8 +29,10 @@ namespace ProyectoClubCreativo.Controllers
             CorreoService correoService,
             NotificacionService notificaciones,
             ActualizacionSuscripcionesService actualizacionSuscripciones,
-            PromocionesService promociones)
+            PromocionesService promociones,
+            AuditoriaService auditoria)
         {
+            _auditoria = auditoria;
             _promociones = promociones;
             _entornoWeb = entornoWeb;
             _context = context;
@@ -44,7 +47,7 @@ namespace ProyectoClubCreativo.Controllers
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
             string? rolUsuario = HttpContext.Session.GetString("RolUsuario");
 
-            if (idUsuario is null || rolUsuario != "Administrador")
+            if (idUsuario is null)
             {
                 context.Result = RedirectToAction(
                     "IniciarSesion",
@@ -54,7 +57,91 @@ namespace ProyectoClubCreativo.Controllers
                 return;
             }
 
+            if (rolUsuario != "Administrador")
+            {
+                context.Result = RedirectToAction(
+                    "AccesoDenegado",
+                    "Cuenta"
+                );
+
+                return;
+            }
+
             base.OnActionExecuting(context);
+        }
+
+        public override async Task OnActionExecutionAsync(
+    Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context,
+    Microsoft.AspNetCore.Mvc.Filters.ActionExecutionDelegate next)
+        {
+            OnActionExecuting(context);
+
+            if (context.Result is not null)
+            {
+                if (context.Result is RedirectToActionResult { ActionName: "AccesoDenegado" })
+                {
+                    string nombreCuenta = HttpContext.Session.GetString("NombreUsuario") ?? "Una cuenta";
+                    string rolCuenta = HttpContext.Session.GetString("RolUsuario") ?? "sin rol";
+                    string rutaBloqueada = $"{context.RouteData.Values["controller"]}/{context.RouteData.Values["action"]}";
+
+                    try
+                    {
+                        await _auditoria.RegistrarAlertaAsync(
+                            "AccesoNoAutorizado",
+                            $"{nombreCuenta} (rol {rolCuenta}) intentó acceder a la sección restringida {rutaBloqueada}.",
+                            "Advertencia");
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                return;
+            }
+
+            Microsoft.AspNetCore.Mvc.Filters.ActionExecutedContext ejecutado = await next();
+
+            if (ejecutado.Exception is not null ||
+                !HttpMethods.IsPost(Request.Method) ||
+                ejecutado.Result is not (RedirectToActionResult or RedirectResult) ||
+                TempData.Peek("ErrorAdmin") is not null)
+            {
+                return;
+            }
+
+            string accion = context.ActionDescriptor.RouteValues["action"] ?? "Desconocida";
+
+            if (accion == nameof(EliminarComentario))
+            {
+                return;
+            }
+
+            string? idRegistro = context.RouteData.Values["id"]?.ToString();
+
+            if (string.IsNullOrEmpty(idRegistro) && Request.HasFormContentType)
+            {
+                idRegistro = Request.Form["id"].FirstOrDefault();
+            }
+
+            string nombre = HttpContext.Session.GetString("NombreUsuario") ?? "El administrador";
+
+            string descripcion = string.IsNullOrEmpty(idRegistro)
+                ? $"{nombre} ejecutó la acción {accion}."
+                : $"{nombre} ejecutó la acción {accion} sobre el registro {idRegistro}.";
+
+            try
+            {
+                await _auditoria.RegistrarAsync(
+                    "Administración",
+                    accion,
+                    null,
+                    idRegistro,
+                    descripcion,
+                    accion.StartsWith("Eliminar") ? "Advertencia" : "Informativo");
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public IActionResult CerrarSesion()
@@ -265,6 +352,26 @@ namespace ProyectoClubCreativo.Controllers
                     Fecha = ahora.ToString("dd/MM/yyyy"),
                     Icono = "bi-credit-card",
                     Nivel = "advertencia"
+                });
+            }
+            int idAdministradorActual = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+
+            int alertasSeguridadPendientes = await _context.Notificaciones.CountAsync(n =>
+                n.IdUsuario == idAdministradorActual &&
+                n.Tipo == "Seguridad" &&
+                !n.Leida);
+
+            if (alertasSeguridadPendientes > 0)
+            {
+                alertas.Insert(0, new AlertaAdminViewModel
+                {
+                    Tipo = "Seguridad",
+                    Mensaje = alertasSeguridadPendientes == 1
+                        ? "Hay 1 alerta de seguridad sin revisar. Consulte Seguridad y auditoría."
+                        : $"Hay {alertasSeguridadPendientes} alertas de seguridad sin revisar. Consulte Seguridad y auditoría.",
+                    Fecha = ahora.ToString("dd/MM/yyyy"),
+                    Icono = "bi-shield-exclamation",
+                    Nivel = "critica"
                 });
             }
 
@@ -7058,7 +7165,7 @@ namespace ProyectoClubCreativo.Controllers
                     $"Complete los campos pendientes antes de guardar: {string.Join(", ", faltantes)}.");
             }
 
-            if (modelo.TipoDescuento != "Porcentaje" && modelo.TipoDescuento != "Monto fijo")
+            if (modelo.TipoDescuento != "Porcentaje" && modelo.TipoDescuento != "MontoFijo")
             {
                 ModelState.AddModelError(nameof(modelo.TipoDescuento), "Seleccione un tipo de descuento válido.");
             }
@@ -7862,7 +7969,47 @@ namespace ProyectoClubCreativo.Controllers
 
             return RedirectToAction(nameof(Encuestas));
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarEncuesta(int id)
+        {
+            Encuesta? encuesta = await _context.Encuestas
+                .Include(e => e.PreguntasEncuesta).ThenInclude(p => p.OpcionesPregunta)
+                .Include(e => e.IdEventos)
+                .Include(e => e.IdTallers)
+                .FirstOrDefaultAsync(e => e.IdEncuesta == id);
 
+            if (encuesta is null)
+            {
+                TempData["ErrorAdmin"] = "La encuesta no está disponible. Es posible que ya haya sido eliminada.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            if (await _context.RespuestasEncuesta.AnyAsync(r => r.IdEncuesta == id))
+            {
+                TempData["ErrorAdmin"] =
+                    $"La encuesta \"{encuesta.Titulo}\" ya tiene respuestas y no se puede eliminar. Puede cerrarla para conservar los resultados.";
+
+                return RedirectToAction(nameof(Encuestas));
+            }
+
+            string titulo = encuesta.Titulo;
+
+            encuesta.IdEventos.Clear();
+            encuesta.IdTallers.Clear();
+
+            _context.OpcionesPregunta.RemoveRange(
+                encuesta.PreguntasEncuesta.SelectMany(p => p.OpcionesPregunta).ToList());
+            _context.PreguntasEncuesta.RemoveRange(encuesta.PreguntasEncuesta.ToList());
+            _context.Encuestas.Remove(encuesta);
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeAdmin"] = $"La encuesta \"{titulo}\" fue eliminada correctamente.";
+
+            return RedirectToAction(nameof(Encuestas));
+        }
         [HttpGet]
         public async Task<IActionResult> ResultadosEncuesta(int id)
         {
@@ -7953,79 +8100,162 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult Bitacora(FiltroBitacoraViewModel filtro)
+        [HttpGet]
+        public async Task<IActionResult> Bitacora(FiltroBitacoraViewModel filtro)
         {
             filtro ??= new FiltroBitacoraViewModel();
-            var movimientos = ObtenerMovimientosBitacoraDemo();
+
+            IQueryable<Auditorium> consulta = _context.Auditoria
+                .AsNoTracking()
+                .Include(a => a.IdUsuarioNavigation);
 
             if (!string.IsNullOrWhiteSpace(filtro.Usuario))
             {
-                movimientos = movimientos.Where(m => m.Usuario.Contains(filtro.Usuario, StringComparison.OrdinalIgnoreCase)).ToList();
+                string usuario = filtro.Usuario.Trim();
+
+                consulta = consulta.Where(a =>
+                    a.IdUsuarioNavigation != null &&
+                    (a.IdUsuarioNavigation.Nombre + " " + a.IdUsuarioNavigation.ApellidoPaterno)
+                        .Contains(usuario));
             }
 
             if (!string.IsNullOrWhiteSpace(filtro.Accion) && filtro.Accion != "Todas")
             {
-                movimientos = movimientos.Where(m => m.Accion == filtro.Accion).ToList();
+                consulta = consulta.Where(a => a.Accion == filtro.Accion);
             }
 
             if (filtro.FechaInicio is not null)
             {
-                movimientos = movimientos.Where(m =>
-                    DateTime.TryParseExact(m.Fecha.Split(' ')[0], "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var fecha) &&
-                    fecha >= filtro.FechaInicio).ToList();
+                DateTime desde = filtro.FechaInicio.Value.Date;
+
+                consulta = consulta.Where(a => a.FechaHora >= desde);
             }
 
             if (filtro.FechaFin is not null)
             {
-                movimientos = movimientos.Where(m =>
-                    DateTime.TryParseExact(m.Fecha.Split(' ')[0], "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var fecha) &&
-                    fecha <= filtro.FechaFin).ToList();
+                DateTime hasta = filtro.FechaFin.Value.Date.AddDays(1);
+
+                consulta = consulta.Where(a => a.FechaHora < hasta);
+            }
+
+            List<Auditorium> registros = await consulta
+                .OrderByDescending(a => a.FechaHora)
+                .Take(200)
+                .ToListAsync();
+
+            ViewBag.AccionesBitacora = await _context.Auditoria
+                .AsNoTracking()
+                .Select(a => a.Accion)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToListAsync();
+
+            List<Auditorium> alertasSeguridad = await _context.Auditoria
+    .AsNoTracking()
+    .Where(a => a.Modulo == "Seguridad")
+    .OrderByDescending(a => a.FechaHora)
+    .Take(10)
+    .ToListAsync();
+
+            DateTime hace24Horas = DateTime.Now.AddHours(-24);
+
+            var intentosFallidos = await _context.IntentosAccesos
+                .AsNoTracking()
+                .Where(i => !i.Exitoso && i.FechaHora >= hace24Horas)
+                .GroupBy(i => i.Correo)
+                .Select(g => new
+                {
+                    Correo = g.Key,
+                    Intentos = g.Count(),
+                    Fecha = g.Max(i => i.FechaHora),
+                    DireccionIp = g.Max(i => i.DireccionIp)
+                })
+                .OrderByDescending(g => g.Fecha)
+                .Take(10)
+                .ToListAsync();
+
+            int idAdministrador = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+
+            List<Notificacione> notificacionesSeguridad = await _context.Notificaciones
+                .Where(n =>
+                    n.IdUsuario == idAdministrador &&
+                    n.Tipo == "Seguridad" &&
+                    !n.Leida)
+                .ToListAsync();
+
+            foreach (Notificacione notificacion in notificacionesSeguridad)
+            {
+                notificacion.Leida = true;
+                notificacion.FechaLectura = DateTime.Now;
+            }
+
+            if (notificacionesSeguridad.Count > 0)
+            {
+                await _context.SaveChangesAsync();
             }
 
             return View(new BitacoraAdminViewModel
             {
                 Filtro = filtro,
-                Movimientos = movimientos,
-                Alertas = ObtenerAlertasSeguridadDemo(),
-                IntentosFallidos = ObtenerIntentosFallidosDemo()
+                Movimientos = registros.Select(ConvertirMovimiento).ToList(),
+                Alertas = alertasSeguridad.Select(a => new AlertaAdminViewModel
+                {
+                    Tipo = "Seguridad",
+                    Mensaje = a.Descripcion ?? a.Accion,
+                    Fecha = a.FechaHora.ToString("dd/MM/yyyy HH:mm"),
+                    Icono = a.Accion == "AccesoNoAutorizado" ? "bi-lock-fill" : "bi-shield-exclamation",
+                    Nivel = a.Nivel == "Critico" ? "critica" : "advertencia"
+                }).ToList(),
+                IntentosFallidos = intentosFallidos.Select(i => new IntentoFallidoViewModel
+                {
+                    Correo = i.Correo,
+                    DireccionIp = i.DireccionIp ?? "",
+                    Fecha = i.Fecha.ToString("dd/MM/yyyy HH:mm"),
+                    Intentos = i.Intentos,
+                    Bloqueado = false
+                }).ToList()
             });
         }
 
         [HttpGet]
-        public IActionResult DetalleMovimiento(int id = 1)
+        public async Task<IActionResult> DetalleMovimiento(int id)
         {
-            var movimiento = ObtenerMovimientosBitacoraDemo().FirstOrDefault(m => m.Id == id) ?? ObtenerMovimientosBitacoraDemo().First();
-            return View(movimiento);
+            Auditorium? registro = await _context.Auditoria
+                .AsNoTracking()
+                .Include(a => a.IdUsuarioNavigation)
+                .FirstOrDefaultAsync(a => a.IdAuditoria == id);
+
+            if (registro is null)
+            {
+                TempData["ErrorAdmin"] = "El registro de auditoría no está disponible.";
+
+                return RedirectToAction(nameof(Bitacora));
+            }
+
+            return View(ConvertirMovimiento(registro));
         }
 
-        private static List<MovimientoBitacoraViewModel> ObtenerMovimientosBitacoraDemo()
+        private static MovimientoBitacoraViewModel ConvertirMovimiento(Auditorium registro)
         {
-            return
-            [
-                new() { Id = 1, Usuario = "Jossete Sánchez", Accion = "Inicio de sesión", Modulo = "Acceso", Fecha = "05/08/2026 08:15", DireccionIp = "190.113.20.4", Detalle = "Inicio de sesión exitoso desde el panel de administración.", Nivel = "informativa" },
-                new() { Id = 2, Usuario = "Jossete Sánchez", Accion = "Aprobación", Modulo = "Emprendimientos", Fecha = "05/08/2026 09:02", DireccionIp = "190.113.20.4", Detalle = "Se aprobó la solicitud de emprendimiento \"Luz Natural\".", Nivel = "informativa" },
-                new() { Id = 3, Usuario = "Carla Ramírez Solís", Accion = "Eliminación", Modulo = "Comentarios", Fecha = "05/08/2026 10:40", DireccionIp = "201.203.14.88", Detalle = "Se eliminó un comentario reportado por contenido inapropiado.", Nivel = "advertencia" },
-                new() { Id = 4, Usuario = "Desconocido", Accion = "Intento fallido", Modulo = "Acceso", Fecha = "04/08/2026 22:18", DireccionIp = "45.66.12.9", Detalle = "Múltiples intentos fallidos de inicio de sesión para la cuenta admin@clubcreativomivo.com.", Nivel = "critica" },
-                new() { Id = 5, Usuario = "Jossete Sánchez", Accion = "Edición", Modulo = "Promociones", Fecha = "04/08/2026 15:22", DireccionIp = "190.113.20.4", Detalle = "Se editaron las fechas de la promoción \"Descuento Feria San Pedro\".", Nivel = "informativa" }
-            ];
+            return new MovimientoBitacoraViewModel
+            {
+                Id = (int)registro.IdAuditoria,
+                Usuario = registro.IdUsuarioNavigation is null
+                    ? "Sistema"
+                    : $"{registro.IdUsuarioNavigation.Nombre} {registro.IdUsuarioNavigation.ApellidoPaterno}",
+                Accion = registro.Accion,
+                Modulo = registro.Modulo,
+                Fecha = registro.FechaHora.ToString("dd/MM/yyyy HH:mm"),
+                DireccionIp = registro.DireccionIp ?? "",
+                Detalle = registro.Descripcion ?? "",
+                Nivel = registro.Nivel switch
+                {
+                    "Critico" => "critica",
+                    "Advertencia" => "advertencia",
+                    _ => "informativa"
+                }
+            };
         }
-
-        private static List<AlertaAdminViewModel> ObtenerAlertasSeguridadDemo()
-        {
-            return
-            [
-                new() { Tipo = "Seguridad", Mensaje = "Se detectaron 5 intentos fallidos de inicio de sesión desde una misma dirección IP.", Fecha = "Hoy", Icono = "bi-shield-exclamation", Nivel = "critica" },
-                new() { Tipo = "Cuentas", Mensaje = "La cuenta admin@clubcreativomivo.com fue bloqueada temporalmente.", Fecha = "Hoy", Icono = "bi-lock-fill", Nivel = "advertencia" }
-            ];
-        }
-
-        private static List<IntentoFallidoViewModel> ObtenerIntentosFallidosDemo()
-        {
-            return
-            [
-                new() { Correo = "admin@clubcreativomivo.com", DireccionIp = "45.66.12.9", Fecha = "04/08/2026 22:18", Intentos = 5, Bloqueado = true },
-                new() { Correo = "carla@ejemplo.com", DireccionIp = "201.203.14.88", Fecha = "03/08/2026 19:40", Intentos = 2, Bloqueado = false }
-            ];
-        }
+        
     }
 }

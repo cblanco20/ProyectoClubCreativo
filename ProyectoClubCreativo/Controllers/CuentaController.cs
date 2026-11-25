@@ -13,13 +13,16 @@ namespace ProyectoClubCreativo.Controllers
     {
         private readonly ClubCreativoDbContext _context;
         private readonly CorreoService _correoService;
+        private readonly AuditoriaService _auditoria;
 
         public CuentaController(
             ClubCreativoDbContext context,
-            CorreoService correoService)
+            CorreoService correoService,
+            AuditoriaService auditoria)
         {
             _context = context;
             _correoService = correoService;
+            _auditoria = auditoria;
         }
 
         [HttpGet]
@@ -28,6 +31,13 @@ namespace ProyectoClubCreativo.Controllers
             return View(new InicioSesionViewModel());
         }
 
+        [HttpGet]
+        public IActionResult AccesoDenegado()
+        {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+
+            return View();
+        }
 
 
         [HttpPost]
@@ -53,12 +63,41 @@ namespace ProyectoClubCreativo.Controllers
                 );
 
             if (usuario is null ||
-                usuario.Estado != "Activo" ||
-                !BCrypt.Net.BCrypt.Verify(
-                    modelo.Contrasena,
-                    usuario.ContrasenaHash
-                ))
+    usuario.Estado != "Activo" ||
+    !BCrypt.Net.BCrypt.Verify(
+        modelo.Contrasena,
+        usuario.ContrasenaHash
+    ))
             {
+                const int limiteIntentos = 5;
+
+                _context.IntentosAccesos.Add(new IntentosAcceso
+                {
+                    Correo = correoNormalizado,
+                    IdUsuario = usuario?.IdUsuario,
+                    Exitoso = false,
+                    DireccionIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    FechaHora = DateTime.Now
+                });
+
+                await _context.SaveChangesAsync();
+
+                DateTime desde = DateTime.Now.AddMinutes(-15);
+
+                int fallidos = await _context.IntentosAccesos.CountAsync(i =>
+                    i.Correo == correoNormalizado &&
+                    !i.Exitoso &&
+                    i.FechaHora >= desde);
+
+                if (fallidos == limiteIntentos)
+                {
+                    await _auditoria.RegistrarAlertaAsync(
+                        "IntentosFallidosExcedidos",
+                        $"Se registraron {fallidos} intentos fallidos de inicio de sesión para la cuenta {correoNormalizado} en los últimos 15 minutos.",
+                        "Critico",
+                        usuario?.IdUsuario);
+                }
+
                 ModelState.AddModelError(
                     string.Empty,
                     "Correo o contraseña incorrectos."
@@ -102,6 +141,24 @@ namespace ProyectoClubCreativo.Controllers
             );
 
             usuario.UltimoAcceso = DateTime.Now;
+
+            _context.IntentosAccesos.Add(new IntentosAcceso
+            {
+                Correo = correoNormalizado,
+                IdUsuario = usuario.IdUsuario,
+                Exitoso = true,
+                DireccionIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                FechaHora = DateTime.Now
+            });
+
+            _auditoria.Agregar(
+                "Acceso",
+                "InicioSesion",
+                "Usuarios",
+                usuario.IdUsuario.ToString(),
+                $"{usuario.Nombre} inició sesión con el rol {rol.Nombre}.",
+                "Informativo",
+                usuario.IdUsuario);
 
             await _context.SaveChangesAsync();
 
@@ -764,6 +821,15 @@ namespace ProyectoClubCreativo.Controllers
 
             tokenRecuperacion.Utilizado = true;
             tokenRecuperacion.FechaUso = DateTime.Now;
+
+            _auditoria.Agregar(
+                "Cuentas",
+                "RestablecerContrasena",
+                "Usuarios",
+                usuario.IdUsuario.ToString(),
+                $"Se restableció la contraseña de la cuenta {usuario.Correo} mediante el enlace de recuperación.",
+                "Advertencia",
+                usuario.IdUsuario);
 
             await _context.SaveChangesAsync();
 

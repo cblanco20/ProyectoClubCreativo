@@ -18,13 +18,16 @@ namespace ProyectoClubCreativo.Controllers
         private readonly PagoService _pagoService;
         private readonly NotificacionService _notificaciones;
         private readonly PromocionesService _promociones;
+        private readonly AuditoriaService _auditoria;
 
         public UsuarioController(
     ClubCreativoDbContext context,
     PagoService pagoService,
     NotificacionService notificaciones,
-    PromocionesService promociones)
+    PromocionesService promociones,
+    AuditoriaService auditoria)
         {
+            _auditoria = auditoria;
             _promociones = promociones;
             _context = context;
             _pagoService = pagoService;
@@ -403,6 +406,15 @@ namespace ProyectoClubCreativo.Controllers
                     BCrypt.Net.BCrypt.HashPassword(
                         modelo.NuevaContrasena
                     );
+
+                _auditoria.Agregar(
+                    "Cuentas",
+                    "CambioContrasena",
+                    "Usuarios",
+                    usuario.IdUsuario.ToString(),
+                    $"{usuario.Nombre} cambió su contraseña desde el perfil.",
+                    "Advertencia",
+                    usuario.IdUsuario);
             }
 
             await _context.SaveChangesAsync();

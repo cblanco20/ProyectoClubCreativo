@@ -22,11 +22,10 @@
         <label asp-for="Filtro.Accion"></label>
         <select asp-for="Filtro.Accion">
             <option value="Todas">Todas</option>
-            <option>Inicio de sesión</option>
-            <option>Aprobación</option>
-            <option>Edición</option>
-            <option>Eliminación</option>
-            <option>Intento fallido</option>
+            @foreach (string accion in (ViewBag.AccionesBitacora as List<string>) ?? new List<string>())
+            {
+                <option value="@accion">@accion</option>
+            }
         </select>
     </div>
     <button type="submit" class="boton-filtro-admin"><i class="bi bi-funnel-fill"></i> Filtrar</button>
@@ -38,6 +37,14 @@
         <div class="encabezado-bloque-admin">
             <h2><i class="bi bi-exclamation-triangle-fill"></i> Alertas de seguridad</h2>
         </div>
+        @if (!Model.Alertas.Any())
+        {
+            <div class="estado-vacio-dashboard">
+                <i class="bi bi-check-circle"></i>
+                <strong>Sin alertas de seguridad</strong>
+                <span>No se han registrado alertas hasta ahora.</span>
+            </div>
+        }
         @foreach (var alerta in Model.Alertas)
         {
             <div class="item-alerta-admin nivel-@alerta.Nivel">
@@ -66,6 +73,10 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if (!Model.IntentosFallidos.Any())
+                    {
+                        <tr><td colspan="5">No hay intentos fallidos en las últimas 24 horas.</td></tr>
+                    }
                     @foreach (var intento in Model.IntentosFallidos)
                     {
                         <tr>
@@ -111,6 +122,10 @@
                 </tr>
             </thead>
             <tbody>
+                @if (Model.Movimientos.Count == 0)
+                {
+                    <tr><td colspan="7">No hay registros que coincidan con los filtros seleccionados.</td></tr>
+                }
                 @foreach (var movimiento in Model.Movimientos)
                 {
                     <tr>

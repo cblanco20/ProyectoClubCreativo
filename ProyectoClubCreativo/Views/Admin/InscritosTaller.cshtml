@@ -84,7 +84,7 @@
 
     @if (cancelable)
     {
-        <form asp-action="CancelarTaller" method="post" class="formulario-admin" style="margin-top:22px;">
+        <form asp-action="CancelarTaller" method="post" class="formulario-admin" style="margin-top:22px;" onsubmit="return confirm('¿Cancelar el taller &quot;@Model.Nombre&quot;? Esta acción no se puede deshacer.');">
             <input type="hidden" name="id" value="@Model.Id" />
             <div class="grupo-formulario"><label>Motivo de cancelación del taller</label><textarea name="motivo" rows="2" required></textarea></div>
             <button type="submit" class="boton-admin boton-admin-peligro">Cancelar taller</button>

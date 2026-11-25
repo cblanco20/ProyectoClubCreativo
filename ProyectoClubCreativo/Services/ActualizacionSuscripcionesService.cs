@@ -6,11 +6,14 @@ namespace ProyectoClubCreativo.Services
     public class ActualizacionSuscripcionesService
     {
         private readonly ClubCreativoDbContext _context;
+        private readonly AuditoriaService _auditoria;
 
         public ActualizacionSuscripcionesService(
-            ClubCreativoDbContext context)
+            ClubCreativoDbContext context,
+            AuditoriaService auditoria)
         {
             _context = context;
+            _auditoria = auditoria;
         }
 
         public async Task ActualizarEstadosAsync()
@@ -32,6 +35,16 @@ namespace ProyectoClubCreativo.Services
             foreach (var suscripcion in vencidas)
             {
                 suscripcion.Estado = "Vencida";
+
+                _auditoria.Agregar(
+                    "Suscripciones",
+                    "SuscripcionVencida",
+                    "Suscripciones",
+                    suscripcion.IdSuscripcion.ToString(),
+                    $"La suscripción {suscripcion.IdSuscripcion} del emprendimiento {suscripcion.IdEmprendimiento} venció automáticamente.",
+                    "Informativo",
+                    null,
+                    true);
             }
 
             // Liberar el índice único antes de activar otros planes.
@@ -65,6 +78,16 @@ namespace ProyectoClubCreativo.Services
                 }
 
                 suscripcion.Estado = "Activa";
+
+                _auditoria.Agregar(
+                    "Suscripciones",
+                    "SuscripcionActivada",
+                    "Suscripciones",
+                    suscripcion.IdSuscripcion.ToString(),
+                    $"La suscripción {suscripcion.IdSuscripcion} del emprendimiento {suscripcion.IdEmprendimiento} se activó automáticamente.",
+                    "Informativo",
+                    null,
+                    true);
 
                 // Guardar cada activación para que la siguiente
                 // comprobación considere los cambios anteriores.

@@ -69,7 +69,7 @@
                                 </a>
                                 @if (promocion.Estado != "Desactivada")
                                 {
-                                    <form asp-action="DesactivarPromocion" method="post">
+                                    <form asp-action="DesactivarPromocion" method="post" onsubmit="return confirm('¿Desactivar la promoción &quot;@promocion.Nombre&quot;? Dejará de estar disponible para los usuarios.');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@promocion.Id" />
                                         <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-slash-circle"></i></button>

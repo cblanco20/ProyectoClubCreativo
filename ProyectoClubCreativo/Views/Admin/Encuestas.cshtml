@@ -79,10 +79,18 @@
                                 }
                                 @if (encuesta.Estado == "Publicada")
                                 {
-                                    <form asp-action="CerrarEncuesta" method="post">
+                                    <form asp-action="CerrarEncuesta" method="post" onsubmit="return confirm('¿Cerrar la encuesta &quot;@encuesta.Titulo&quot;? Ya no aceptará respuestas nuevas.');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@encuesta.Id" />
                                         <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-lock-fill"></i></button>
+                                    </form>
+                                }
+                                @if (encuesta.TotalRespuestas == 0)
+                                {
+                                    <form asp-action="EliminarEncuesta" method="post" onsubmit="return confirm('¿Eliminar la encuesta &quot;@encuesta.Titulo&quot;? Esta acción no se puede deshacer.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@encuesta.Id" />
+                                        <button type="submit" class="boton-admin boton-admin-peligro"><i class="bi bi-trash-fill"></i></button>
                                     </form>
                                 }
                             </div>

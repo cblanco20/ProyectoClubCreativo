@@ -76,7 +76,7 @@
                                 }
                                 else
                                 {
-                                    <form asp-action="DesactivarNoticia" method="post">
+                                    <form asp-action="DesactivarNoticia" method="post" onsubmit="return confirm('¿Desactivar la publicación &quot;@noticia.Titulo&quot;? Dejará de mostrarse a los usuarios.');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@noticia.Id" />
                                         <button type="submit" class="boton-admin boton-admin-secundario"><i class="bi bi-eye-slash-fill"></i></button>

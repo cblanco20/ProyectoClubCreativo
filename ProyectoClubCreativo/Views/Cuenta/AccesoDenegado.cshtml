@@ -1,0 +1,42 @@
+﻿@{
+    ViewData["Title"] = "Permisos insuficientes";
+    Layout = "~/Views/Shared/_LayoutAcceso.cshtml";
+    string? rol = Context.Session.GetString("RolUsuario");
+    string controlador = rol switch
+    {
+        "Administrador" => "Admin",
+        "Emprendedor" => "Emprendedor",
+        _ => "Usuario"
+    };
+}
+
+<div class="contenedor-acceso">
+
+    <section class="panel-formulario-acceso">
+        <div class="tarjeta-formulario-acceso">
+
+            <div class="encabezado-formulario-acceso">
+                <span class="etiqueta-formulario-acceso">
+                    Acceso restringido
+                </span>
+
+                <h1 class="titulo-formulario-acceso">
+                    Permisos insuficientes
+                </h1>
+
+                <p class="descripcion-formulario-acceso">
+                    Su cuenta no tiene permisos para ver esta sección.
+                    Si cree que es un error, comuníquese con la administración del club.
+                </p>
+            </div>
+
+            <a asp-controller="@controlador"
+               asp-action="Panel"
+               class="boton-formulario-acceso">
+                Volver a mi panel
+            </a>
+
+        </div>
+    </section>
+
+</div>

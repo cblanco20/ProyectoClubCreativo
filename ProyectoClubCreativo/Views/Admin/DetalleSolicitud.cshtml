@@ -73,7 +73,7 @@
                 </button>
             </form>
 
-            <form asp-controller="Admin" asp-action="Rechazar" method="post" class="formulario-admin">
+            <form asp-controller="Admin" asp-action="Rechazar" method="post" class="formulario-admin" onsubmit="return confirm('¿Rechazar la solicitud de &quot;@Model.NombreComercial&quot;? Se notificará al emprendedor.');">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" value="@Model.Id" />
 
@@ -99,7 +99,7 @@
                 <h2><i class="bi bi-slash-circle"></i> Desactivar emprendimiento</h2>
             </div>
 
-            <form asp-controller="Admin" asp-action="Desactivar" method="post" class="formulario-admin">
+            <form asp-controller="Admin" asp-action="Desactivar" method="post" class="formulario-admin" onsubmit="return confirm('¿Desactivar el emprendimiento &quot;@Model.NombreComercial&quot;? Dejará de estar visible para los usuarios.');">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" value="@Model.Id" />
 

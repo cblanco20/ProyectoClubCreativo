@@ -17,6 +17,7 @@ namespace ProyectoClubCreativo.Controllers
         private readonly CorreoService _correoService;
         private readonly NotificacionService _notificaciones;
         private readonly ActualizacionSuscripcionesService _actualizacionSuscripciones;
+        private readonly AuditoriaService _auditoria;
 
         public EmprendedorController(
             ClubCreativoDbContext context,
@@ -24,8 +25,10 @@ namespace ProyectoClubCreativo.Controllers
             PagoService pagoService,
             CorreoService correoService,
             NotificacionService notificaciones,
-           ActualizacionSuscripcionesService actualizacionSuscripciones)
+           ActualizacionSuscripcionesService actualizacionSuscripciones,
+            AuditoriaService auditoria)
         {
+            _auditoria = auditoria;
             _context = context;
             _entornoWeb = entornoWeb;
             _pagoService = pagoService;
@@ -41,10 +44,34 @@ namespace ProyectoClubCreativo.Controllers
             int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
             string? rolUsuario = HttpContext.Session.GetString("RolUsuario");
 
-            if (idUsuario is null || rolUsuario != "Emprendedor")
+            if (idUsuario is null)
             {
                 context.Result = RedirectToAction(
                     "IniciarSesion",
+                    "Cuenta"
+                );
+
+                return;
+            }
+
+            if (rolUsuario != "Emprendedor")
+            {
+                string nombreCuenta = HttpContext.Session.GetString("NombreUsuario") ?? "Una cuenta";
+                string rutaCuenta = $"{context.RouteData.Values["controller"]}/{context.RouteData.Values["action"]}";
+
+                try
+                {
+                    await _auditoria.RegistrarAlertaAsync(
+                        "AccesoNoAutorizado",
+                        $"{nombreCuenta} (rol {rolUsuario ?? "sin rol"}) intentó acceder a la sección restringida {rutaCuenta}.",
+                        "Advertencia");
+                }
+                catch (Exception)
+                {
+                }
+
+                context.Result = RedirectToAction(
+                    "AccesoDenegado",
                     "Cuenta"
                 );
 
@@ -75,8 +102,46 @@ namespace ProyectoClubCreativo.Controllers
             }
 
             ViewBag.ProductosConAlertaInventario = productosConAlerta;
+            ViewBag.ProductosConAlertaInventario = productosConAlerta;
 
-            await next();
+            ActionExecutedContext ejecutado = await next();
+
+            if (ejecutado.Exception is not null ||
+                !HttpMethods.IsPost(Request.Method) ||
+                ejecutado.Result is not (RedirectToActionResult or RedirectResult) ||
+                TempData.Peek("MensajeError") is not null)
+            {
+                return;
+            }
+
+            string accion = context.ActionDescriptor.RouteValues["action"] ?? "Desconocida";
+
+            string? idRegistro = context.RouteData.Values["id"]?.ToString();
+
+            if (string.IsNullOrEmpty(idRegistro) && Request.HasFormContentType)
+            {
+                idRegistro = Request.Form["id"].FirstOrDefault();
+            }
+
+            string nombre = HttpContext.Session.GetString("NombreUsuario") ?? "El emprendedor";
+
+            string descripcion = string.IsNullOrEmpty(idRegistro)
+                ? $"{nombre} ejecutó la acción {accion}."
+                : $"{nombre} ejecutó la acción {accion} sobre el registro {idRegistro}.";
+
+            try
+            {
+                await _auditoria.RegistrarAsync(
+                    "Emprendedor",
+                    accion,
+                    null,
+                    idRegistro,
+                    descripcion,
+                    accion.StartsWith("Eliminar") ? "Advertencia" : "Informativo");
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public async Task<IActionResult> Panel()

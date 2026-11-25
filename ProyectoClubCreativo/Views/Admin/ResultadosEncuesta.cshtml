@@ -23,7 +23,7 @@
         <p>Todavía no hay respuestas para esta encuesta.</p>
     }
 
-    @foreach (var pregunta in Model.Resultados)
+    @foreach (var pregunta in Model.Resultados.Where(_ => Model.TotalRespuestas > 0))
     {
         int totalVotos = pregunta.Opciones.Sum(o => o.Votos);
 
