@@ -6,6 +6,7 @@ using ProyectoClubCreativo.Data;
 using ProyectoClubCreativo.Models.Entities;
 using ProyectoClubCreativo.Models.ViewModels;
 using ProyectoClubCreativo.Services;
+using System.Globalization;
 
 namespace ProyectoClubCreativo.Controllers
 {
@@ -4218,9 +4219,478 @@ namespace ProyectoClubCreativo.Controllers
             return RedirectToAction(nameof(ParticipacionEventos));
         }
 
-        public IActionResult Estadisticas()
+        [HttpGet]
+        public async Task<IActionResult> Estadisticas(int periodo = 30)
         {
-            return View();
+            if (periodo != 7 && periodo != 30 && periodo != 90 && periodo != 365)
+            {
+                periodo = 30;
+            }
+
+            int idUsuario = HttpContext.Session.GetInt32("IdUsuario")!.Value;
+            DateTime ahora = DateTime.Now;
+            DateTime desde = ahora.AddDays(-periodo);
+            DateTime desdeAnterior = desde.AddDays(-periodo);
+
+            static double Variacion(decimal actual, decimal anterior)
+            {
+                if (anterior == 0)
+                {
+                    return actual > 0 ? 100 : 0;
+                }
+
+                return Math.Round((double)((actual - anterior) / anterior * 100), 1);
+            }
+
+            static decimal TopeEscala(decimal maximo)
+            {
+                if (maximo <= 0)
+                {
+                    return 1000m;
+                }
+
+                double magnitud = Math.Pow(10, Math.Floor(Math.Log10((double)maximo)));
+
+                return (decimal)(Math.Ceiling((double)maximo / magnitud) * magnitud);
+            }
+
+            string descripcion = periodo switch
+            {
+                7 => "los últimos 7 días.",
+                30 => "los últimos 30 días.",
+                90 => "los últimos 3 meses.",
+                _ => "el último año."
+            };
+
+            EstadisticasEmprendedorViewModel modelo = new()
+            {
+                Periodo = periodo,
+                DescripcionPeriodo = "Ingresos obtenidos durante " + descripcion
+            };
+
+            int? idEmprendimiento = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.IdUsuarioPropietario == idUsuario)
+                .Select(e => (int?)e.IdEmprendimiento)
+                .FirstOrDefaultAsync();
+
+            if (!idEmprendimiento.HasValue)
+            {
+                return View(modelo);
+            }
+
+            int idEmp = idEmprendimiento.Value;
+
+            string[] estadosVenta = { "Pagada", "En preparacion", "Enviada", "Entregada" };
+
+            // Ventas del período actual y del anterior.
+            var filas = await _context.VentaDetalles
+                .AsNoTracking()
+                .Where(d =>
+                    d.IdProductoNavigation.IdEmprendimiento == idEmp &&
+                    estadosVenta.Contains(d.IdVentaNavigation.Estado) &&
+                    d.IdVentaNavigation.FechaVenta >= desdeAnterior)
+                .Select(d => new
+                {
+                    d.IdVenta,
+                    d.IdProducto,
+                    Fecha = d.IdVentaNavigation.FechaVenta,
+                    IdComprador = d.IdVentaNavigation.IdUsuario,
+                    Producto = d.IdProductoNavigation.Nombre,
+                    Categoria = d.IdProductoNavigation.IdCategoriaNavigation == null
+                        ? null
+                        : d.IdProductoNavigation.IdCategoriaNavigation.Nombre,
+                    Imagen = d.IdProductoNavigation.ProductoImagene == null
+                        ? null
+                        : d.IdProductoNavigation.ProductoImagene.UrlImagen,
+                    d.Cantidad,
+                    Monto = d.Subtotal ?? d.Cantidad * d.PrecioUnitario
+                })
+                .ToListAsync();
+
+            var actuales = filas.Where(f => f.Fecha >= desde).ToList();
+            var anteriores = filas.Where(f => f.Fecha < desde).ToList();
+
+            modelo.Ventas = actuales.Sum(f => f.Monto);
+            modelo.VentasAnterior = anteriores.Sum(f => f.Monto);
+            modelo.VariacionVentas = Variacion(modelo.Ventas, modelo.VentasAnterior);
+
+            modelo.Ordenes = actuales.Select(f => f.IdVenta).Distinct().Count();
+            int ordenesAnteriores = anteriores.Select(f => f.IdVenta).Distinct().Count();
+            modelo.VariacionOrdenes = Variacion(modelo.Ordenes, ordenesAnteriores);
+
+            modelo.Unidades = actuales.Sum(f => f.Cantidad);
+            int unidadesAnteriores = anteriores.Sum(f => f.Cantidad);
+            modelo.VariacionUnidades = Variacion(modelo.Unidades, unidadesAnteriores);
+
+            modelo.Clientes = actuales.Select(f => f.IdComprador).Distinct().Count();
+            modelo.TicketPromedio = modelo.Ordenes > 0 ? modelo.Ventas / modelo.Ordenes : 0;
+
+            // Favoritos del emprendimiento y de sus productos.
+            IQueryable<Favorito> favoritos = _context.Favoritos
+                .AsNoTracking()
+                .Where(f =>
+                    f.IdEmprendimiento == idEmp ||
+                    (f.IdProducto != null &&
+                     f.IdProductoNavigation!.IdEmprendimiento == idEmp));
+
+            modelo.Favoritos = await favoritos.CountAsync(f => f.FechaRegistro >= desde);
+            int favoritosAnteriores = await favoritos.CountAsync(f =>
+                f.FechaRegistro >= desdeAnterior && f.FechaRegistro < desde);
+            modelo.VariacionFavoritos = Variacion(modelo.Favoritos, favoritosAnteriores);
+
+            // Valoración promedio general.
+            List<byte?> valoraciones = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c =>
+                    c.Estado != "Eliminado" &&
+                    c.Valoracion != null &&
+                    (c.IdEmprendimiento == idEmp ||
+                     (c.IdProducto != null &&
+                      c.IdProductoNavigation!.IdEmprendimiento == idEmp)))
+                .Select(c => c.Valoracion)
+                .ToListAsync();
+
+            modelo.TotalValoraciones = valoraciones.Count;
+            modelo.Valoracion = valoraciones.Count > 0
+                ? Math.Round(valoraciones.Average(v => (double)v!.Value), 1)
+                : null;
+
+            // Productos.
+            modelo.ProductosTotales = await _context.Productos
+                .CountAsync(p => p.IdEmprendimiento == idEmp);
+
+            var publicados = await _context.Productos
+                .AsNoTracking()
+                .Where(p => p.IdEmprendimiento == idEmp && p.Estado == "Publicado")
+                .OrderBy(p => p.Nombre)
+                .Select(p => new
+                {
+                    p.IdProducto,
+                    p.Nombre,
+                    p.StockActual,
+                    Categoria = p.IdCategoriaNavigation == null
+                        ? null
+                        : p.IdCategoriaNavigation.Nombre,
+                    Imagen = p.ProductoImagene == null
+                        ? null
+                        : p.ProductoImagene.UrlImagen
+                })
+                .ToListAsync();
+
+            modelo.ProductosPublicados = publicados.Count;
+            modelo.ProductosBajoStock = publicados.Count(p => p.StockActual <= 3);
+
+            Dictionary<int, int> favoritosPorProducto = await _context.Favoritos
+                .AsNoTracking()
+                .Where(f =>
+                    f.IdProducto != null &&
+                    f.IdProductoNavigation!.IdEmprendimiento == idEmp &&
+                    f.FechaRegistro >= desde)
+                .GroupBy(f => f.IdProducto!.Value)
+                .Select(g => new { IdProducto = g.Key, Total = g.Count() })
+                .ToDictionaryAsync(x => x.IdProducto, x => x.Total);
+
+            Dictionary<int, (int Unidades, int Ordenes, decimal Ingresos)> ventasPorProducto =
+                actuales
+                    .GroupBy(f => f.IdProducto)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => (
+                            g.Sum(x => x.Cantidad),
+                            g.Select(x => x.IdVenta).Distinct().Count(),
+                            g.Sum(x => x.Monto)));
+
+            modelo.Productos = publicados
+                .Select(p =>
+                {
+                    ventasPorProducto.TryGetValue(p.IdProducto, out var v);
+                    favoritosPorProducto.TryGetValue(p.IdProducto, out int totalFavoritos);
+
+                    return new ProductoEstadisticaViewModel
+                    {
+                        IdProducto = p.IdProducto,
+                        Nombre = p.Nombre,
+                        Categoria = p.Categoria,
+                        ImagenUrl = p.Imagen,
+                        Stock = p.StockActual,
+                        Favoritos = totalFavoritos,
+                        Unidades = v.Unidades,
+                        Ordenes = v.Ordenes,
+                        Ingresos = v.Ingresos
+                    };
+                })
+                .OrderByDescending(p => p.Ingresos)
+                .ThenBy(p => p.Nombre)
+                .ToList();
+
+            // Productos más vendidos.
+            modelo.TopProductos = actuales
+                .GroupBy(f => f.IdProducto)
+                .Select(g => new ProductoEstadisticaViewModel
+                {
+                    IdProducto = g.Key,
+                    Nombre = g.First().Producto,
+                    Categoria = g.First().Categoria,
+                    ImagenUrl = g.First().Imagen,
+                    Unidades = g.Sum(x => x.Cantidad),
+                    Ingresos = g.Sum(x => x.Monto)
+                })
+                .OrderByDescending(p => p.Unidades)
+                .ThenByDescending(p => p.Ingresos)
+                .Take(4)
+                .ToList();
+
+            int maximoUnidades = modelo.TopProductos.Count > 0
+                ? modelo.TopProductos.Max(p => p.Unidades)
+                : 1;
+
+            foreach (ProductoEstadisticaViewModel producto in modelo.TopProductos)
+            {
+                producto.Porcentaje = Math.Round((double)producto.Unidades / maximoUnidades * 100);
+            }
+
+            modelo.ProductoEstrella = modelo.TopProductos.FirstOrDefault()?.Nombre;
+
+            // Ventas por categoría.
+            string[] colores = { "#7f45c6", "#e95b86", "#e6a42e", "#3cae78", "#94a3b8" };
+
+            var porCategoria = actuales
+                .GroupBy(f => f.Categoria ?? "Sin categoría")
+                .Select(g => new { Nombre = g.Key, Monto = g.Sum(x => x.Monto) })
+                .OrderByDescending(c => c.Monto)
+                .ToList();
+
+            List<(string Nombre, decimal Monto)> categorias = porCategoria
+                .Take(4)
+                .Select(c => (c.Nombre, c.Monto))
+                .ToList();
+
+            decimal otras = porCategoria.Skip(4).Sum(c => c.Monto);
+
+            if (otras > 0)
+            {
+                categorias.Add(("Otras", otras));
+            }
+
+            double acumulado = 0;
+            List<string> tramos = new();
+
+            for (int i = 0; i < categorias.Count; i++)
+            {
+                double porcentaje = modelo.Ventas > 0
+                    ? (double)(categorias[i].Monto / modelo.Ventas * 100)
+                    : 0;
+
+                tramos.Add(
+                    $"{colores[i]} " +
+                    $"{acumulado.ToString("0.##", CultureInfo.InvariantCulture)}% " +
+                    $"{(acumulado + porcentaje).ToString("0.##", CultureInfo.InvariantCulture)}%");
+
+                modelo.Categorias.Add(new CategoriaVentaViewModel
+                {
+                    Nombre = categorias[i].Nombre,
+                    Color = colores[i],
+                    Monto = categorias[i].Monto,
+                    Porcentaje = Math.Round(porcentaje)
+                });
+
+                acumulado += porcentaje;
+            }
+
+            if (tramos.Count > 0)
+            {
+                modelo.GradienteCategorias = "conic-gradient(" + string.Join(", ", tramos) + ")";
+            }
+
+            // Evolución de ventas.
+            int cubetas = periodo switch { 7 => 7, 30 => 10, _ => 12 };
+            double diasPorCubeta = (double)periodo / cubetas;
+
+            decimal[] serieActual = new decimal[cubetas];
+            decimal[] serieAnterior = new decimal[cubetas];
+
+            foreach (var fila in filas)
+            {
+                bool esActual = fila.Fecha >= desde;
+                DateTime inicioBase = esActual ? desde : desdeAnterior;
+
+                int indice = (int)Math.Floor(
+                    (fila.Fecha - inicioBase).TotalDays / diasPorCubeta);
+
+                indice = Math.Clamp(indice, 0, cubetas - 1);
+
+                if (esActual)
+                {
+                    serieActual[indice] += fila.Monto;
+                }
+                else
+                {
+                    serieAnterior[indice] += fila.Monto;
+                }
+            }
+
+            decimal tope = TopeEscala(Math.Max(serieActual.Max(), serieAnterior.Max()));
+
+            for (int i = 5; i >= 0; i--)
+            {
+                modelo.EscalaVentas.Add("₡" + (tope * i / 5).ToString("N0"));
+            }
+
+            for (int i = 0; i < cubetas; i++)
+            {
+                modelo.EtiquetasVentas.Add(
+                    desde.AddDays(i * diasPorCubeta).ToString("dd/MM"));
+            }
+
+            string Ruta(decimal[] serie, bool guardarPuntos)
+            {
+                List<string> comandos = new();
+
+                for (int i = 0; i < serie.Length; i++)
+                {
+                    double x = i * 700.0 / (cubetas - 1);
+                    double y = 250 - (double)(serie[i] / tope) * 230;
+
+                    comandos.Add(
+                        (i == 0 ? "M" : "L") +
+                        x.ToString("0.##", CultureInfo.InvariantCulture) + "," +
+                        y.ToString("0.##", CultureInfo.InvariantCulture));
+
+                    if (guardarPuntos)
+                    {
+                        modelo.Puntos.Add(new PuntoGraficoEmprendedorViewModel { X = x, Y = y });
+                    }
+                }
+
+                return string.Join(" ", comandos);
+            }
+
+            modelo.RutaActual = Ruta(serieActual, true);
+            modelo.RutaAnterior = Ruta(serieAnterior, false);
+            modelo.RutaArea = modelo.RutaActual + " L700,260 L0,260 Z";
+
+            // Actividad reciente.
+            List<ActividadEstadisticaViewModel> actividad = new();
+
+            var ventasRecientes = await _context.VentaDetalles
+                .AsNoTracking()
+                .Where(d =>
+                    d.IdProductoNavigation.IdEmprendimiento == idEmp &&
+                    estadosVenta.Contains(d.IdVentaNavigation.Estado))
+                .GroupBy(d => new
+                {
+                    d.IdVenta,
+                    d.IdVentaNavigation.FechaVenta,
+                    d.IdVentaNavigation.IdUsuarioNavigation.Nombre
+                })
+                .Select(g => new
+                {
+                    g.Key.FechaVenta,
+                    g.Key.Nombre,
+                    Total = g.Sum(x => x.Subtotal ?? x.Cantidad * x.PrecioUnitario)
+                })
+                .OrderByDescending(v => v.FechaVenta)
+                .Take(3)
+                .ToListAsync();
+
+            actividad.AddRange(ventasRecientes.Select(v => new ActividadEstadisticaViewModel
+            {
+                Tipo = "venta",
+                Icono = "bi-bag-check-fill",
+                Titulo = "Nueva venta recibida",
+                Detalle = $"{v.Nombre} realizó una compra por ₡{v.Total:N0}.",
+                Fecha = v.FechaVenta
+            }));
+
+            var favoritosRecientes = await favoritos
+                .OrderByDescending(f => f.FechaRegistro)
+                .Take(2)
+                .Select(f => new
+                {
+                    f.FechaRegistro,
+                    Producto = f.IdProductoNavigation == null
+                        ? null
+                        : f.IdProductoNavigation.Nombre
+                })
+                .ToListAsync();
+
+            actividad.AddRange(favoritosRecientes.Select(f => new ActividadEstadisticaViewModel
+            {
+                Tipo = "favorito",
+                Icono = "bi-heart-fill",
+                Titulo = "Agregado a favoritos",
+                Detalle = f.Producto is null
+                    ? "Tu emprendimiento fue agregado a favoritos."
+                    : $"«{f.Producto}» fue agregado a favoritos.",
+                Fecha = f.FechaRegistro
+            }));
+
+            var resenasRecientes = await _context.ComentariosResenas
+                .AsNoTracking()
+                .Where(c =>
+                    c.Estado != "Eliminado" &&
+                    c.Valoracion != null &&
+                    (c.IdEmprendimiento == idEmp ||
+                     (c.IdProducto != null &&
+                      c.IdProductoNavigation!.IdEmprendimiento == idEmp)))
+                .OrderByDescending(c => c.FechaPublicacion)
+                .Take(2)
+                .Select(c => new { c.FechaPublicacion, c.Valoracion })
+                .ToListAsync();
+
+            actividad.AddRange(resenasRecientes.Select(c => new ActividadEstadisticaViewModel
+            {
+                Tipo = "valoracion",
+                Icono = "bi-star-fill",
+                Titulo = "Nueva valoración",
+                Detalle = $"Recibiste una valoración de {c.Valoracion} de 5.",
+                Fecha = c.FechaPublicacion
+            }));
+
+            var participacion = await _context.ParticipacionesEventos
+                .AsNoTracking()
+                .Where(p => p.IdEmprendimiento == idEmp && p.Estado == "Aprobada")
+                .OrderByDescending(p => p.FechaSolicitud)
+                .Select(p => new
+                {
+                    p.FechaSolicitud,
+                    Evento = p.IdEventoNavigation.Nombre
+                })
+                .FirstOrDefaultAsync();
+
+            if (participacion is not null)
+            {
+                actividad.Add(new ActividadEstadisticaViewModel
+                {
+                    Tipo = "evento",
+                    Icono = "bi-calendar-check-fill",
+                    Titulo = "Participación aprobada",
+                    Detalle = $"Tu participación en «{participacion.Evento}» fue aprobada.",
+                    Fecha = participacion.FechaSolicitud
+                });
+            }
+
+            modelo.Actividad = actividad
+                .OrderByDescending(a => a.Fecha)
+                .Take(5)
+                .ToList();
+
+            // Eventos disponibles para solicitar participación.
+            List<int> idsConSolicitud = await _context.ParticipacionesEventos
+                .AsNoTracking()
+                .Where(p => p.IdEmprendimiento == idEmp && p.Estado != "Cancelada")
+                .Select(p => p.IdEvento)
+                .ToListAsync();
+
+            modelo.EventosDisponibles = await _context.Eventos
+                .AsNoTracking()
+                .CountAsync(e =>
+                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                    e.FechaInicio > ahora &&
+                    !idsConSolicitud.Contains(e.IdEvento));
+
+            return View(modelo);
         }
 
         [HttpGet]
