@@ -3655,6 +3655,11 @@ namespace ProyectoClubCreativo.Controllers
 
                 venta.EstadoPago = "Aprobado";
 
+                if (venta.Estado == "Pendiente")
+                {
+                    venta.Estado = "Pagada";
+                }
+
                 var existeAcumulacion = await _context.MovimientosPuntos
                     .AnyAsync(m =>
                         m.IdVenta == venta.IdVenta &&

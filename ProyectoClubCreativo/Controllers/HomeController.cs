@@ -26,9 +26,104 @@ namespace ProyectoClubCreativo.Controllers
             _promociones = promociones;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            DateTime ahora = DateTime.Now;
+
+            var eventos = await _context.Eventos
+                .AsNoTracking()
+                .Where(e =>
+                    (e.Estado == "Programado" || e.Estado == "Activo") &&
+                    (e.FechaFin ?? e.FechaInicio) >= ahora)
+                .OrderBy(e => e.FechaInicio)
+                .Take(3)
+                .Select(e => new
+                {
+                    e.IdEvento,
+                    e.Nombre,
+                    e.Descripcion,
+                    e.Ubicacion,
+                    e.ImagenUrl,
+                    e.FechaInicio,
+                    e.FechaFin
+                })
+                .ToListAsync();
+
+            var emprendimientos = await _context.Emprendimientos
+                .AsNoTracking()
+                .Where(e => e.EstadoAprobacion == "Aprobado" && e.Activo)
+                .Select(e => new
+                {
+                    e.IdEmprendimiento,
+                    e.NombreComercial,
+                    e.Descripcion,
+                    e.LogoUrl,
+                    Categoria = e.IdCategoriaNavigation == null
+                        ? null
+                        : e.IdCategoriaNavigation.Nombre,
+                    ImagenPrincipal = e.EmprendimientoImagene == null
+                        ? null
+                        : e.EmprendimientoImagene.UrlImagen,
+                    Valoraciones = e.ComentariosResenas
+                        .Where(c => c.Estado != "Eliminado" && c.Valoracion != null)
+                        .Select(c => (int)c.Valoracion!.Value)
+                        .ToList()
+                })
+                .ToListAsync();
+
+            List<PromocionPublicaViewModel> promociones =
+                await ConsultarPromocionesPublicasAsync();
+
+            List<string> imagenesComunidad = await _context.GaleriaImagenes
+                .AsNoTracking()
+                .Where(i => i.IdGaleriaNavigation.Estado == "Publicada")
+                .OrderByDescending(i => i.IdGaleriaNavigation.FechaCreacion)
+                .ThenBy(i => i.OrdenVisual)
+                .Select(i => i.UrlImagen)
+                .Take(6)
+                .ToListAsync();
+
+            return View(new InicioViewModel
+            {
+                Eventos = eventos
+                    .Select(e => new EventoPublicoViewModel
+                    {
+                        IdEvento = e.IdEvento,
+                        Nombre = e.Nombre,
+                        Descripcion = e.Descripcion,
+                        Ubicacion = e.Ubicacion,
+                        ImagenUrl = e.ImagenUrl,
+                        FechaInicio = e.FechaInicio,
+                        FechaFin = e.FechaFin
+                    })
+                    .ToList(),
+
+                Talleres = (await ConsultarTalleresPublicosAsync(null, 0))
+                    .Take(3)
+                    .ToList(),
+
+                Emprendimientos = emprendimientos
+                    .Select(e => new EmprendimientoPublicoViewModel
+                    {
+                        IdEmprendimiento = e.IdEmprendimiento,
+                        NombreComercial = e.NombreComercial,
+                        Descripcion = e.Descripcion,
+                        Categoria = e.Categoria,
+                        ImagenUrl = !string.IsNullOrWhiteSpace(e.ImagenPrincipal)
+                            ? e.ImagenPrincipal
+                            : e.LogoUrl,
+                        Valoracion = e.Valoraciones.Count > 0
+                            ? Math.Round(e.Valoraciones.Average(), 1)
+                            : null
+                    })
+                    .OrderByDescending(e => e.Valoracion ?? 0)
+                    .ThenBy(e => e.NombreComercial)
+                    .Take(4)
+                    .ToList(),
+
+                Promocion = promociones.FirstOrDefault(),
+                ImagenesComunidad = imagenesComunidad
+            });
         }
 
         public IActionResult Privacy()
@@ -72,6 +167,11 @@ namespace ProyectoClubCreativo.Controllers
         }
         public async Task<IActionResult> Promociones()
         {
+            return View(await ConsultarPromocionesPublicasAsync());
+        }
+
+        private async Task<List<PromocionPublicaViewModel>> ConsultarPromocionesPublicasAsync()
+        {
             await _promociones.SincronizarEstadosAsync();
 
             var datos = await _context.Promociones
@@ -95,7 +195,7 @@ namespace ProyectoClubCreativo.Controllers
                 })
                 .ToListAsync();
 
-            List<PromocionPublicaViewModel> modelo = datos
+            return datos
                 .Where(p => !p.LimiteUsos.HasValue || p.Usos < p.LimiteUsos.Value)
                 .Select(p =>
                 {
@@ -131,8 +231,6 @@ namespace ProyectoClubCreativo.Controllers
                     };
                 })
                 .ToList();
-
-            return View(modelo);
         }
 
         [HttpGet]

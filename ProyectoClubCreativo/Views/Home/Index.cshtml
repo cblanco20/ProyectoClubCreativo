@@ -1,8 +1,22 @@
-﻿@{
+﻿@model ProyectoClubCreativo.Models.ViewModels.InicioViewModel
+
+@{
     ViewData["Title"] = "Inicio";
     Layout = "~/Views/Shared/_LayoutExterno.cshtml";
-}
 
+    bool haySesion = Context.Session.GetInt32("IdUsuario") is not null;
+
+    string ImagenDe(string? url) =>
+        string.IsNullOrWhiteSpace(url)
+            ? Url.Content("~/images/logo.jpg")
+            : Url.Content(url);
+
+    string Resumen(string? texto, int maximo)
+    {
+        texto ??= string.Empty;
+        return texto.Length <= maximo ? texto : texto[..(maximo - 3)] + "...";
+    }
+}
 <!-- BANNER PRINCIPAL-->
 <section class="seccion-hero">
     <div class="contenedor-club">
@@ -100,7 +114,40 @@
         </div>
     </div>
 </section>
+@if (!haySesion)
+{
+    <section class="seccion-contenido">
+        <div class="burbuja-seccion burbuja-azul-suave">
+            <div class="contenedor-club">
+                <div class="encabezado-seccion">
+                    <div>
+                        <h2 class="titulo-seccion">
+                            Esto es lo que Club Creativo tiene para vos ✦
+                        </h2>
+                        <p class="descripcion-seccion">
+                            Iniciá sesión para inscribirte en eventos y talleres,
+                            guardar tus favoritos, acumular puntos y
+                            aprovechar promociones.
+                        </p>
+                    </div>
 
+                    <div>
+                        <a asp-controller="Cuenta"
+                           asp-action="IniciarSesion"
+                           class="boton-principal">
+                            Iniciar sesión
+                        </a>
+                        <a asp-controller="Cuenta"
+                           asp-action="SeleccionarRegistro"
+                           class="enlace-ver-todos">
+                            Crear cuenta →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
 <!-- PRÓXIMOS EVENTOS-->
 <section id="eventos"
          class="seccion-contenido">
@@ -127,102 +174,43 @@
             </a>
         </div>
 
-        <div class="cuadricula-tarjetas">
+            @if (Model.Eventos.Count == 0)
+            {
+                <p>Por ahora no hay eventos próximos. ¡Vuelve pronto!</p>
+            }
+            else
+            {
+                <div class="cuadricula-tarjetas">
+                    @foreach (var evento in Model.Eventos)
+                    {
+                        <article class="tarjeta-contenido">
+                            <img src="@ImagenDe(evento.ImagenUrl)"
+                                 alt="@evento.Nombre"
+                                 class="imagen-tarjeta" />
 
-            <article class="tarjeta-contenido">
-                <img src="~/images/evento-san-pedro.jpg"
-                     alt="Arte Inarrivo San Pedro"
-                     class="imagen-tarjeta" />
+                            <div class="cuerpo-tarjeta">
+                                <span class="etiqueta-tarjeta">@evento.FechaTexto</span>
 
-                <div class="cuerpo-tarjeta">
-                    <span class="etiqueta-tarjeta">
-                        15 y 16 de agosto
-                    </span>
+                                <h3 class="titulo-tarjeta">@evento.Nombre</h3>
 
-                    <h3 class="titulo-tarjeta">
-                        Arte Inarrivo San Pedro
-                    </h3>
+                                <p class="texto-tarjeta">@Resumen(evento.Descripcion, 110)</p>
 
-                    <p class="texto-tarjeta">
-                        Una edición especial con arte,
-                        diseño y emprendimientos locales.
-                    </p>
+                                <div class="datos-tarjeta">
+                                    <span>📍 @evento.Ubicacion</span>
+                                    <span>🕐 @evento.HoraTexto</span>
+                                </div>
 
-                    <div class="datos-tarjeta">
-                        <span>📍 San Pedro</span>
-                        <span>🕐 12:00 p. m.</span>
-                    </div>
-
-                    <a href="#"
-                       class="enlace-tarjeta">
-                        Ver evento →
-                    </a>
+                                <a asp-controller="Home"
+                                   asp-action="DetalleEvento"
+                                   asp-route-id="@evento.IdEvento"
+                                   class="enlace-tarjeta">
+                                    Ver evento →
+                                </a>
+                            </div>
+                        </article>
+                    }
                 </div>
-            </article>
-
-            <article class="tarjeta-contenido">
-                <img src="~/images/evento-santa-ana.jpg"
-                     alt="Feria Creativa Santa Ana"
-                     class="imagen-tarjeta" />
-
-                <div class="cuerpo-tarjeta">
-                    <span class="etiqueta-tarjeta">
-                        5 al 7 de septiembre
-                    </span>
-
-                    <h3 class="titulo-tarjeta">
-                        Feria Creativa Santa Ana
-                    </h3>
-
-                    <p class="texto-tarjeta">
-                        Marcas creativas, productos únicos
-                        y actividades para toda la comunidad.
-                    </p>
-
-                    <div class="datos-tarjeta">
-                        <span>📍 Santa Ana</span>
-                        <span>🕐 10:00 a. m.</span>
-                    </div>
-
-                    <a href="#"
-                       class="enlace-tarjeta">
-                        Ver evento →
-                    </a>
-                </div>
-            </article>
-
-            <article class="tarjeta-contenido">
-                <img src="~/images/evento-madres.jpg"
-                     alt="Edición especial Día de las Madres"
-                     class="imagen-tarjeta" />
-
-                <div class="cuerpo-tarjeta">
-                    <span class="etiqueta-tarjeta">
-                        Edición especial
-                    </span>
-
-                    <h3 class="titulo-tarjeta">
-                        Día de las Madres
-                    </h3>
-
-                    <p class="texto-tarjeta">
-                        Regalos, experiencias y talento local
-                        para celebrar a mamá.
-                    </p>
-
-                    <div class="datos-tarjeta">
-                        <span>📍 Heredia</span>
-                        <span>🕐 11:00 a. m.</span>
-                    </div>
-
-                    <a href="#"
-                       class="enlace-tarjeta">
-                        Ver evento →
-                    </a>
-                </div>
-            </article>
-
-        </div>
+            }
     </div>
     </div>
 </section>
@@ -252,93 +240,41 @@
             </a>
         </div>
 
-        <div class="cuadricula-talleres">
+            @if (Model.Talleres.Count == 0)
+            {
+                <p>Por ahora no hay talleres programados. ¡Vuelve pronto!</p>
+            }
+            else
+            {
+                <div class="cuadricula-talleres">
+                    @foreach (var taller in Model.Talleres)
+                    {
+                        <article class="tarjeta-contenido tarjeta-taller">
+                            <img src="@ImagenDe(taller.ImagenUrl)"
+                                 alt="@taller.Nombre"
+                                 class="imagen-tarjeta" />
 
-            <article class="tarjeta-contenido tarjeta-taller">
-                <img src="~/images/taller-ceramica.jpg"
-                     alt="Taller de cerámica"
-                     class="imagen-tarjeta" />
+                            <div class="cuerpo-tarjeta">
+                                <span class="etiqueta-tarjeta">@taller.TextoDisponibilidad</span>
 
-                <div class="cuerpo-tarjeta">
-                    <span class="etiqueta-tarjeta">
-                        Cupos disponibles
-                    </span>
+                                <h3 class="titulo-tarjeta">@taller.Nombre</h3>
 
-                    <h3 class="titulo-tarjeta">
-                        Cerámica para principiantes
-                    </h3>
+                                <div class="datos-tarjeta">
+                                    <span>📅 @taller.FechaTexto</span>
+                                    <span>📍 @taller.Ubicacion</span>
+                                </div>
 
-                    <div class="datos-tarjeta">
-                        <span>📅 Sábado 23</span>
-                        <span>📍 Escazú</span>
-                    </div>
+                                <a asp-controller="Home"
+                                   asp-action="DetalleTaller"
+                                   asp-route-id="@taller.IdTaller"
+                                   class="enlace-tarjeta">
+                                    Ver taller →
+                                </a>
+                            </div>
+                        </article>
+                    }
                 </div>
-            </article>
-
-            <article class="tarjeta-contenido tarjeta-taller">
-                <img src="~/images/taller-bordado.jpg"
-                     alt="Taller de bordado creativo"
-                     class="imagen-tarjeta" />
-
-                <div class="cuerpo-tarjeta">
-                    <span class="etiqueta-tarjeta">
-                        Cupos disponibles
-                    </span>
-
-                    <h3 class="titulo-tarjeta">
-                        Bordado creativo
-                    </h3>
-
-                    <div class="datos-tarjeta">
-                        <span>📅 Domingo 24</span>
-                        <span>📍 Santa Ana</span>
-                    </div>
-                </div>
-            </article>
-
-            <article class="tarjeta-contenido tarjeta-taller">
-                <img src="~/images/taller-velas.jpg"
-                     alt="Taller de velas artesanales"
-                     class="imagen-tarjeta" />
-
-                <div class="cuerpo-tarjeta">
-                    <span class="etiqueta-tarjeta">
-                        Cupos limitados
-                    </span>
-
-                    <h3 class="titulo-tarjeta">
-                        Velas artesanales
-                    </h3>
-
-                    <div class="datos-tarjeta">
-                        <span>📅 Sábado 30</span>
-                        <span>📍 Heredia</span>
-                    </div>
-                </div>
-            </article>
-
-            <article class="tarjeta-contenido tarjeta-taller">
-                <img src="~/images/taller-joyeria.jpg"
-                     alt="Taller de joyería"
-                     class="imagen-tarjeta" />
-
-                <div class="cuerpo-tarjeta">
-                    <span class="etiqueta-tarjeta">
-                        Cupos disponibles
-                    </span>
-
-                    <h3 class="titulo-tarjeta">
-                        Joyería en arcilla
-                    </h3>
-
-                    <div class="datos-tarjeta">
-                        <span>📅 Domingo 31</span>
-                        <span>📍 Alajuela</span>
-                    </div>
-                </div>
-            </article>
-
-        </div>
+            }
     </div>
     </div>
 </section>
@@ -370,105 +306,37 @@
             </a>
         </div>
 
-        <div class="cuadricula-productos">
+            @if (Model.Emprendimientos.Count == 0)
+            {
+                <p>Pronto verás aquí los emprendimientos de nuestra comunidad.</p>
+            }
+            else
+            {
+                <div class="cuadricula-productos">
+                    @foreach (var emprendimiento in Model.Emprendimientos)
+                    {
+                        <article class="tarjeta-contenido tarjeta-producto">
+                            <a asp-controller="Home"
+                               asp-action="DetalleEmprendimiento"
+                               asp-route-id="@emprendimiento.IdEmprendimiento"
+                               class="enlace-tarjeta-producto">
 
-            <article class="tarjeta-contenido tarjeta-producto">
-                <button type="button"
-                        class="boton-favorito"
-                        aria-label="Agregar a favoritos">
-                    ♡
-                </button>
+                                <img src="@ImagenDe(emprendimiento.ImagenUrl)"
+                                     alt="@emprendimiento.NombreComercial"
+                                     class="imagen-tarjeta" />
 
-                <a asp-controller="Home"
-                   asp-action="DetalleEmprendimiento"
-                   asp-route-name="Orquídea"
-                   class="enlace-tarjeta-producto">
+                                <div class="cuerpo-tarjeta">
+                                    <h3 class="titulo-tarjeta">@emprendimiento.NombreComercial</h3>
+                                    <p class="texto-tarjeta">
+                                        @(emprendimiento.Categoria ?? Resumen(emprendimiento.Descripcion, 60))
+                                    </p>
+                                </div>
 
-                    <img src="~/images/producto-1.jpg"
-                         alt="Accesorios artesanales"
-                         class="imagen-tarjeta" />
-
-                    <div class="cuerpo-tarjeta">
-                        <h3 class="titulo-tarjeta">Orquídea</h3>
-                        <p class="texto-tarjeta">Accesorios artesanales</p>
-                    </div>
-
-                </a>
-            </article>
-
-            <article class="tarjeta-contenido tarjeta-producto">
-                <button type="button"
-                        class="boton-favorito"
-                        aria-label="Agregar a favoritos">
-                    ♡
-                </button>
-
-                <a asp-controller="Home"
-                   asp-action="DetalleEmprendimiento"
-                   asp-route-name="Moras"
-                   class="enlace-tarjeta-producto">
-
-                    <img src="~/images/producto-2.jpg"
-                         alt="Bolsos y accesorios"
-                         class="imagen-tarjeta" />
-
-                    <div class="cuerpo-tarjeta">
-                        <h3 class="titulo-tarjeta">Moras</h3>
-                        <p class="texto-tarjeta">Bolsos y accesorios</p>
-                    </div>
-
-                </a>
-            </article>
-
-            <article class="tarjeta-contenido tarjeta-producto">
-                <button type="button"
-                        class="boton-favorito"
-                        aria-label="Agregar a favoritos">
-                    ♡
-                </button>
-
-                <a asp-controller="Home"
-                   asp-action="DetalleEmprendimiento"
-                   asp-route-name="Luz Natural"
-                   class="enlace-tarjeta-producto">
-
-                    <img src="~/images/producto-3.jpg"
-                         alt="Velas artesanales"
-                         class="imagen-tarjeta" />
-
-                    <div class="cuerpo-tarjeta">
-                        <h3 class="titulo-tarjeta">Luz Natural</h3>
-                        <p class="texto-tarjeta">Velas artesanales</p>
-                    </div>
-
-                </a>
-            </article>
-
-            <article class="tarjeta-contenido tarjeta-producto">
-                <button type="button"
-                        class="boton-favorito"
-                        aria-label="Agregar a favoritos">
-                    ♡
-                </button>
-
-                <a asp-controller="Home"
-                   asp-action="DetalleEmprendimiento"
-                   asp-route-name="Pinta Bonito"
-                   class="enlace-tarjeta-producto">
-
-                    <img src="~/images/producto-4.jpg"
-                         alt="Arte e ilustración"
-                         class="imagen-tarjeta" />
-
-                    <div class="cuerpo-tarjeta">
-                        <h3 class="titulo-tarjeta">Pinta Bonito</h3>
-                        <p class="texto-tarjeta">Arte e ilustración</p>
-                    </div>
-
-                </a>
-            </article>
-
-        </div>
+                            </a>
+                        </article>
+                    }
+                </div>
+            }
     </div>
     </div>
 </section>
@@ -488,35 +356,49 @@
             </div>
         </div>
 
-        <div class="banner-promocion">
+            @if (Model.Promocion is null)
+            {
+                <p>Por ahora no hay promociones activas. ¡Vuelve pronto!</p>
+            }
+            else
+            {
+                <div class="banner-promocion">
 
-            <div class="contenido-promocion">
-                <span class="descuento-promocion">
-                    15% OFF
-                </span>
+                    <div class="contenido-promocion">
+                        <span class="descuento-promocion">
+                            @Model.Promocion.Descuento OFF
+                        </span>
 
-                <h2>
-                    Regalos especiales para mamá
-                </h2>
+                        <h2>@Model.Promocion.Nombre</h2>
 
-                <p>
-                    Aprovechá promociones en productos seleccionados
-                    creados por emprendimientos costarricenses.
-                </p>
+                        <p>
+                            @Resumen(Model.Promocion.Descripcion, 160)
+                            Aplica a: @Model.Promocion.AplicaA.
+                            Vigente hasta el @Model.Promocion.FechaFin.ToString("dd/MM/yyyy").
+                        </p>
 
-                <div>
-                    <a href="#"
-                       class="boton-principal">
-                        Ver promociones
-                    </a>
+                        <div>
+                            <a asp-controller="Home"
+                               asp-action="Promociones"
+                               class="boton-principal">
+                                Ver promociones
+                            </a>
+
+                            @if (!haySesion)
+                            {
+                                <p>
+                                    <small>Iniciá sesión para aprovechar esta promoción.</small>
+                                </p>
+                            }
+                        </div>
+                    </div>
+
+                    <img src="~/images/promociones-banner.jpg"
+                         alt="Promoción vigente"
+                         class="imagen-promocion" />
+
                 </div>
-            </div>
-
-            <img src="~/images/evento-madres.jpg"
-                 alt="Promoción especial para el Día de las Madres"
-                 class="imagen-promocion" />
-
-        </div>
+            }
     </div>
     </div>
 </section>
