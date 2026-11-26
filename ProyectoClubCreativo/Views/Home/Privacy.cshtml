@@ -1,6 +1,232 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Políticas y condiciones de uso";
+    Layout = "_LayoutExterno";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<section class="introduccion-reglamento">
+    <div class="container">
+
+        <div class="encabezado-reglamento">
+            <span class="subtitulo-reglamento">
+                Información importante
+            </span>
+
+            <h1>Políticas y condiciones de uso</h1>
+
+            <p>
+                En Club Creativo MiVo buscamos ofrecer una
+                experiencia transparente y responsable.
+                Conoce las condiciones relacionadas con el
+                uso de nuestra plataforma.
+            </p>
+        </div>
+
+    </div>
+</section>
+
+<section class="normas-reglamento">
+    <div class="container">
+
+        <div class="row g-4">
+
+            <!-- POLÍTICA DE PRIVACIDAD -->
+            <div class="col-12" id="privacidad">
+                <article class="tarjeta-norma">
+
+                    <div class="icono-norma">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+
+                    <h3>Política de privacidad</h3>
+
+                    <p>
+                        La plataforma recopila información
+                        proporcionada por los usuarios, como
+                        su nombre, correo electrónico, número
+                        de teléfono y dirección, cuando sea
+                        necesaria para utilizar sus servicios.
+                    </p>
+
+                    <p>
+                        Esta información se utiliza para gestionar
+                        cuentas, compras, suscripciones,
+                        inscripciones, notificaciones y solicitudes
+                        relacionadas con Club Creativo MiVo.
+                    </p>
+
+                    <p>
+                        El acceso a la información personal debe
+                        limitarse a las personas autorizadas y
+                        a las finalidades correspondientes.
+                    </p>
+
+                    <p>
+                        Los usuarios pueden solicitar el acceso,
+                        actualización, rectificación o eliminación
+                        de sus datos personales, según corresponda,
+                        mediante los canales de contacto.
+                    </p>
+
+                </article>
+            </div>
+
+            <!-- TÉRMINOS DEL SERVICIO -->
+            <div class="col-12" id="terminos-servicio">
+                <article class="tarjeta-norma">
+
+                    <div class="icono-norma">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+
+                    <h3>Términos del servicio</h3>
+
+                    <p>
+                        Club Creativo MiVo ofrece un espacio
+                        para conocer emprendimientos, adquirir
+                        productos y participar en eventos,
+                        talleres y actividades creativas.
+                    </p>
+
+                    <p>
+                        Las compras, suscripciones e inscripciones
+                        estarán sujetas a la disponibilidad y
+                        condiciones indicadas en la plataforma.
+                    </p>
+
+                    <p>
+                        Los pagos realizados mediante SINPE Móvil
+                        estarán sujetos a verificación por parte
+                        de la administración antes de su
+                        confirmación.
+                    </p>
+
+                    <p>
+                        Los usuarios deberán respetar las normas
+                        establecidas en el reglamento de
+                        Club Creativo MiVo.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="Reglamento"
+                       class="boton-reglamento">
+                        Consultar reglamento
+                    </a>
+
+                </article>
+            </div>
+
+            <!-- POLÍTICA DE REEMBOLSO -->
+            <div class="col-12" id="reembolsos">
+                <article class="tarjeta-norma">
+
+                    <div class="icono-norma">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+
+                    <h3>Política de reembolso</h3>
+
+                    <p>
+                        Las solicitudes de reembolso serán
+                        revisadas considerando las condiciones
+                        de la compra, el motivo de la solicitud
+                        y los derechos del consumidor.
+                    </p>
+
+                    <p>
+                        Para gestionar una solicitud, el cliente
+                        deberá proporcionar el comprobante de
+                        pago y la información correspondiente
+                        a su compra o suscripción.
+                    </p>
+
+                    <p>
+                        Cuando corresponda realizar un reembolso,
+                        la administración coordinará con el
+                        cliente el procedimiento y el plazo
+                        aplicable.
+                    </p>
+
+                    <p>
+                        Las condiciones de garantía y devolución
+                        pueden consultarse en nuestro reglamento.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="Reglamento"
+                       asp-fragment="devoluciones"
+                       class="boton-reglamento">
+                        Consultar devoluciones
+                    </a>
+
+                </article>
+            </div>
+
+            <!-- CONDICIONES DE USO -->
+            <div class="col-12" id="condiciones-uso">
+                <article class="tarjeta-norma">
+
+                    <div class="icono-norma">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+
+                    <h3>Condiciones de uso</h3>
+
+                    <p>
+                        Los usuarios deben proporcionar
+                        información verdadera y mantener
+                        actualizados los datos de su cuenta.
+                    </p>
+
+                    <p>
+                        Cada usuario es responsable de proteger
+                        sus credenciales de acceso y utilizar
+                        la plataforma de manera adecuada.
+                    </p>
+
+                    <p>
+                        No se permite publicar contenido
+                        ofensivo, realizar actividades
+                        fraudulentas ni utilizar la información
+                        de otros usuarios sin autorización.
+                    </p>
+
+                    <p>
+                        El incumplimiento de estas condiciones
+                        podrá dar lugar a restricciones o
+                        suspensión de la cuenta, según la
+                        gravedad de la situación.
+                    </p>
+
+                </article>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- CONTACTO -->
+<section class="cta-reglamento">
+    <div class="container">
+
+        <div class="cta-reglamento-contenido">
+
+            <span>Club Creativo MiVo</span>
+
+            <h2>¿Tienes alguna consulta?</h2>
+
+            <p>
+                Estamos disponibles para atender tus dudas
+                relacionadas con nuestras políticas,
+                condiciones y servicios.
+            </p>
+
+            <a asp-controller="Home"
+               asp-action="Contacto"
+               class="boton-reglamento boton-reglamento-claro">
+                Contáctanos
+            </a>
+
+        </div>
+
+    </div>
+</section>

@@ -371,25 +371,6 @@
                     y la creatividad.
                 </p>
 
-                <div class="redes-footer">
-                    <a href="#"
-                       class="red-social"
-                       aria-label="Instagram">
-                        IG
-                    </a>
-
-                    <a href="#"
-                       class="red-social"
-                       aria-label="TikTok">
-                        TK
-                    </a>
-
-                    <a href="#"
-                       class="red-social"
-                       aria-label="Facebook">
-                        FB
-                    </a>
-                </div>
             </section>
 
             <section>
@@ -468,7 +449,7 @@
                 </ul>
             </section>
 
-            <section>
+           <section>
                 <h2 class="titulo-footer">Ayuda</h2>
 
                 <ul class="lista-footer">
@@ -478,16 +459,45 @@
                             Preguntas frecuentes
                         </a>
                     </li>
-                    <li><a href="#">Envíos y entregas</a></li>
-                    <li><a href="#">Métodos de pago</a></li>
-                    <li><a href="#">Devoluciones</a></li>
+
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="Reglamento"
+                           asp-fragment="envios-entregas">
+                            Envíos y entregas
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="Reglamento"
+                           asp-fragment="metodos-pago">
+                            Métodos de pago
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="Reglamento"
+                           asp-fragment="devoluciones">
+                            Devoluciones
+                        </a>
+                    </li>
+
                     <li>
                         <a asp-controller="Home"
                            asp-action="Reglamento">
                             Reglamento
                         </a>
                     </li>
-                    <li><a href="#">Términos del servicio</a></li>
+
+                    <li>
+                        <a asp-controller="Home"
+                           asp-action="Privacy"
+                           asp-fragment="terminos-servicio">
+                            Términos del servicio
+                        </a>
+                    </li>
                 </ul>
             </section>
 
@@ -526,10 +536,31 @@
                 </p>
 
                 <div class="enlaces-legales">
-                    <a href="#">Política de privacidad</a>
-                    <a href="#">Términos del servicio</a>
-                    <a href="#">Política de reembolso</a>
-                    <a href="#">Condiciones de uso</a>
+
+                    <a asp-controller="Home"
+                       asp-action="Privacy"
+                       asp-fragment="privacidad">
+                        Política de privacidad
+                    </a>
+
+                    <a asp-controller="Home"
+                       asp-action="Privacy"
+                       asp-fragment="terminos-servicio">
+                        Términos del servicio
+                    </a>
+
+                    <a asp-controller="Home"
+                       asp-action="Privacy"
+                       asp-fragment="reembolsos">
+                        Política de reembolso
+                    </a>
+
+                    <a asp-controller="Home"
+                       asp-action="Privacy"
+                       asp-fragment="condiciones-uso">
+                        Condiciones de uso
+                    </a>
+
                 </div>
 
             </div>

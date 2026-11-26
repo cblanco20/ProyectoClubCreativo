@@ -1,6 +1,4 @@
-﻿@model ProyectoClubCreativo.Models.ViewModels.ContactoViewModel
-
-@{
+﻿@{
     ViewData["Title"] = "Contacto";
     Layout = "~/Views/Shared/_LayoutExterno.cshtml";
 }
@@ -17,122 +15,73 @@
                     Hablemos
                 </span>
 
-                <h1>
-                    Contacto
-                </h1>
+                <h1>Contacto</h1>
 
                 <p>
                     ¿Tienes consultas sobre ferias, talleres,
                     productos o participación de emprendimientos?
-                    Envíanos un mensaje.
+                    Estamos para ayudarte.
                 </p>
 
                 <div class="datos-contacto">
+
                     <div>
                         <strong>WhatsApp</strong>
                         <span>+506 7130-1389</span>
                     </div>
 
                     <div>
-                        <strong>Correo</strong>
-                        <span>hola@clubcreativomivo.com</span>
-                    </div>
-
-                    <div>
                         <strong>Ubicación</strong>
                         <span>San José, Costa Rica</span>
                     </div>
+
                 </div>
 
                 <div class="decoracion-contacto">
                     Club Creativo MiVo ✦
                 </div>
+
             </div>
 
-            <div class="formulario-contacto">
+            <div class="formulario-contacto d-flex flex-column justify-content-center">
 
-                @if (TempData["MensajeContacto"] is not null)
-                {
-                    <div class="alerta-exito-acceso">
-                        @TempData["MensajeContacto"]
-                    </div>
-                }
+                <div class="mb-4">
+                    <i class="bi bi-whatsapp text-success"
+                       style="font-size: 3.5rem;"></i>
+                </div>
 
-                <form asp-controller="Home"
-                      asp-action="Contacto"
-                      method="post"
-                      novalidate>
+                <h2 class="mb-3">
+                    ¡Conversemos!
+                </h2>
 
-                    @Html.AntiForgeryToken()
+                <p class="mb-3">
+                    Nos encantaría conocer tus dudas, ideas
+                    y consultas. Si necesitas información
+                    sobre nuestros productos, eventos,
+                    talleres o cómo formar parte de nuestra
+                    comunidad, puedes escribirnos directamente
+                    por WhatsApp.
+                </p>
 
-                    <div asp-validation-summary="ModelOnly"></div>
+                <p class="mb-4">
+                    Déjanos tu mensaje y con mucho gusto
+                    te atenderemos lo antes posible.
+                </p>
 
-                    <div class="fila-formulario">
-                        <div class="grupo-formulario">
-                            <label asp-for="Nombre"></label>
-                            <input asp-for="Nombre"
-                                   class="control-formulario"
-                                   placeholder="Tu nombre" />
-                            <span asp-validation-for="Nombre"
-                                  class="mensaje-validacion"></span>
-                        </div>
+                <a href="https://wa.me/50671301389?text=Hola%2C%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n%20sobre%20Club%20Creativo%20MiVo."
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="btn btn-success rounded-pill px-4 py-3 fw-bold">
 
-                        <div class="grupo-formulario">
-                            <label asp-for="Correo"></label>
-                            <input asp-for="Correo"
-                                   class="control-formulario"
-                                   placeholder="ejemplo@correo.com" />
-                            <span asp-validation-for="Correo"
-                                  class="mensaje-validacion"></span>
-                        </div>
-                    </div>
+                    <i class="bi bi-whatsapp me-2"></i>
+                    Escríbenos por WhatsApp
 
-                    <div class="fila-formulario">
-                        <div class="grupo-formulario">
-                            <label asp-for="Telefono"></label>
-                            <input asp-for="Telefono"
-                                   class="control-formulario"
-                                   placeholder="88888888"
-                                   maxlength="8" />
-                            <span asp-validation-for="Telefono"
-                                  class="mensaje-validacion"></span>
-                        </div>
+                </a>
 
-                        <div class="grupo-formulario">
-                            <label asp-for="Asunto"></label>
-
-                            <select asp-for="Asunto"
-                                    class="control-formulario">
-                                <option value="">Seleccione un asunto</option>
-                                <option>Información sobre eventos</option>
-                                <option>Información sobre talleres</option>
-                                <option>Registro de emprendimiento</option>
-                                <option>Productos y compras</option>
-                                <option>Soporte de la plataforma</option>
-                                <option>Otro</option>
-                            </select>
-
-                            <span asp-validation-for="Asunto"
-                                  class="mensaje-validacion"></span>
-                        </div>
-                    </div>
-
-                    <div class="grupo-formulario">
-                        <label asp-for="Mensaje"></label>
-
-                        <textarea asp-for="Mensaje"
-                                  class="control-formulario"
-                                  placeholder="Cuéntanos cómo podemos ayudarte..."></textarea>
-
-                        <span asp-validation-for="Mensaje"
-                              class="mensaje-validacion"></span>
-                    </div>
-
-                    <button type="submit"
-                            class="boton-enviar-contacto">
-                        Enviar mensaje
-                    </button>
-                </form>
+                <p class="text-muted small mt-3 mb-0">
+                    Al presionar el botón, se abrirá una
+                    conversación en WhatsApp.
+                </p>
 
             </div>
 
