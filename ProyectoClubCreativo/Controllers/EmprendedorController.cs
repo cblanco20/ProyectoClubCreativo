@@ -4183,43 +4183,6 @@ namespace ProyectoClubCreativo.Controllers
         }
 
         [HttpGet]
-        public IActionResult ParticipacionEventos()
-        {
-            return View(new SolicitudEventoViewModel());
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult SolicitarParticipacionEvento(
-            SolicitudEventoViewModel modelo)
-        {
-            if (!modelo.ConfirmaSolicitud)
-            {
-                ModelState.AddModelError(
-                    nameof(modelo.ConfirmaSolicitud),
-                    "Debe confirmar que desea enviar la solicitud."
-                );
-            }
-
-            if (!ModelState.IsValid)
-            {
-                ViewBag.AbrirModalEvento = true;
-
-                return View(
-                    "ParticipacionEventos",
-                    modelo
-                );
-            }
-
-            TempData["MensajeEvento"] =
-                $"La solicitud para participar en «{modelo.NombreEvento}» " +
-                "fue enviada correctamente.";
-
-            return RedirectToAction(nameof(ParticipacionEventos));
-        }
-
-        [HttpGet]
         public async Task<IActionResult> Estadisticas(int periodo = 30)
         {
             if (periodo != 7 && periodo != 30 && periodo != 90 && periodo != 365)
@@ -4675,20 +4638,6 @@ namespace ProyectoClubCreativo.Controllers
                 .OrderByDescending(a => a.Fecha)
                 .Take(5)
                 .ToList();
-
-            // Eventos disponibles para solicitar participación.
-            List<int> idsConSolicitud = await _context.ParticipacionesEventos
-                .AsNoTracking()
-                .Where(p => p.IdEmprendimiento == idEmp && p.Estado != "Cancelada")
-                .Select(p => p.IdEvento)
-                .ToListAsync();
-
-            modelo.EventosDisponibles = await _context.Eventos
-                .AsNoTracking()
-                .CountAsync(e =>
-                    (e.Estado == "Programado" || e.Estado == "Activo") &&
-                    e.FechaInicio > ahora &&
-                    !idsConSolicitud.Contains(e.IdEvento));
 
             return View(modelo);
         }

@@ -489,27 +489,6 @@
             </div>
         </article>
 
-        <article>
-            <span class="numero-recomendacion-estadistica">03</span>
-            <div>
-                <h3>Participa en próximos eventos</h3>
-                <p>
-                    @if (Model.EventosDisponibles > 0)
-                    {
-                        <text>Hay @Model.EventosDisponibles evento(s) próximo(s) disponible(s) para solicitar participación y darte a conocer.</text>
-                    }
-                    else
-                    {
-                        <text>Por ahora no hay eventos disponibles. Revisa esta sección con frecuencia.</text>
-                    }
-                </p>
-                <a asp-controller="Emprendedor" asp-action="ParticipacionEventos">
-                    Ver eventos
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-        </article>
-
     </div>
 
 </section>

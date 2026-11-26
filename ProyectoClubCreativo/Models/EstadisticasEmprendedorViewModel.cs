@@ -38,7 +38,6 @@
 
         public int ProductosBajoStock { get; set; }
         public string? ProductoEstrella { get; set; }
-        public int EventosDisponibles { get; set; }
     }
 
     public class PuntoGraficoEmprendedorViewModel
